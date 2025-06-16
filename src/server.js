@@ -13,6 +13,7 @@ const db = require("./models");
 
 
 const app = express();
+const { petRouter } = require("./routes");
 
 // Sử dụng cors middleware để cho phép request từ localhost:3000
 app.use(cors({
@@ -31,7 +32,7 @@ app.get("/", async (req, res, next) => {
 });
 
 // Định tuyến theo các chức năng thực tế
-
+app.use("/pets", petRouter);
 
 app.use(async (req, res, next) => {
   next(httpsErrors(404, "Bad Request"));
