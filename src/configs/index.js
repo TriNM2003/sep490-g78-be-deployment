@@ -1,3 +1,5 @@
-module.exports = {
+const cloudinary = require('./cloudinary');
 
+module.exports = {
+    cloudinary,
 }
