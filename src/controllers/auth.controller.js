@@ -200,7 +200,7 @@ const refreshToken = async (req, res) => {
 // };
 
 module.exports = {
-  // register,
+  register,
   login,
   logout,
   refreshToken,
