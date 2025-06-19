@@ -1,29 +1,35 @@
-const jwt = require("../utils/jwt");
+const jwt = require("jsonwebtoken");
+const createError = require("http-errors");
+const passport = require("passport");
 
-const isAuthorized = (req, res, next) => {
-  const accessToken = req.cookies?.accessToken;
-  console.log("Access Token:", accessToken);
-
-  if (!accessToken) {
-    return res.status(401).json({ error: "Unauthorized" });
-  }
-
-  try {
-    const accessTokenDecoded = jwt.verifyToken(
-      accessToken,
-      process.env.ACCESS_TOKEN
-    );
-    req.jwtDecoded = accessTokenDecoded;
-    next();
-  } catch (error) {
-    console.error("Token verification failed:", error);
-    if (error.message?.includes("jwt expired")) {
-      return res.status(410).json({ error: "Need to refresh Token" });
+const verifyAccessToken = (req, res, next) => {
+    if (!req.headers['authorization']) {
+        return next(createError.Unauthorized)
     }
-    return res.status(401).json({ error: "Unauthorized! Please Login" });
-  }
+    const authHeader = req.headers['authorization']
+    const bearerToken = authHeader.split(' ')
+    const token = bearerToken[1];
+
+    if (!token) {
+        throw createError.NotFound("Token is not provided!")
+    }
+    jwt.verify(token, process.env.JWT_SECRET, (err, payload) => {
+        if (err) {
+            const message = err.name == 'JsonWebTokenError' ? 'Unauthorized' : err.message;
+            return next(createError.Unauthorized(message))
+        }
+        req.payload = payload;
+        next();
+    })
 };
 
-export const authMiddleware = {
-  isAuthorized,
-};
+const verifyGoogleCallback = passport.authenticate("google-user", { failureRedirect: "http://localhost:3000/error" });
+const verifyGoogleCallbackAdmin = passport.authenticate("google-admin", { failureRedirect: "http://localhost:3000/error" });
+
+const authMiddleware = {
+    verifyAccessToken,
+    verifyGoogleCallback,
+    verifyGoogleCallbackAdmin,
+}
+
+module.exports = authMiddleware;
