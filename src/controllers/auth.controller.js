@@ -154,56 +154,56 @@ const refreshToken = async (req, res) => {
     res.status(500).json("Refresh token fail");
   }
 };
-// const verifyEmail = async (req, res) => {
-//   try {
-//     const { token } = req.query;
-//     const decoded = await jwt.verifyToken(token, ACCESSTOKEN);
-//     const user = await User.findOne({ email: decoded.email });
+const verifyEmail = async (req, res) => {
+  try {
+    const { token } = req.query;
+    const decoded = await jwt.verifyToken(token, ACCESSTOKEN);
+    const user = await User.findOne({ email: decoded.email });
 
-//     if (!user) return res.status(404).json({ message: "User not found" });
-//     if (user.status === "active")
-//       return res.status(400).json({ message: "Already verified" });
+    if (!user) return res.status(404).json({ message: "User not found" });
+    if (user.status === "active")
+      return res.status(400).json({ message: "Already verified" });
 
-//     user.status = "active";
-//     await user.save();
+    user.status = "active";
+    await user.save();
 
-//     res.status(200).json({ message: "Email verified successfully!" });
-//   } catch (err) {
-//     res.status(400).json({ message: "Invalid or expired token" });
-//   }
-// };
-// const resendVerificationEmail = async (req, res) => {
-//   try {
-//     const { email } = req.body;
-//     if (!email) return res.status(400).json({ message: "Email is required" });
+    res.status(200).json({ message: "Email verified successfully!" });
+  } catch (err) {
+    res.status(400).json({ message: "Invalid or expired token" });
+  }
+};
+const resendVerificationEmail = async (req, res) => {
+  try {
+    const { email } = req.body;
+    if (!email) return res.status(400).json({ message: "Email is required" });
 
-//     const user = await User.findOne({ email });
-//     if (!user) return res.status(404).json({ message: "User not found" });
+    const user = await User.findOne({ email });
+    if (!user) return res.status(404).json({ message: "User not found" });
 
-//     if (user.status === "active") {
-//       return res.status(400).json({ message: "Tài khoản đã xác thực." });
-//     }
+    if (user.status === "active") {
+      return res.status(400).json({ message: "Tài khoản đã xác thực." });
+    }
 
-//     const token = await jwt.generateToken(
-//       { email: user.email },
-//       process.env.ACCESS_TOKEN,
-//       "1d"
-//     );
+    const token = await jwt.generateToken(
+      { email: user.email },
+      process.env.ACCESS_TOKEN,
+      "1d"
+    );
 
-//     await sendVerificationEmail(user.email, token);
+    await sendVerificationEmail(user.email, token);
 
-//     return res.status(200).json({ message: "Đã gửi lại email xác thực." });
-//   } catch (err) {
-//     console.error("Resend verification error:", err);
-//     return res.status(500).json({ message: "Gửi lại email thất bại." });
-//   }
-// };
+    return res.status(200).json({ message: "Đã gửi lại email xác thực." });
+  } catch (err) {
+    console.error("Resend verification error:", err);
+    return res.status(500).json({ message: "Gửi lại email thất bại." });
+  }
+};
 
 module.exports = {
   register,
   login,
   logout,
   refreshToken,
-  // verifyEmail,
-  // resendVerificationEmail,
+  verifyEmail,
+  resendVerificationEmail,
 };
