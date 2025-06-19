@@ -1,3 +1,4 @@
+
 const jwt = require("jsonwebtoken");
 const createError = require("http-errors");
 const passport = require("passport");
@@ -31,3 +32,4 @@ const authMiddleware = {
 }
 
 module.exports = authMiddleware;
+
