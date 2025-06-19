@@ -8,16 +8,15 @@ const allRoutes = require("./routes");
 const cookieParser = require("cookie-parser");
 const passport = require("passport");
 require("./configs/passport");
-
+const {userRouter} = require("./routes");
 const path = require("path");
 
 const http = require("http");
 const db = require("./models");
 
 const app = express();
-const {userRouter} = require("./routes");
 
-
+// Sử dụng cors middleware để cho phép request từ localhost:3000
 app.use(
   cors({
     origin: ["http://localhost:5173", "http://localhost:3000"],
@@ -26,23 +25,17 @@ app.use(
   })
 );
 
-
 app.use(morgan("dev"));
 app.use(bodyParser.json());
 app.use(cookieParser());
 app.use(passport.initialize());
 
-app.use("/api", allRoutes);
 app.get("/", async (req, res, next) => {
   res.status(200).json({ message: "Server is running" });
 });
 
 // Định tuyến theo các chức năng thực tế
-
 app.use("/users", userRouter);
-app.use("/uploads", express.static(path.join(__dirname, "uploads")));
-
-
 app.use(async (req, res, next) => {
   next(httpsErrors(404, "Bad Request"));
 });
