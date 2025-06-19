@@ -15,8 +15,9 @@ const http = require("http");
 const db = require("./models");
 
 const app = express();
+const {userRouter} = require("./routes");
 
-// Sử dụng cors middleware để cho phép request từ localhost:3000
+
 app.use(
   cors({
     origin: ["http://localhost:5173", "http://localhost:3000"],
@@ -24,6 +25,7 @@ app.use(
     credentials: true,
   })
 );
+
 
 app.use(morgan("dev"));
 app.use(bodyParser.json());
@@ -36,6 +38,10 @@ app.get("/", async (req, res, next) => {
 });
 
 // Định tuyến theo các chức năng thực tế
+
+app.use("/users", userRouter);
+app.use("/uploads", express.static(path.join(__dirname, "uploads")));
+
 
 app.use(async (req, res, next) => {
   next(httpsErrors(404, "Bad Request"));

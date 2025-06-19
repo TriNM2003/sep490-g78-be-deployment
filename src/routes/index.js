@@ -1,8 +1,7 @@
-const express = require("express");
+const userRouter = require("./user.route");
 const authRouter = require("./auth.route");
+module.exports = {
+    userRouter,
+    authRouter
+}
 
-const router = express.Router();
-
-router.use("/auth", authRouter); // chỉ mount một lần
-
-module.exports = router;
