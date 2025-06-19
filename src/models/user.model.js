@@ -5,13 +5,14 @@ const userSchema = new mongoose.Schema(
     username: {
       type: String,
       required: true,
-      unique: true,
       minlength: 5,
       maxlength: 30,
     },
     password: {
       type: String,
-      required: true,
+      required: function () {
+        return !this.googleId;
+      },
       minlength: 8,
       validate: {
         validator: function (value) {
@@ -22,7 +23,7 @@ const userSchema = new mongoose.Schema(
     },
     googleId: {
       type: String,
-      sparse: true
+      sparse: true,
     },
     fullName: {
       type: String,
@@ -61,7 +62,7 @@ const userSchema = new mongoose.Schema(
     },
     background: {
       type: String,
-      default: ""
+      default: "",
     },
     roles: [
       {
@@ -81,8 +82,6 @@ const userSchema = new mongoose.Schema(
       min: 0,
       //warningCount = 3 => status = "banned",
     },
-
-
   },
   { timestamps: true }
 );
