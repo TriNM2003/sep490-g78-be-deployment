@@ -97,12 +97,12 @@ const editProfile = async (userId, profileData, files) => {
               console.error("Error deleting file in catch:", filePath, err);
           });
         }
-        throw new Error("Failed to edit project! Try again.");
+        throw new Error("Lỗi khi tải lên ảnh đại diện. Vui lòng thử lại.");
       }
     }
 
     // Xử lý file background
-    if (files?.avatar?.length > 0) {
+    if (files?.background?.length > 0) {
       try {
         const backgroundFile = files.background[0];
         const uploadResult = await cloudinary.uploader.upload(
@@ -124,7 +124,7 @@ const editProfile = async (userId, profileData, files) => {
               console.error("Error deleting file in catch:", filePath, err);
           });
         }
-        throw new Error("Failed to edit project! Try again.");
+        throw new Error("Lỗi khi tải lên ảnh nền. Vui lòng thử lại.");
       }
     }
 
@@ -133,7 +133,7 @@ const editProfile = async (userId, profileData, files) => {
       !/^[a-zA-ZÀ-Ỹà-ỹ\s]+$/.test(profileData.fullName)
     ) {
       throw new Error(
-        "Full name is invalid. Only letters and spaces are allowed"
+        "Họ và tên không hợp lệ. Hoặc tên chỉ chứa chữ cái và khoảng trắng"
       );
     }
     if (
@@ -141,7 +141,7 @@ const editProfile = async (userId, profileData, files) => {
       !/^(0[3|5|7|8|9])+([0-9]{8})$/.test(profileData.phoneNumber)
     ) {
       throw new Error(
-        "Phone number is invalid. Please enter a valid phone number"
+        "Số điện thoại không hợp lệ. Số điện thoại phải bắt đầu bằng 03, 05, 07, 08 hoặc 09 và có 10 chữ số."
       );
     }
     if (profileData.dob) {
@@ -160,14 +160,10 @@ const editProfile = async (userId, profileData, files) => {
       // Nếu chưa qua sinh nhật, giảm 1 tuổi
       const exactAge = hasBirthdayPassed ? age : age - 1;
 
-      // Validate: ngày sinh không được lớn hơn ngày hôm nay
-      if (dob > today) {
-        throw new Error("Date of birth must be in the past.");
-      }
 
       // Validate: phải đủ 16 tuổi trở lên
       if (exactAge < 16) {
-        throw new Error("You must be at least 16 years old.");
+        throw new Error("Ngày sinh không hợp lệ. Bạn phải đủ 16 tuổi trở lên");
       }
     }
 
