@@ -21,6 +21,7 @@ const userSchema = new mongoose.Schema(
     },
     fullName: {
       type: String,
+      minLength: 6,
       match: /^[a-zA-ZÀ-Ỹà-ỹ\s]+$/,
     },
     email: {
@@ -37,22 +38,9 @@ const userSchema = new mongoose.Schema(
     bio: {
       type: String,
     },
-    dob: {
-      type: Date,
-      validate: {
-        validator: function (value) {
-          return value <= new Date();
-        },
-        message: "Ngày sinh không được lớn hơn ngày hiện tại!",
-      },
-      default: null,
-    },
     phoneNumber: {
       type: String,
       match: /^(0[3|5|7|8|9])+([0-9]{8})$/,
-    },
-    address: {
-      type: String,
     },
     background: {
       type: String,

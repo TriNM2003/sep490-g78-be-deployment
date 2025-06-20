@@ -46,72 +46,88 @@ const register = async (req) => {
 };
 
 
-const login = async (email, password) => {
-    const user = await User.findOne({ email: email });
+const login = async (email, password, type) => {
+  const user = await User.findOne({ email: email });
 
-    // console.log(usernameOrEmail, password)
-    if (!user) {
-        return {
-            status: 400,
-            message: "Email không tồn tại!"
-        };
-    }
+  // console.log(usernameOrEmail, password)
+  if (!user) {
+    return {
+      status: 400,
+      message: "Email không tồn tại!",
+    };
+  }
 
-    // check co phai account dk bang google
-    if (user.googleId !== null) {
-        return {
-            status: 400,
-            message: "Tài khoản đã đăng kí bằng Google! Làm ơn hãy đăng nhập bằng Google"
-        };
-    }
+  // check co phai account dk bang google
+  if (user.googleId !== null) {
+    return {
+      status: 400,
+      message:
+        "Tài khoản đã đăng kí bằng Google! Làm ơn hãy đăng nhập bằng Google",
+    };
+  }
+
+  const isMatch = await bcryptUtils.comparePassword(password, user.password);
+  // console.log(isMatch)
+  if (!isMatch) {
+    return {
+      status: 400,
+      message: "Sai mật khẩu!",
+    };
+  }
+
+  const validRole = user.roles.includes(type);
+  if (!validRole) {
+    return {
+      status: 400,
+      message: "Tài khoản không có quyền đăng nhập hệ thống!",
+    };
+  }
 
 
-    const isMatch = await bcryptUtils.comparePassword(password, user.password);
-    // console.log(isMatch)
-    if (!isMatch) {
-        return {
-            status: 400,
-            message: "Sai mật khẩu!"
-        };
-    }
   // Nếu tài khoản chưa kích hoạt, gửi token về FE để kích hoạt
   if (user.status === "verifying") {
     const activeToken = jwt.sign(
-        { id: user._id, email: user.email },
-        process.env.JWT_SECRET,
-        { expiresIn: "15m" }
+      { id: user._id, email: user.email },
+      process.env.JWT_SECRET,
+      { expiresIn: "15m" }
     );
-    return {  
-        status: 403,
-        message: "Tài khoản chưa kích hoạt!...",
-        activeToken
-    };
-} if(user.status === "banned") {
     return {
-        status: 400,
-        message: "Tài khoản đã bị khóa!"
+      status: 403,
+      message: "Tài khoản chưa kích hoạt!...",
+      activeToken,
     };
-}
+  }
+  if (user.status === "banned") {
+    return {
+      status: 400,
+      message: "Tài khoản đã bị khóa!",
+    };
+  }
 
-    // accessToken
-    const accessToken = jwtUtils.generateAccessToken(user._id);
-    // refresh token
-    const refreshToken = jwtUtils.generateRefreshToken(user._id);
-    // luu vao trong redis
-    await redisUtils.setRefreshToken(user._id, refreshToken, jwtUtils.refreshTokenExp);
-    return {
-        status: 200,
-        message: "Đăng nhập thành công!",
-        accessToken: accessToken,
-        accessTokenExp: jwtUtils.accessTokenExp,
-        user: {
-            userId: user._id,
-            fullName: user.fullName,
-            email: user.email,
-            avatar: user.avatar,
-            roles: user.roles,
-        },
-    };
+  // accessToken
+  const accessToken = jwtUtils.generateAccessToken(user._id);
+  // refresh token
+  const refreshToken = jwtUtils.generateRefreshToken(user._id);
+  // luu vao trong redis
+  await redisUtils.setRefreshToken(
+    user._id,
+    refreshToken,
+    jwtUtils.refreshTokenExp
+  );
+  return {
+    status: 200,
+    message: "Đăng nhập thành công!",
+    accessToken: accessToken,
+    accessTokenExp: jwtUtils.accessTokenExp,
+    user: {
+      userId: user._id,
+      fullName: user.fullName,
+      email: user.email,
+      avatar: user.avatar,
+      roles: user.roles,
+      status: user.status,
+    },
+  };
 };
 
 
