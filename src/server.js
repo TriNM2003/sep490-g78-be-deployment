@@ -19,7 +19,7 @@ const session = require("express-session");
 // Sử dụng cors middleware để cho phép request từ localhost:3000
 app.use(
   cors({
-    origin: ["http://localhost:5173", "http://localhost:3000"],
+    origin: [`${process.env.FE_URL_USER}`, `${process.env.FE_URL_ADMIN}`],
     methods: "GET,HEAD,PUT,PATCH,POST,DELETE",
     credentials: true,
   })

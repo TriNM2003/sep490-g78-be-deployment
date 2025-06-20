@@ -198,8 +198,8 @@ const register = async (req, res) => {
 };
 const login = async (req, res) => {
     try {
-        const { email, password } = req.body;
-        const accountInfo = await authService.login(email, password);
+        const { email, password, type } = req.body;
+        const accountInfo = await authService.login(email, password, type);
         res.status(accountInfo.status).json(accountInfo);
     } catch (error) {
         res.status(400).json({
@@ -265,11 +265,20 @@ const loginByGoogleCallbackUser = async (req, res, next) => {
     }else{
          // user da ton tai va la tk dang ki bang google -> dang nhap
         if(isUserExist.googleId !== null){
-            accessToken = jwtUtils.generateAccessToken(isUserExist._id);
-            const refreshToken = jwtUtils.generateRefreshToken(isUserExist._id);
-            await redisUtils.setRefreshToken(isUserExist._id, refreshToken, jwtUtils.refreshTokenExp);
+            if(isUserExist.roles.includes('user')){
+                accessToken = jwtUtils.generateAccessToken(isUserExist._id);
+                const refreshToken = jwtUtils.generateRefreshToken(isUserExist._id);
+                await redisUtils.setRefreshToken(isUserExist._id, refreshToken, jwtUtils.refreshTokenExp);
+            }else{
+                const newError = new Error(
+                  "Chỉ có thể đăng nhập bằng tài khoản quản trị viên có quyền người dùng"
+                );
+                newError.status = 403;
+                throw newError;
+            }
+
         }else{
-            const newError =  new Error("Tài khoản đã đăng kí bằng cách thông thường! Hãy đăng nhập bằng tên tài khoản hoặc email")
+            const newError =  new Error("Tài khoản đã đăng kí bằng cách thông thường! Hãy đăng nhập bằng email và mật khẩu")
             newError.status = 403;
             throw newError;
         }
@@ -321,35 +330,26 @@ const loginByGoogleCallbackAdmin = async (req, res, next) => {
     // user de gui len frontend
     let accessToken;
     if (!isUserExist) {
-        // user chua ton tai -> tao account moi trong database
-        const newUser = new db.User({
-          username: googleUser.name,
-          email: googleUser.email,
-          password: hashedPassword,
-          fullName: googleUser.given_name,
-          phoneNumber: null,
-          address: null,
-          roles: ["admin"],
-          avatar: googleUser.picture || "https://i.pinimg.com/736x/2e/9b/34/2e9b3443e8afa8d383c132c7b3745d47.jpg",
-          bio: null,
-          background: null,
-          warningCount: 0,
-          teams: [],
-          googleId: googleUser.sub,
-          status: "active",
-        });
-        const newlyCreatedUser = await newUser.save();
-        accessToken = jwtUtils.generateAccessToken(newlyCreatedUser._id);
-        const refreshToken = jwtUtils.generateRefreshToken(newlyCreatedUser._id);
-        await redisUtils.setRefreshToken(newlyCreatedUser._id, refreshToken, jwtUtils.refreshTokenExp);
+        const newError =  new Error("Tài khoản không tồn tại")
+        newError.status = 403;
+        throw newError;
     }else{
          // user da ton tai va la tk dang ki bang google -> dang nhap
         if(isUserExist.googleId !== null){
-            accessToken = jwtUtils.generateAccessToken(isUserExist._id);
-            const refreshToken = jwtUtils.generateRefreshToken(isUserExist._id);
-            await redisUtils.setRefreshToken(isUserExist._id, refreshToken, jwtUtils.refreshTokenExp);
+            if(isUserExist.roles.includes('admin')){
+                accessToken = jwtUtils.generateAccessToken(isUserExist._id);
+                const refreshToken = jwtUtils.generateRefreshToken(isUserExist._id);
+                await redisUtils.setRefreshToken(isUserExist._id, refreshToken, jwtUtils.refreshTokenExp);
+            }else{
+                const newError = new Error(
+                  "Không thể đăng nhập bằng tài khoản người dùng thông thường"
+                );
+                newError.status = 403;
+                throw newError;
+            }
+            
         }else{
-            const newError =  new Error("Tài khoản đã đăng kí bằng cách thông thường! Hãy đăng nhập bằng tên tài khoản hoặc email")
+            const newError =  new Error("Tài khoản đã đăng kí bằng cách thông thường! Hãy đăng nhập bằng email và mật khẩu")
             newError.status = 403;
             throw newError;
         }
@@ -362,10 +362,10 @@ const loginByGoogleCallbackAdmin = async (req, res, next) => {
         httpOnly: true,
         sameSite: "lax"
     })
-    res.redirect(`${process.env.FE_URL_USER}/login?isLoginByGoogle=true`);
+    res.redirect(`${process.env.FE_URL_ADMIN}/login?isLoginByGoogle=true`);
     } catch (error) {
         console.log(error.message)
-        res.redirect(`${process.env.FE_URL_USER}/login?isLoginByGoogle=false&message=`+ error.message);
+        res.redirect(`${process.env.FE_URL_ADMIN}/login?isLoginByGoogle=false&message=`+ error.message);
     }
     
 };
@@ -418,7 +418,7 @@ const logout = async (req, res) => {
     try {
         // xoa refresh token trong redis
         await authService.logout(req.body.id);
-        res.status(200).json({ message: "Logout successfully!" });
+        res.status(200).json({ message: "Thoát đăng nhập thành công!" });
     } catch (error) {
         res.status(400).json({ 
             message: error.message 
