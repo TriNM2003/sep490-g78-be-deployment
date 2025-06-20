@@ -2,6 +2,7 @@ const jwt = require("jsonwebtoken");
 const createError = require("http-errors");
 const passport = require("passport");
 
+
 const verifyAccessToken = (req, res, next) => {
     if (!req.headers['authorization']) {
         return next(createError.Unauthorized)
@@ -23,8 +24,10 @@ const verifyAccessToken = (req, res, next) => {
     })
 };
 
+
 const verifyGoogleCallback = passport.authenticate("google-user", { failureRedirect: "http://localhost:3000/error" });
 const verifyGoogleCallbackAdmin = passport.authenticate("google-admin", { failureRedirect: "http://localhost:3000/error" });
+
 
 const authMiddleware = {
     verifyAccessToken,
@@ -33,3 +36,4 @@ const authMiddleware = {
 }
 
 module.exports = authMiddleware;
+
