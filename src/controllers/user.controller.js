@@ -11,7 +11,7 @@ const getAllUsers = async (req, res) => {
 
 const getUserById = async (req, res) => {
   try {
-    const user = await userService.getUserById(req.params.userId);
+    const user = await userService.getUserById(req.payload.id);
     if (!user) return res.status(404).json({ message: "User not found" });
     const result = {
       _id: user._id,
@@ -35,7 +35,7 @@ const changePassword = async (req, res) => {
   const { oldPassword, newPassword, confirmPassword } = req.body;
   try {
     const result = await userService.changePassword(
-      req.params.userId,
+      req.payload.id,
       oldPassword,
       newPassword,
       confirmPassword
@@ -52,7 +52,7 @@ const editProfile = async (req, res) => {
     // console.log("Req files:", req.files);
     const profileData = req.body;
     const result = await userService.editProfile(
-      req.params.userId,
+      req.payload.id,
       profileData,
       req.files
     );
