@@ -10,8 +10,8 @@ const transporter = nodemailer.createTransport({
 });
 
 
-async function sendEmail(to, subject = "[Skrumio] No subject", body = "No content") {
-    subject = "[Skrumio] "+ subject;
+async function sendEmail(to, subject = "[PawShelter] No subject", body = "No content") {
+    subject = "[PawShelter] "+ subject;
 
     const mailOptions = {
         from: process.env.EMAIL_USER,

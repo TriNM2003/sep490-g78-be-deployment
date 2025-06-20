@@ -6,15 +6,8 @@ require("../middlewares/auth.middleware");
 
 
 const register = async (req) => {
-    const { username, email, password} = req.body;
-    console.log(req.body)
-    const isUsernameExisted = await User.findOne({username: username});
-    if (isUsernameExisted) {
-        return {
-            status: 400,
-            message: "Tên tài khoản đã tồn tại!"
-        };
-    }
+    const { fullName, email, password} = req.body;
+    // console.log(req.body)
     const isEmailExisted = await User.findOne({email: email});
     if (isEmailExisted) {
         return {
@@ -24,10 +17,9 @@ const register = async (req) => {
     }
     const hashedPassword = await bcryptUtils.encryptPassword(password, 10);
     const newUser = new User({
-        username,
         email,
         password: hashedPassword,
-        fullName: null,
+        fullName: fullName,
         phoneNumber: null,
         address: null,
         roles: ["user"],
@@ -36,14 +28,20 @@ const register = async (req) => {
         background: null,
         warningCount: 0,
         teams: [],
-        // googleId: null,
+        googleId: null,
         status: "verifying",
     });
     await newUser.save();
+    const activeToken = jwt.sign(
+        { id: newUser._id, email: newUser.email },
+        process.env.JWT_SECRET,
+        { expiresIn: "15m" }
+    )
     return {
         status: 200,
         message: "Đăng kí thành công!",
-        account: newUser
+        account: newUser,
+        activeToken: activeToken
      };
 };
 
@@ -55,12 +53,12 @@ const login = async (email, password) => {
     if (!user) {
         return {
             status: 400,
-            message: "Tên tài khoản hoặc email không tồn tại!"
+            message: "Email không tồn tại!"
         };
     }
 
     // check co phai account dk bang google
-    if (user.googleId !== undefined) {
+    if (user.googleId !== null) {
         return {
             status: 400,
             message: "Tài khoản đã đăng kí bằng Google! Làm ơn hãy đăng nhập bằng Google"
@@ -78,15 +76,15 @@ const login = async (email, password) => {
     }
   // Nếu tài khoản chưa kích hoạt, gửi token về FE để kích hoạt
   if (user.status === "verifying") {
-    const token = jwt.sign(
+    const activeToken = jwt.sign(
         { id: user._id, email: user.email },
         process.env.JWT_SECRET,
-        { expiresIn: "10m" }
+        { expiresIn: "15m" }
     );
     return {  
         status: 403,
         message: "Tài khoản chưa kích hoạt!...",
-        token
+        activeToken
     };
 } if(user.status === "banned") {
     return {
@@ -106,7 +104,13 @@ const login = async (email, password) => {
         message: "Đăng nhập thành công!",
         accessToken: accessToken,
         accessTokenExp: jwtUtils.accessTokenExp,
-        user: user,
+        user: {
+            userId: user._id,
+            fullName: user.fullName,
+            email: user.email,
+            avatar: user.avatar,
+            roles: user.roles,
+        },
     };
 };
 

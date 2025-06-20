@@ -23,7 +23,7 @@ async function forgotPassword(req, res) {
         );
 
         // Gửi email mà không hiển thị token trong URL
-        const link = "http://localhost:3000/reset-password"
+        const link = `${process.env.FE_URL_USER}/reset-password`
         const subject = "Reset Your Password";
         const body = `
         <div style="font-family: Arial, sans-serif; padding: 20px;">
@@ -34,10 +34,7 @@ async function forgotPassword(req, res) {
             <p>If you didn't request this, please ignore this email.</p>
         </div>
     `;
-
-
         await mailer.sendEmail(email, subject, body);
-
         res.json({ status: "Email sent, check your inbox!", token });
     } catch (error) {
         console.error(error);
@@ -91,45 +88,51 @@ async function resetPassword(req, res) {
 
 
 const sendActivationEmail = async (req, res) => {
-    const { token } = req.body;
+    const { activeToken } = req.body;
 
     try {
-        if (!token) {
-            return res.status(400).json({ message: "Missing activation token!" });
+        if (!activeToken) {
+            return res.status(400).json({ message: "Không có activation token!" });
         }
 
         // Giải mã token để lấy email
-        const decoded = jwt.verify(token, process.env.JWT_SECRET);
+        const decoded = jwt.verify(activeToken, process.env.JWT_SECRET);
         const user = await db.User.findById(decoded.id);
         if (!user) {
-            return res.status(404).json({ message: "User not found!" });
+            return res.status(404).json({ message: "Tài khoản không tồn tại!" });
         }
 
         if (user.status === "active") {
-            return res.status(400).json({ message: "Account is already activated!" });
+            return res.status(400).json({ message: "Tài khoản đã kích hoạt!" });
         }
 
         // Tạo link kích hoạt
-        const activationLink = `http://localhost:3000/active-account?token=${token}`;
+        const activationLink = `${process.env.FE_URL_USER}/active-account?token=${activeToken}`;
         const to = user.email;
-        const subject = "Activate Your Account";
+        const subject = "Kích hoạt tài khoản PawShelter";
         const body = `
         <div style="font-family: Arial, sans-serif; padding: 20px;">
-            <p>Click the button below to activate your account:</p>
-            <a href="${activationLink}" style="display: inline-block; padding: 10px 20px; color: #fff; background: #1890ff; text-decoration: none; border-radius: 5px;">
-               Activate Account
-            </a>
-            <p>If you didn't request this, please ignore this email.</p>
-        </div>
+                <p>Chào bạn,</p>
+                <p>Cảm ơn bạn đã đăng ký tài khoản tại hệ thống của chúng tôi. Để hoàn tất quá trình đăng ký và bắt đầu sử dụng các tính năng, vui lòng kích hoạt tài khoản của bạn.</p>
+  
+                <p>Vui lòng nhấn vào nút bên dưới để kích hoạt tài khoản:</p>
+                <a href="${activationLink}" style="display: inline-block; padding: 10px 20px; color: #fff; background: #1890ff; text-decoration: none; border-radius: 5px;">
+                    Kích hoạt tài khoản
+                </a>
+
+                <p>Nếu bạn không yêu cầu đăng ký tài khoản, vui lòng bỏ qua email này.</p>
+  
+                    <p>Trân trọng,<br />PawShelter</p>
+            </div>
     `;
 
         await mailer.sendEmail(to, subject, body);
 
-        res.json({ message: "Activation email sent successfully!" });
+        res.json({ message: "Email kích hoạt đã gửi, hãy kiểm tra email!" });
 
     } catch (error) {
         console.error(error);
-        res.status(500).json({ message: "Something went wrong!" });
+        res.status(500).json({ message: "Có gì đó sai sai!" });
     }
 };
 
@@ -279,10 +282,10 @@ const loginByGoogleCallbackUser = async (req, res, next) => {
         httpOnly: true,
         sameSite: "lax"
     })
-    res.redirect("http://localhost:5173/login?isLoginByGoogle=true");
+    res.redirect(`${process.env.FE_URL_USER}/login?isLoginByGoogle=true`);
     } catch (error) {
         console.log(error.message)
-        res.redirect("http://localhost:5173/login?isLoginByGoogle=false&message="+ error.message);
+        res.redirect(`${process.env.FE_URL_USER}/login?isLoginByGoogle=false&message=`+ error.message);
     }
     
 };
@@ -359,10 +362,10 @@ const loginByGoogleCallbackAdmin = async (req, res, next) => {
         httpOnly: true,
         sameSite: "lax"
     })
-    res.redirect("http://localhost:5173/login?isLoginByGoogle=true");
+    res.redirect(`${process.env.FE_URL_USER}/login?isLoginByGoogle=true`);
     } catch (error) {
         console.log(error.message)
-        res.redirect("http://localhost:5173/login?isLoginByGoogle=false&message="+ error.message);
+        res.redirect(`${process.env.FE_URL_USER}/login?isLoginByGoogle=false&message=`+ error.message);
     }
     
 };
