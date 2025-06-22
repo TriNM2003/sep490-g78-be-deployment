@@ -137,11 +137,12 @@ const editProfile = async (userId, profileData, files) => {
       );
     }
     if (
+      // số điện thoại bắt đầu bằng số 0 và có 10 chữ số
       profileData.phoneNumber &&
-      !/^(0[3|5|7|8|9])+([0-9]{8})$/.test(profileData.phoneNumber)
+      !/^(0[0-9])+([0-9]{8})$/.test(profileData.phoneNumber)
     ) {
       throw new Error(
-        "Số điện thoại không hợp lệ. Số điện thoại phải bắt đầu bằng 03, 05, 07, 08 hoặc 09 và có 10 chữ số."
+        "Số điện thoại không hợp lệ. Số điện thoại phải bắt đầu bằng số 0 và có 10 chữ số"
       );
     }
     if (profileData.dob) {
@@ -204,4 +205,4 @@ const userService = {
   editProfile,
 };
 
-module.exports = userService;
+module.exports = userService; 
