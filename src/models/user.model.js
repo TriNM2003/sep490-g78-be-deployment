@@ -2,16 +2,11 @@ const mongoose = require("mongoose");
 
 const userSchema = new mongoose.Schema(
   {
-    username: {
-      type: String,
-      required: true,
-      unique: true,
-      minlength: 5,
-      maxlength: 30,
-    },
     password: {
       type: String,
-      required: true,
+      required: function () {
+        return !this.googleId;
+      },
       minlength: 8,
       validate: {
         validator: function (value) {
@@ -22,10 +17,11 @@ const userSchema = new mongoose.Schema(
     },
     googleId: {
       type: String,
-      sparse: true
+      sparse: true,
     },
     fullName: {
       type: String,
+      minLength: 6,
       match: /^[a-zA-ZÀ-Ỹà-ỹ\s]+$/,
     },
     email: {
@@ -42,13 +38,26 @@ const userSchema = new mongoose.Schema(
     bio: {
       type: String,
     },
+    dob: {
+      type: Date,
+      validate: {
+        validator: function (value) {
+          return value <= new Date();
+        },
+        message: "Ngày sinh không được lớn hơn ngày hiện tại!",
+      },
+      default: null,
+    },
     phoneNumber: {
       type: String,
       match: /^(0[3|5|7|8|9])+([0-9]{8})$/,
     },
     background: {
       type: String,
-      default: ""
+      default: "",
+    },
+    address: {
+      type: String,
     },
     roles: [
       {
@@ -68,8 +77,6 @@ const userSchema = new mongoose.Schema(
       min: 0,
       //warningCount = 3 => status = "banned",
     },
-
-
   },
   { timestamps: true }
 );
