@@ -4,6 +4,7 @@ const bodyParser = require("body-parser");
 const { userController } = require("../controllers");
 const cloudinary = require("../configs/cloudinary");
 const { verifyAccessToken, verifyGoogleCallback, verifyGoogleCallbackAdmin } = require("../middlewares/auth.middleware");
+const { isAdmin } = require("../middlewares/admin.middleware");
 
 userRouter.use(bodyParser.json());
 
@@ -18,5 +19,8 @@ userRouter.put("/edit-profile",
   verifyAccessToken,
   userController.editProfile
 );
+
+//ADMIN
+userRouter.get("/admin/get-users-list",[verifyAccessToken, isAdmin], userController.getUsersList);
 
 module.exports = userRouter;
