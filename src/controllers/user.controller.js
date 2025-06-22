@@ -14,16 +14,16 @@ const getUserById = async (req, res) => {
     const user = await userService.getUserById(req.payload.id);
     if (!user) return res.status(404).json({ message: "User not found" });
     const result = {
-      _id: user._id,
-      username: user.username,
-      fullName: user.fullName,
-      email: user.email,
-      avatar: user.avatar,
-      bio: user.bio,
-      dob: user.dob,
-      phoneNumber: user.phoneNumber,
-      address: user.address,
-      background: user.background,
+      _id: user._id || null,
+      username: user.username || null,
+      fullName: user.fullName || null,
+      email: user.email || null,
+      avatar: user.avatar || null,
+      bio: user.bio || null,
+      dob: user.dob || null,
+      phoneNumber: user.phoneNumber || null,
+      address: user.address || null,
+      background: user.background || null,
     }
     res.status(200).json(result);
   } catch (error) {
