@@ -63,11 +63,37 @@ const editProfile = async (req, res) => {
   }
 };
 
+
+// ADMIN
+const getUsersList = async (req, res) => {
+  try {
+    const users = await userService.getAllUsers();
+    const formattedOutput = users.map(user => {
+      return {
+      avatar: user.avatar,
+      fullName: user.fullName || null,
+      email: user.email,
+      roles: user.roles,
+      status: user.status,
+      createdAt: user.createdAt
+    }})
+    res.status(200).json({
+      status: 200,
+      usersList: formattedOutput
+    });
+  } catch (error) {
+    res.status(404).json({ message: error.message });
+  }
+};
+
 const userController = {
   getAllUsers,
   getUserById,
   changePassword,
   editProfile,
+
+  //ADMIN
+  getUsersList,
 };
 
 module.exports = userController;

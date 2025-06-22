@@ -118,7 +118,6 @@ const login = async (email, password, type) => {
     status: 200,
     message: "Đăng nhập thành công!",
     accessToken: accessToken,
-    accessTokenExp: jwtUtils.accessTokenExp,
     user: {
       userId: user._id,
       fullName: user.fullName,
@@ -189,7 +188,6 @@ const refreshAccessToken = async (req, res) => {
     return {
         message: "Refresh access token successfully!",
         accessToken: accessToken,
-        accessTokenExp: jwtUtils.accessTokenExp,
     };
 };
 

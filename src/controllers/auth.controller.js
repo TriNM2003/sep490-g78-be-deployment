@@ -377,8 +377,7 @@ const getUserByAccessToken = async (req, res, next) => {
         res.status(200).json({
             message: "Get user by access token successfully !",
             user: user,
-            accessToken: req.cookies.accessToken,
-            accessTokenExp: jwtUtils.accessTokenExp
+            accessToken: req.cookies.accessToken
         })
     } catch (error) {
         res.status(error.status).json({
