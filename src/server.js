@@ -15,6 +15,7 @@ const http = require("http");
 const db = require("./models");
 const app = express();
 const session = require("express-session");
+const shelterRouter = require("./routes/shelter.route");
 
 // Sử dụng cors middleware để cho phép request từ localhost:3000
 app.use(
@@ -48,6 +49,7 @@ app.get("/", async (req, res, next) => {
 
 app.use("/auth", authRouter);
 app.use("/users", userRouter);
+app.use("/shelters", shelterRouter);
 
 app.use(async (req, res, next) => {
   next(httpsErrors(404, "Bad Request"));
