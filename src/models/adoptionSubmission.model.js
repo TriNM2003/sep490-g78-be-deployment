@@ -24,6 +24,10 @@ const adoptionSubmissionSchema = new mongoose.Schema(
             type: String,
           },
         ],
+        answerText: {
+          type: String,
+          default: "",
+        }
       },
     ],
     adoptionsLastMonth: {

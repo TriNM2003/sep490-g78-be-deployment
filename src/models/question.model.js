@@ -15,6 +15,7 @@ const questionSchema = new mongoose.Schema(
         },
         options: [
             {
+                _id: false,
                 title: {
                     type: String,
                     required: true,
