@@ -18,7 +18,19 @@ const getUserById = async (userId) => {
     if (!user) {
       throw new Error("User not found");
     }
-    return user;
+    const result = {
+      _id: user._id || null,
+      username: user.username || null,
+      fullName: user.fullName || null,
+      email: user.email || null,
+      avatar: user.avatar || null,
+      bio: user.bio || null,
+      dob: user.dob || null,
+      phoneNumber: user.phoneNumber || null,
+      address: user.address || null,
+      background: user.background || null,
+    };
+    return result;
   } catch (error) {
     throw error;
   }
@@ -161,7 +173,6 @@ const editProfile = async (userId, profileData, files) => {
       // Nếu chưa qua sinh nhật, giảm 1 tuổi
       const exactAge = hasBirthdayPassed ? age : age - 1;
 
-
       // Validate: phải đủ 16 tuổi trở lên
       if (exactAge < 16) {
         throw new Error("Ngày sinh không hợp lệ. Bạn phải đủ 16 tuổi trở lên");
@@ -205,4 +216,4 @@ const userService = {
   editProfile,
 };
 
-module.exports = userService; 
+module.exports = userService;
