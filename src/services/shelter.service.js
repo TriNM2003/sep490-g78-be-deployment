@@ -1,17 +1,58 @@
 const {Shelter, User, Pet, Post, Blog, Report, Donation} = require("../models/index")
 const {cloudinary} = require("../configs/cloudinary");
 const fs = require("fs");
+const generateCodename = require("../utils/codeNameGenerator");
 
 //USER
+const getShelterRequestByUserId = async (userId) => {
+  try {
+      const shelter = await Shelter.find({"members._id": userId});
+      let isEligible = true;  //check dieu kien gui yeu cau
+      let reason = 'Đủ điều kiện để tạo yêu cầu thành lập trạm cứu hộ' //ly do
+      for(let i=0; i< shelter.length; i++) {
+        if(["banned"].includes(shelter[i].status)){
+          reason = "Bạn đã bị ban khỏi việc thành lập trạm cứu hộ!"
+          isEligible = false;
+          break;
+        }
+        if(["active"].includes(shelter[i].status)){
+          reason = "Bạn đã thuộc về một trạm cứu hộ!"
+          isEligible = false;
+          break;
+        }
+        if(["verifying"].includes(shelter[i].status)){
+          reason = "Bạn có yêu cầu đang chờ xử lý!"
+          isEligible = false;
+          break;
+        }
+      };
+      return {
+        isEligible,
+        reason,
+        shelterRequest: shelter
+      };
+  } catch (error) {
+    throw error;
+  }
+}
 const sendShelterEstablishmentRequest = async (requesterId, shelterRequestData, {shelterLicense}) => {
     try {
         if(!shelterLicense[0]){
           throw new Error("Không tìm thấy giấy phép hoạt động! Vui lòng đính kèm giấy phép hoạt động")
         }
 
-        const isRequestOrShelterExist = await Shelter.findOne({"members._id": requesterId});
-        if(isRequestOrShelterExist){
-          throw new Error("Yêu cầu đã tồn tại hoặc tài khoản đã thuộc một trạm cứu hộ!")
+        const isNotEligible = await Shelter.findOne({
+          "members._id": requesterId,
+          status: { $in: ["active", "banned", "verifying"] },
+        });
+        if(isNotEligible){
+          // Xoa file o local
+          fs.unlink(shelterLicense[0].path, (err) => {
+            if (err) console.error("Lỗi xóa file ở local:", err);
+          });
+          throw new Error(
+            "Tài khoản không đủ điều kiện để gửi yêu cầu!"
+          );
         }
 
         const uploadResult = await cloudinary.uploader.upload(shelterLicense[0].path, {
@@ -26,6 +67,7 @@ const sendShelterEstablishmentRequest = async (requesterId, shelterRequestData, 
 
         const shelter = await Shelter.create({
           name: shelterRequestData.name,
+          shelterCode: generateCodename(shelterRequestData.name),
           bio: "",
           email: shelterRequestData.email,
           hotline: shelterRequestData.hotline,
@@ -35,7 +77,9 @@ const sendShelterEstablishmentRequest = async (requesterId, shelterRequestData, 
           members: [
             {
                 _id: requesterId,
-                roles: ["staff", "manager"]
+                roles: ["staff", "manager"],
+                joinMethod: "created",
+                status: "pending"
             }
           ],
           shelterLicense: {
@@ -53,7 +97,7 @@ const sendShelterEstablishmentRequest = async (requesterId, shelterRequestData, 
         
         return {
             status: 200,
-            message: "Gửi yêu cầu thành lập shelter thành công",
+            message: "Gửi yêu cầu thành lập trạm cứu hộ thành công",
             shelterRequest: shelter
         }
     } catch (error) {
@@ -215,21 +259,58 @@ const getOverviewStatistic = async () => {
         throw error;
     }
 }
-const reviewShelterEstablishmentRequest = async ({shelterId, decision = "reject"}) => {
+const reviewShelterEstablishmentRequest = async ({requestId, decision = "reject"}) => {
     try {
+        const shelter = await Shelter.findOne({_id: requestId});
+        if (!shelter) {
+          throw new Error("Không tìm thấy shelter với requestId đã cho.");
+        }
+        if(["active", "banned", "rejected"].includes(shelter.status)){
+          throw new Error("Yêu cầu đã được xử lý trong quá khứ!")
+        }
+
+        // hoan thanh viec thanh lap shelter
         if (decision === "approve") {
-          await Shelter.findOneAndUpdate([
-            { _id: shelterId },
-            { status: "rejected" },
-          ]);
-        } else if (decision === "reject") {
-          await Shelter.findOneAndUpdate([
-            { _id: shelterId },
+          await Shelter.findOneAndUpdate(
+            { _id: requestId },
             { status: "active" },
-          ]);
+          );
+        } else if (decision === "reject") {
+          await Shelter.findOneAndUpdate(
+            { _id: requestId },
+            { status: "rejected" },
+          );
         }else{
             throw new Error("Thiếu quyết định!")
         }
+
+        // reject cac yeu cau moi vao shelter (neu co)
+        await Shelter.updateMany(
+          {
+            members: {
+              $elemMatch: {
+                _id: shelter?.members[0]._id,
+                status: "pending", // chỉ các trạng thái đang chờ
+                joinMethod: { $in: ["invited", "requested"] },
+              },
+            },
+          },
+          {
+            $set: {
+              "members.$[elem].status": "rejected",
+            },
+          },
+          {
+            arrayFilters: [
+              {
+                "elem._id": shelter?.members[0]._id,
+                "elem.status": "pending",
+                "elem.joinMethod": { $in: ["invited", "requested"] },
+              },
+            ],
+          }
+        );
+
         return {
             status: 200,
             message: "Xử lý yêu cầu thành lập shelter thành công",
@@ -244,6 +325,7 @@ const reviewShelterEstablishmentRequest = async ({shelterId, decision = "reject"
 const shelterService = {
   // USER
   sendShelterEstablishmentRequest,
+  getShelterRequestByUserId,
 
   // ADMIN
   getAllShelter,

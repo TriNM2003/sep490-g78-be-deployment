@@ -7,6 +7,11 @@ const shelterSchema = new mongoose.Schema(
       required: true,
       trim: true,
     },
+    shelterCode: {
+      type: String,
+      required: true,
+      unique: true,
+    },
     bio: {
       type: String,
       trim: true,
@@ -47,6 +52,14 @@ const shelterSchema = new mongoose.Schema(
             required: true,
           },
         ],
+        joinMethod: {
+          type: String,
+          enum: ["invited", "requested", "created"], // phan biet loi moi vao shelter va yeu cau vao shelter
+        },
+        status: {
+          type: String,
+          enum: ["active", "rejected", "left", "pending"], // trang thai cua thanh vien: hoat dong, tu choi vao shelter, da roi khoi shelter, dang cho xu ly yeu cau
+        }
       },
     ],
     shelterLicense: //update schema license
@@ -64,7 +77,7 @@ const shelterSchema = new mongoose.Schema(
     },
     status: {
       type: String,
-      enum: ["verifying", "active", "banned"],
+      enum: ["verifying", "active", "banned", "rejected"],
       default: "verifying",
     },
     warningCount: {

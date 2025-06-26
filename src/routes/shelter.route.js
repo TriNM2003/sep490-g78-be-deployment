@@ -10,9 +10,10 @@ shelterRouter.use(bodyParser.json());
 
 // USER
 shelterRouter.post("/send-shelter-request",
-    // verifyAccessToken, 
+    verifyAccessToken, 
     cloudinary.upload.fields([{ name: "shelterLicense", maxCount: 1 }]), 
     shelterController.sendShelterEstablishmentRequest)
+shelterRouter.get("/get-shelter-request", verifyAccessToken, shelterController.getShelterRequestByUserId);
 
 
 
@@ -20,6 +21,7 @@ shelterRouter.post("/send-shelter-request",
 shelterRouter.get("/admin/get-shelters-list", [verifyAccessToken, isAdmin], shelterController.getAllShelter);
 shelterRouter.get("/admin/get-shelter-requests-list", [verifyAccessToken, isAdmin], shelterController.getAllShelterEstablishmentRequests);
 shelterRouter.get("/admin/get-overview-statistics", [verifyAccessToken, isAdmin], shelterController.getOverviewStatistic);
+shelterRouter.post("/admin/review-shelter-request", [verifyAccessToken, isAdmin], shelterController.reviewShelterEstablishmentRequest);
 
 
 module.exports = shelterRouter;
