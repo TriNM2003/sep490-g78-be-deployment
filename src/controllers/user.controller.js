@@ -70,6 +70,7 @@ const getUsersList = async (req, res) => {
     const users = await userService.getAllUsers();
     const formattedOutput = users.map(user => {
       return {
+        _id: user._id,
       avatar: user.avatar,
       fullName: user.fullName || null,
       email: user.email,

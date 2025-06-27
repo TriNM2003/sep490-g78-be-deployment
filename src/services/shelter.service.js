@@ -143,7 +143,7 @@ const getAllShelterEstablishmentRequests = async () => {
     try {
         const shelters = await Shelter.find({
           status: { $in: ["verifying"] },
-        });
+        }).populate("members._id");
         return shelters.map((shelter, index) => {
           return {
             index: index + 1,
@@ -154,6 +154,10 @@ const getAllShelterEstablishmentRequests = async () => {
             hotline: shelter.hotline,
             address: shelter.address,
             shelterLicenseURL: shelter.shelterLicense.url,
+            createdBy: {
+              fullName: shelter.members[0]._id.fullName,
+              avatar: shelter.members[0]._id.avatar,
+            },
             createdAt: shelter.createdAt,
             updateAt: shelter.updatedAt,
           };
@@ -280,6 +284,11 @@ const reviewShelterEstablishmentRequest = async ({requestId, decision = "reject"
             { _id: requestId },
             { status: "rejected" },
           );
+          return {
+            status: 200,
+            message: "Xử lý yêu cầu thành lập shelter thành công",
+            decision: decision === "approve" ? "Chấp thuận" : "Từ chối"
+          }
         }else{
             throw new Error("Thiếu quyết định!")
         }
