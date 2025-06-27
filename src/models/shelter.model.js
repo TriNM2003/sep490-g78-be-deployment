@@ -52,16 +52,41 @@ const shelterSchema = new mongoose.Schema(
             required: true,
           },
         ],
-        joinMethod: {
-          type: String,
-          enum: ["invited", "requested", "created"], // phan biet loi moi vao shelter va yeu cau vao shelter
-        },
-        status: {
-          type: String,
-          enum: ["active", "rejected", "left", "pending"], // trang thai cua thanh vien: hoat dong, tu choi vao shelter, da roi khoi shelter, dang cho xu ly yeu cau
-        }
       },
     ],
+    invitations: [{
+        _id: {
+            type: mongoose.Schema.Types.ObjectId,
+            default: () => new mongoose.Types.ObjectId()
+        },        
+        sender: {
+            type: mongoose.Schema.Types.ObjectId,
+            ref: 'user',
+            required: true,
+        },
+        receiver: {
+            type: mongoose.Schema.Types.ObjectId,
+            ref: 'user',
+            required: true,
+        },
+        status: {
+            type: String,
+            enum: ['pending', 'accepted', 'declined', "expired", "cancelled"],
+            default: 'pending'
+        },
+        expireAt: {
+            type: Date,
+            default: () => new Date(Date.now() + 7 * 24 * 60 * 60 * 1000) // 7 ngày
+        },   
+        createdAt: {
+            type: Date,
+            default: Date.now
+        },
+        updatedAt: {
+            type: Date,
+            default: Date.now
+        }   
+    }],
     shelterLicense: //update schema license
     {    
         fileName: { type: String, required: true },

@@ -29,7 +29,18 @@ const getShelterRequestByUserId = async (userId) => {
       return {
         isEligible,
         reason,
-        shelterRequest: shelter
+        shelterRequest: shelter.map(item => {
+          return {
+            name: item.name,
+            email: item.email,
+            hotline: item.hotline,
+            address: item.address,
+            status: item.status,
+            shelterLicenseURL: item.shelterLicense.url,
+            createdAt: item.createdAt,
+            updatedAt: item.updatedAt,
+          };
+        })
       };
   } catch (error) {
     throw error;
@@ -78,8 +89,6 @@ const sendShelterEstablishmentRequest = async (requesterId, shelterRequestData, 
             {
                 _id: requesterId,
                 roles: ["staff", "manager"],
-                joinMethod: "created",
-                status: "pending"
             }
           ],
           shelterLicense: {
@@ -114,25 +123,28 @@ const sendShelterEstablishmentRequest = async (requesterId, shelterRequestData, 
 // ADMIN
 const getAllShelter = async () => {
     try {
-        const shelters = await Shelter.find({
-          status: { $in: ["active", "banned"] },
-        });
+        const shelters = await Shelter.find({status: {$in: ["active", "banned"]}});
         return shelters.map((shelter, index) => {
           return {
-            index: index+1,
             _id: shelter?._id,
             avatar: shelter?.avatar,
+            shelterCode: shelter?.shelterCode,
             name: shelter?.name,
             email: shelter?.email,
             hotline: shelter?.hotline,
             address: shelter?.address,
+            createdBy: {
+              fullName: shelter.members[0]._id.fullName,
+              avatar: shelter.members[0]._id.avatar,
+            },
             membersCount: shelter?.members.length,
+            invitationsCount: shelter?.invitations.length,
             shelterLicenseURL: shelter?.shelterLicense.url,
             foundationDate: shelter?.foundationDate,
             warningCount: shelter?.warningCount,
             status: shelter?.status,
             createdAt: shelter?.createdAt,
-            updateAt: shelter?.updatedAt,
+            updatedAt: shelter?.updatedAt,
           };
         });
     } catch (error) {
@@ -141,23 +153,22 @@ const getAllShelter = async () => {
 }
 const getAllShelterEstablishmentRequests = async () => {
     try {
-        const shelters = await Shelter.find({
-          status: { $in: ["verifying"] },
-        }).populate("members._id");
+        const shelters = await Shelter.find({}).populate("members._id");
         return shelters.map((shelter, index) => {
           return {
-            index: index + 1,
             _id: shelter._id,
             avatar: shelter.avatar,
+            shelterCode: shelter.shelterCode,
+            status: shelter.status,
             name: shelter.name,
             email: shelter.email,
             hotline: shelter.hotline,
             address: shelter.address,
-            shelterLicenseURL: shelter.shelterLicense.url,
             createdBy: {
               fullName: shelter.members[0]._id.fullName,
               avatar: shelter.members[0]._id.avatar,
             },
+            shelterLicenseURL: shelter.shelterLicense.url,
             createdAt: shelter.createdAt,
             updateAt: shelter.updatedAt,
           };
@@ -294,31 +305,7 @@ const reviewShelterEstablishmentRequest = async ({requestId, decision = "reject"
         }
 
         // reject cac yeu cau moi vao shelter (neu co)
-        await Shelter.updateMany(
-          {
-            members: {
-              $elemMatch: {
-                _id: shelter?.members[0]._id,
-                status: "pending", // chỉ các trạng thái đang chờ
-                joinMethod: { $in: ["invited", "requested"] },
-              },
-            },
-          },
-          {
-            $set: {
-              "members.$[elem].status": "rejected",
-            },
-          },
-          {
-            arrayFilters: [
-              {
-                "elem._id": shelter?.members[0]._id,
-                "elem.status": "pending",
-                "elem.joinMethod": { $in: ["invited", "requested"] },
-              },
-            ],
-          }
-        );
+        
 
         return {
             status: 200,
