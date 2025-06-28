@@ -37,6 +37,8 @@ const getShelterRequestByUserId = async (userId) => {
             address: item.address,
             status: item.status,
             shelterLicenseURL: item.shelterLicense.url,
+            aspiration: item.aspiration,
+            rejectReason: item.rejectReason,
             createdAt: item.createdAt,
             updatedAt: item.updatedAt,
           };
@@ -99,6 +101,7 @@ const sendShelterEstablishmentRequest = async (requesterId, shelterRequestData, 
             createAt: new Date(),
             updateAt: new Date()
           },
+          aspiration: shelterRequestData.aspiration,
           foundationDate: new Date(),  //tam thoi
           status: "verifying",
           warningCount: 0,
@@ -164,10 +167,12 @@ const getAllShelterEstablishmentRequests = async () => {
             email: shelter.email,
             hotline: shelter.hotline,
             address: shelter.address,
+            aspiration: shelter.aspiration,
             createdBy: {
               fullName: shelter.members[0]._id.fullName,
               avatar: shelter.members[0]._id.avatar,
             },
+            rejectReason: shelter.rejectReason,
             shelterLicenseURL: shelter.shelterLicense.url,
             createdAt: shelter.createdAt,
             updateAt: shelter.updatedAt,
@@ -274,7 +279,7 @@ const getOverviewStatistic = async () => {
         throw error;
     }
 }
-const reviewShelterEstablishmentRequest = async ({requestId, decision = "reject"}) => {
+const reviewShelterEstablishmentRequest = async ({requestId, decision = "reject", rejectReason = "No reason"}) => {
     try {
         const shelter = await Shelter.findOne({_id: requestId});
         if (!shelter) {
@@ -293,7 +298,9 @@ const reviewShelterEstablishmentRequest = async ({requestId, decision = "reject"
         } else if (decision === "reject") {
           await Shelter.findOneAndUpdate(
             { _id: requestId },
-            { status: "rejected" },
+            { status: "rejected",
+              rejectReason: rejectReason,
+             },
           );
           return {
             status: 200,

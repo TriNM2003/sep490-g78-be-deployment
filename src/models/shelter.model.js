@@ -100,6 +100,13 @@ const shelterSchema = new mongoose.Schema(
       type: Date,
       required: true,
     },
+    aspiration: {
+      type: String,
+      required: true,
+    },
+    rejectReason: {
+      type: String
+    },
     status: {
       type: String,
       enum: ["verifying", "active", "banned", "rejected"],
