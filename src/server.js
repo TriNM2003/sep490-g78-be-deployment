@@ -4,7 +4,7 @@ const bodyParser = require("body-parser");
 const httpsErrors = require("http-errors");
 const cors = require("cors");
 require("dotenv").config();
-const {authRouter} = require("./routes");
+const {authRouter, shelterRouter, adoptionTemplateRouter} = require("./routes");
 const cookieParser = require("cookie-parser");
 
 const passport = require("./configs/passport.config");
@@ -48,6 +48,8 @@ app.get("/", async (req, res, next) => {
 
 app.use("/auth", authRouter);
 app.use("/users", userRouter);
+app.use("/shelters", shelterRouter);
+app.use("/shelters/:shelterId/adoptionTemplates", adoptionTemplateRouter);
 
 app.use(async (req, res, next) => {
   next(httpsErrors(404, "Bad Request"));
