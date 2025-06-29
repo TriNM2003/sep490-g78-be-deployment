@@ -12,20 +12,7 @@ const getAllUsers = async (req, res) => {
 const getUserById = async (req, res) => {
   try {
     const user = await userService.getUserById(req.payload.id);
-    if (!user) return res.status(404).json({ message: "User not found" });
-    const result = {
-      _id: user._id || null,
-      username: user.username || null,
-      fullName: user.fullName || null,
-      email: user.email || null,
-      avatar: user.avatar || null,
-      bio: user.bio || null,
-      dob: user.dob || null,
-      phoneNumber: user.phoneNumber || null,
-      address: user.address || null,
-      background: user.background || null,
-    }
-    res.status(200).json(result);
+    res.status(200).json(user);
   } catch (error) {
     res.status(500).json({ message: error.message });
   }

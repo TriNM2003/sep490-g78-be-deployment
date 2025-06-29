@@ -5,10 +5,8 @@ const handleGoogleCallback = async (req, res) => {
   try {
     const googleProfile = req.user;
 
-    // 🔍 Tìm user trong database theo email Google
     let user = await User.findOne({ email: googleProfile.email });
 
-    // ✅ Nếu chưa có thì tạo mới user
     if (!user) {
       user = new User({
         username: googleProfile.name || googleProfile.email.split("@")[0],

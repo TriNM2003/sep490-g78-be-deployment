@@ -44,6 +44,14 @@ const editShelterProfile = async (req, res, next) => {
     res.status(404).json({ message: error.message });
   }
 };
+async function getAll(req, res,next) {
+    try {
+        const shelters = await shelterService.getAll();
+        res.status(200).json(shelters);
+      } catch (error) {
+        res.status(400).json({ message: error.message });
+      }
+}
 
 
 // ADMIN
@@ -88,6 +96,7 @@ const shelterController = {
     getShelterRequestByUserId,
     getShelterProfile,
     editShelterProfile,
+    getAll,
 
     //ADMIN
     getAllShelter,

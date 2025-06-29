@@ -4,18 +4,20 @@ const bodyParser = require("body-parser");
 const httpsErrors = require("http-errors");
 const cors = require("cors");
 require("dotenv").config();
-const {authRouter} = require("./routes");
 const cookieParser = require("cookie-parser");
 
 const passport = require("./configs/passport.config");
 
-const {userRouter} = require("./routes");
+
+const {userRouter, petRouter, authRouter, medicalRecordRouter, adoptionSubmissionRouter, shelterRouter, adoptionTemplateRouter} = require("./routes");
+
 const path = require("path");
 const http = require("http");
 const db = require("./models");
 const app = express();
 const session = require("express-session");
 const shelterRouter = require("./routes/shelter.route");
+
 
 // Sử dụng cors middleware để cho phép request từ localhost:3000
 app.use(
@@ -35,7 +37,7 @@ app.use(
     secret: "pawShelterGoogleLogin",
     resave: false,
     saveUninitialized: false,
-    cookie: { secure: false }
+    cookie: { secure: false },
   })
 );
 app.use(passport.initialize());
@@ -46,10 +48,22 @@ app.get("/", async (req, res, next) => {
 });
 
 // Định tuyến theo các chức năng thực tế
-
+app.use("/pets", petRouter);
 app.use("/auth", authRouter);
 app.use("/users", userRouter);
 app.use("/shelters", shelterRouter);
+app.use("/pets/:petId/medical-records", medicalRecordRouter);
+app.use("/pets/:petId/adoption-submissions", adoptionSubmissionRouter);
+// app.use("/shelters/:shelterId/adoptionForms", );
+app.use("/shelters/:shelterId/adoptionTemplates", adoptionTemplateRouter);
+// app.use("/shelters/:shelterId/consentForms", );
+
+// app.use("/posts", );
+// app.use("/posts/:postId/comments", );
+// app.use("/notifications", );
+app.use("/uploads", express.static("uploads"));
+
+
 
 app.use(async (req, res, next) => {
   next(httpsErrors(404, "Bad Request"));

@@ -26,6 +26,7 @@ shelterRouter.put("/edit-profile/:shelterId",
   ]),
   shelterController.editShelterProfile
 );
+shelterRouter.get("/get-all", shelterController.getAll);
 
 
 
