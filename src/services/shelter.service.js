@@ -70,7 +70,7 @@ const sendShelterEstablishmentRequest = async (requesterId, shelterRequestData, 
 
         const uploadResult = await cloudinary.uploader.upload(shelterLicense[0].path, {
           folder: "shelter_licenses",
-          resource_type: "image",
+          resource_type: "auto",
         });
         // Xoa file o local
         fs.unlink(shelterLicense[0].path, (err) => {
@@ -121,6 +121,87 @@ const sendShelterEstablishmentRequest = async (requesterId, shelterRequestData, 
         throw error;
     }
 }
+const getShelterProfile = async (shelterId) => {
+  try {
+      const shelter = await Shelter.findById(shelterId);
+
+      if(!shelter){
+        throw new Error("Không tìm thấy shelter")
+      }
+      
+      return {
+        name: shelter.name,
+        bio: shelter.bio,
+        email: shelter.email,
+        hotline: shelter.hotline,
+        avatar: shelter.avatar,
+        address: shelter.address,
+        background: shelter.background,
+      };
+  } catch (error) {
+    throw error;
+  }
+}
+
+const editShelterProfile = async (shelterId, updatedData) => {
+  try {
+    const shelter = await Shelter.findById(shelterId);
+    if (!shelter) {
+      throw new Error("Không tìm thấy trạm cứu hộ để cập nhật");
+    }
+
+    const updatedFields = {};
+
+    // Các trường cơ bản
+    const basicFields = ["name", "bio", "email", "hotline", "address"];
+    for (const field of basicFields) {
+      if (updatedData[field] !== undefined) {
+        updatedFields[field] = updatedData[field];
+      }
+    }
+
+    // Upload avatar nếu có
+    if (updatedData.avatar && typeof updatedData.avatar === "object") {
+      const result = await cloudinary.uploader.upload(updatedData.avatar.path, {
+        folder: "shelter_profiles",
+        resource_type: "image",
+      });
+      updatedFields.avatar = result.secure_url;
+      fs.unlink(updatedData.avatar.path, () => {}); // xóa file local
+    }
+
+    // Upload background nếu có
+    if (updatedData.background && typeof updatedData.background === "object") {
+      const result = await cloudinary.uploader.upload(updatedData.background.path, {
+        folder: "shelter_profiles",
+        resource_type: "image",
+      });
+      updatedFields.background = result.secure_url;
+      fs.unlink(updatedData.background.path, () => {}); // xóa file local
+    }
+
+    // Cập nhật vào MongoDB
+    const updatedShelter = await Shelter.findByIdAndUpdate(
+      shelterId,
+      { $set: updatedFields },
+      { new: true, runValidators: true }
+    );
+
+    return {
+      name: updatedShelter.name,
+      bio: updatedShelter.bio,
+      email: updatedShelter.email,
+      hotline: updatedShelter.hotline,
+      avatar: updatedShelter.avatar,
+      address: updatedShelter.address,
+      background: updatedShelter.background,
+    };
+  } catch (error) {
+    throw error;
+  }
+};
+
+
 
 
 // ADMIN
@@ -329,6 +410,8 @@ const shelterService = {
   // USER
   sendShelterEstablishmentRequest,
   getShelterRequestByUserId,
+  getShelterProfile,
+  editShelterProfile,
 
   // ADMIN
   getAllShelter,

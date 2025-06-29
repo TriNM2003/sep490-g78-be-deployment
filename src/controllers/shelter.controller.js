@@ -20,6 +20,30 @@ const sendShelterEstablishmentRequest = async (req, res, next) => {
         res.status(404).json({ message: error.message });
     }
 }
+const getShelterProfile = async (req, res, next) => {
+  try {
+        const {shelterId} = req.params;
+        const response = await shelterService.getShelterProfile(shelterId);
+        res.status(200).json(response);
+  } catch (error) {
+    res.status(404).json({ message: error.message });
+  }
+}
+
+const editShelterProfile = async (req, res, next) => {
+  try {
+        const {shelterId} = req.params;
+        const updatedData = {
+            ...req.body,
+            avatar: req.files?.avatar?.[0],
+            background: req.files?.background?.[0],
+        };
+        const response = await shelterService.getShelterProfile(shelterId, updatedData);
+        res.status(200).json(response);
+  } catch (error) {
+    res.status(404).json({ message: error.message });
+  }
+};
 
 
 // ADMIN
@@ -62,6 +86,8 @@ const shelterController = {
     //USER
     sendShelterEstablishmentRequest,
     getShelterRequestByUserId,
+    getShelterProfile,
+    editShelterProfile,
 
     //ADMIN
     getAllShelter,

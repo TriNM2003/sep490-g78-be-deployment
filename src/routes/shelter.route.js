@@ -5,6 +5,7 @@ const shelterController = require("../controllers/shelter.controller");
 const { verifyAccessToken } = require("../middlewares/auth.middleware");
 const { isAdmin } = require("../middlewares/admin.middleware");
 const cloudinary = require("../configs/cloudinary");
+const { isShelterManager } = require("../middlewares/shelterManager.middleware");
 
 shelterRouter.use(bodyParser.json());
 
@@ -14,6 +15,17 @@ shelterRouter.post("/send-shelter-request",
     cloudinary.upload.fields([{ name: "shelterLicense", maxCount: 1 }]), 
     shelterController.sendShelterEstablishmentRequest)
 shelterRouter.get("/get-shelter-request", verifyAccessToken, shelterController.getShelterRequestByUserId);
+shelterRouter.get("/get-profile/:shelterId", 
+    // [verifyAccessToken, isShelterManager],
+    shelterController.getShelterProfile);
+shelterRouter.put("/edit-profile/:shelterId",
+    [verifyAccessToken, isShelterManager],
+  cloudinary.upload.fields([
+    { name: "avatar", maxCount: 1 },
+    { name: "background", maxCount: 1 },
+  ]),
+  shelterController.editShelterProfile
+);
 
 
 
