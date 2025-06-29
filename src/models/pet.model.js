@@ -11,7 +11,8 @@ const petSchema = new mongoose.Schema(
       type: Boolean,
       required: true,
     },
-    age: { // Age in months
+    age: {
+      // Age in months
       type: Number,
       min: 0,
     },
@@ -19,20 +20,22 @@ const petSchema = new mongoose.Schema(
       type: Number,
       min: 0,
     },
-    identificationFeature:{
-      type:String,
+    identificationFeature: {
+      type: String,
     },
-    sterilizationStatus:{
-      type:Boolean,// tinh trang triet san
+    sterilizationStatus: {
+      type: Boolean, // tinh trang triet san
     },
     species: {
       type: mongoose.Schema.Types.ObjectId,
-      ref: "Species", 
+      ref: "Species",
     },
-    breeds: [{
-      type: mongoose.Schema.Types.ObjectId,
-      ref: "Breed",
-    }],
+    breeds: [
+      {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: "Breed",
+      },
+    ],
     color: {
       type: String,
       trim: true,
@@ -69,11 +72,18 @@ const petSchema = new mongoose.Schema(
     },
     status: {
       type: String,
-      enum: ["unavailable", "available", "adopted", "disabled", "booking","delivered"],
+      enum: [
+        "unavailable",
+        "available",
+        "adopted",
+        "disabled",
+        "booking",
+        "delivered",
+      ],
       default: "unavailable",
     },
   },
-  { timestamps: true } 
+  { timestamps: true }
 );
 
 const Pet = mongoose.model("Pet", petSchema);

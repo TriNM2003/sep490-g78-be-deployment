@@ -1,13 +1,30 @@
-const express = require ("express");
+const express = require("express");
 const medicalRecordRouter = express.Router();
-const bodyParser = require("body-parser");
-
-const { medicalRecordController } = require("../controllers");
-
-medicalRecordRouter.use(bodyParser.json());
-
+const { verifyAccessToken } = require("../middlewares/auth.middleware");
+const medicalRecordController = require("../controllers/medicalRecord.controller");
+router.get(
+  "/",
+  verifyAccessToken,
+  medicalRecordController.getMedicalRecordsByPet
+);
+router.post(
+  "/",
+  verifyAccessToken,
+  medicalRecordController.createMedicalRecord
+);
+router.put(
+  "/:id",
+  verifyAccessToken,
+  medicalRecordController.updateMedicalRecord
+);
+router.delete("/:id", medicalRecordController.deleteMedicalRecord);
+router.get(
+  "/:id",
+  verifyAccessToken,
+  medicalRecordController.getMedicalRecordById
+);
 medicalRecordRouter.get("/get-medical-record/:petId", medicalRecordController.getPetMedicalRecord);
 
 
-
 module.exports = medicalRecordRouter;
+
