@@ -11,7 +11,7 @@ module.exports = {
     userRouter,
     authRouter,
     adoptionSubmissionRouter,
-    medicalRecordRouter
+    medicalRecordRouter,
     shelterRouter,
     adoptionTemplateRouter,
 }
