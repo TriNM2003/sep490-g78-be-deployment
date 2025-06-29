@@ -16,7 +16,7 @@ shelterRouter.post("/send-shelter-request",
     shelterController.sendShelterEstablishmentRequest)
 shelterRouter.get("/get-shelter-request", verifyAccessToken, shelterController.getShelterRequestByUserId);
 shelterRouter.get("/get-profile/:shelterId", 
-    // [verifyAccessToken, isShelterManager],
+    [verifyAccessToken, isShelterManager],
     shelterController.getShelterProfile);
 shelterRouter.put("/edit-profile/:shelterId",
     [verifyAccessToken, isShelterManager],

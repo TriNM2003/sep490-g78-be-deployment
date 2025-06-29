@@ -38,7 +38,7 @@ const editShelterProfile = async (req, res, next) => {
             avatar: req.files?.avatar?.[0],
             background: req.files?.background?.[0],
         };
-        const response = await shelterService.getShelterProfile(shelterId, updatedData);
+        const response = await shelterService.editShelterProfile(shelterId, updatedData);
         res.status(200).json(response);
   } catch (error) {
     res.status(404).json({ message: error.message });

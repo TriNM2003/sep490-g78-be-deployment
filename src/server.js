@@ -16,7 +16,6 @@ const http = require("http");
 const db = require("./models");
 const app = express();
 const session = require("express-session");
-const shelterRouter = require("./routes/shelter.route");
 
 
 // Sử dụng cors middleware để cho phép request từ localhost:3000
