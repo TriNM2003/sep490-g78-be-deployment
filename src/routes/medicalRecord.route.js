@@ -2,23 +2,22 @@ const express = require("express");
 const medicalRecordRouter = express.Router();
 const { verifyAccessToken } = require("../middlewares/auth.middleware");
 const medicalRecordController = require("../controllers/medicalRecord.controller");
-router.get(
-  "/",
+medicalRecordRouter.get("/get-by-pet",
   verifyAccessToken,
   medicalRecordController.getMedicalRecordsByPet
 );
-router.post(
+medicalRecordRouter.post(
   "/",
   verifyAccessToken,
   medicalRecordController.createMedicalRecord
 );
-router.put(
+medicalRecordRouter.put(
   "/:id",
   verifyAccessToken,
   medicalRecordController.updateMedicalRecord
 );
-router.delete("/:id", medicalRecordController.deleteMedicalRecord);
-router.get(
+medicalRecordRouter.delete("/:id", medicalRecordController.deleteMedicalRecord);
+medicalRecordRouter.get(
   "/:id",
   verifyAccessToken,
   medicalRecordController.getMedicalRecordById

@@ -50,13 +50,21 @@ app.get("/", async (req, res, next) => {
 app.use("/pets", petRouter);
 app.use("/auth", authRouter);
 app.use("/users", userRouter);
-app.use("/pets", petRouter);
-app.use("/medical-records", medicalRecordRouter);
-app.use("/uploads", express.static("uploads"));
-app.use("/medical-records", medicalRecordRouter);
-app.use("/adoption-submissions", adoptionSubmissionRouter);
 app.use("/shelters", shelterRouter);
+
+
+app.use("/pets/:petId/medical-records", medicalRecordRouter);
+app.use("/pets/:petId/adoption-submissions", adoptionSubmissionRouter);
+// app.use("/shelters/:shelterId/adoptionForms", );
 app.use("/shelters/:shelterId/adoptionTemplates", adoptionTemplateRouter);
+// app.use("/shelters/:shelterId/consentForms", );
+
+// app.use("/posts", );
+// app.use("/posts/:postId/comments", );
+// app.use("/notifications", );
+app.use("/uploads", express.static("uploads"));
+
+
 
 app.use(async (req, res, next) => {
   next(httpsErrors(404, "Bad Request"));

@@ -26,8 +26,20 @@ const shelterSchema = new mongoose.Schema(
       default: "https://cdn-icons-png.flaticon.com/512/616/616408.png",
     },
     address: {
-      type: String
+      type: String,
+      required: true,
+      trim: true,
     },
+    location: {
+    lat: {
+      type: Number,
+      default: 0,
+    },
+    lng: {
+      type: Number,
+      default: 0,
+    },
+  },
     background: {
       type: String,
       default: "https://cdn.pixabay.com/photo/2015/10/01/20/17/01/background-980970_1280.jpg",

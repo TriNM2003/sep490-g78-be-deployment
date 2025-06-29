@@ -70,6 +70,8 @@ const uploadImage = async (req, res) => {
     res.status(200).json({ url: result.secure_url });
   } catch (error) {
     res.status(500).json({ message: error.message });
+  }
+};
 
 const getPetList = async (req, res) => {
   try {

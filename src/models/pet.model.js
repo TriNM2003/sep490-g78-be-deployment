@@ -19,6 +19,7 @@ const petSchema = new mongoose.Schema(
     weight: {
       type: Number,
       min: 0,
+      required: true,
     },
     identificationFeature: {
       type: String,
@@ -29,6 +30,7 @@ const petSchema = new mongoose.Schema(
     species: {
       type: mongoose.Schema.Types.ObjectId,
       ref: "Species",
+      required: true,
     },
     breeds: [
       {
@@ -39,6 +41,7 @@ const petSchema = new mongoose.Schema(
     color: {
       type: String,
       trim: true,
+      required: true,
     },
     bio: {
       type: String,
@@ -50,6 +53,7 @@ const petSchema = new mongoose.Schema(
     photos: [
       {
         type: String,
+        required: true,
       },
     ],
     foundLocation: {
