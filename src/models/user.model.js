@@ -66,6 +66,12 @@ const userSchema = new mongoose.Schema(
         default: "user",
       },
     ],
+    wishList: [
+      {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: "Pet",
+      },
+    ],
     status: {
       type: String,
       enum: ["verifying", "active", "banned"],
