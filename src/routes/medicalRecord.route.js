@@ -1,5 +1,5 @@
 const express = require("express");
-const router = express.Router();
+const medicalRecordRouter = express.Router();
 const { verifyAccessToken } = require("../middlewares/auth.middleware");
 const medicalRecordController = require("../controllers/medicalRecord.controller");
 router.get(
@@ -23,5 +23,8 @@ router.get(
   verifyAccessToken,
   medicalRecordController.getMedicalRecordById
 );
+medicalRecordRouter.get("/get-medical-record/:petId", medicalRecordController.getPetMedicalRecord);
 
-module.exports = router;
+
+module.exports = medicalRecordRouter;
+

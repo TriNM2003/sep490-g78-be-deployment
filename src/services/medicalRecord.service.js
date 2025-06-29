@@ -1,4 +1,6 @@
 const MedicalRecord = require("../models/medicalRecord.model");
+const db = require("../models/");
+
 
 const createMedicalRecord = async (data) => {
   const record = new MedicalRecord(data);
@@ -23,6 +25,17 @@ const getMedicalRecordById = async (id) => {
     .populate("pet")
     .populate("performedBy", "fullName email");
 };
+const getPetMedicalRecord = async (petId) => {
+    try {
+        const pet = await db.MedicalRecord.find({pet: petId}).populate("pet").populate("performedBy");
+        if (!pet) {
+            throw new Error("Pet not found");
+        }
+        return pet;
+    } catch (error) {
+        throw error;
+    }
+}
 
 module.exports = {
   createMedicalRecord,
@@ -30,4 +43,6 @@ module.exports = {
   deleteMedicalRecord,
   getMedicalRecordById,
   getMedicalRecordsByPet,
+  getPetMedicalRecord,
+  
 };

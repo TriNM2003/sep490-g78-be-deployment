@@ -4,18 +4,19 @@ const bodyParser = require("body-parser");
 const httpsErrors = require("http-errors");
 const cors = require("cors");
 require("dotenv").config();
-const { authRouter, medicalRecordRouter } = require("./routes");
-const { petRouter } = require("./routes");
 const cookieParser = require("cookie-parser");
 
 const passport = require("./configs/passport.config");
 
-const { userRouter } = require("./routes");
+
+const {userRouter, petRouter, authRouter, medicalRecordRouter, adoptionSubmissionRouter, shelterRouter, adoptionTemplateRouter} = require("./routes");
+
 const path = require("path");
 const http = require("http");
 const db = require("./models");
 const app = express();
 const session = require("express-session");
+
 
 // Sử dụng cors middleware để cho phép request từ localhost:3000
 app.use(
@@ -46,12 +47,16 @@ app.get("/", async (req, res, next) => {
 });
 
 // Định tuyến theo các chức năng thực tế
-
+app.use("/pets", petRouter);
 app.use("/auth", authRouter);
 app.use("/users", userRouter);
 app.use("/pets", petRouter);
 app.use("/medical-records", medicalRecordRouter);
 app.use("/uploads", express.static("uploads"));
+app.use("/medical-records", medicalRecordRouter);
+app.use("/adoption-submissions", adoptionSubmissionRouter);
+app.use("/shelters", shelterRouter);
+app.use("/shelters/:shelterId/adoptionTemplates", adoptionTemplateRouter);
 
 app.use(async (req, res, next) => {
   next(httpsErrors(404, "Bad Request"));

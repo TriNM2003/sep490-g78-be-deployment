@@ -50,7 +50,15 @@ const deleteMedicalRecord = async (req, res) => {
     res.status(500).json({ message: error.message });
   }
 };
-
+const getPetMedicalRecord = async (req, res) => {
+    try {
+        const { petId } = req.params; // Assuming the pet ID is in the request parameters
+        const medicalRecord = await medicalRecordService.getPetMedicalRecord(petId);
+        res.status(200).json(medicalRecord);
+    } catch (error) {
+        res.status(500).json({ message: error.message });
+    }
+}
 const getMedicalRecordById = async (req, res) => {
   try {
     const record = await medicalRecordService.getMedicalRecordById(
@@ -70,4 +78,6 @@ module.exports = {
   deleteMedicalRecord,
   getMedicalRecordById,
   getMedicalRecordsByPet,
+  getPetMedicalRecord,
 };
+

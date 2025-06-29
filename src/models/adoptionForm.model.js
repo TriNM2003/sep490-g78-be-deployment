@@ -24,7 +24,7 @@ const adoptionFormSchema = new mongoose.Schema(
     ],
     createdBy: {
       type: mongoose.Schema.Types.ObjectId,
-      ref: "User", // hoặc "ShelterStaff" nếu có role riêng
+      ref: "User",
       required: true,
     },
     shelter: {
@@ -34,7 +34,7 @@ const adoptionFormSchema = new mongoose.Schema(
     },
     status: {
       type: String,
-      enum: ["draft", "active", "closed"],
+      enum: ["draft", "active"],
       default: "draft",
     },
   },
