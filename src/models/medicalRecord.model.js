@@ -32,12 +32,12 @@ const medicalRecordSchema = new mongoose.Schema(
     },
     performedBy: {
       type: mongoose.Schema.Types.ObjectId,
-      ref: "User", 
+      ref: "User",
     },
     photos: [
       {
         type: String,
-        required: true
+        required: true,
       },
     ],
     status: {

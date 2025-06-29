@@ -4,12 +4,13 @@ const bodyParser = require("body-parser");
 const httpsErrors = require("http-errors");
 const cors = require("cors");
 require("dotenv").config();
-const {authRouter} = require("./routes");
+const { authRouter, medicalRecordRouter } = require("./routes");
+const { petRouter } = require("./routes");
 const cookieParser = require("cookie-parser");
 
 const passport = require("./configs/passport.config");
 
-const {userRouter} = require("./routes");
+const { userRouter } = require("./routes");
 const path = require("path");
 const http = require("http");
 const db = require("./models");
@@ -34,7 +35,7 @@ app.use(
     secret: "pawShelterGoogleLogin",
     resave: false,
     saveUninitialized: false,
-    cookie: { secure: false }
+    cookie: { secure: false },
   })
 );
 app.use(passport.initialize());
@@ -48,6 +49,9 @@ app.get("/", async (req, res, next) => {
 
 app.use("/auth", authRouter);
 app.use("/users", userRouter);
+app.use("/pets", petRouter);
+app.use("/medical-records", medicalRecordRouter);
+app.use("/uploads", express.static("uploads"));
 
 app.use(async (req, res, next) => {
   next(httpsErrors(404, "Bad Request"));

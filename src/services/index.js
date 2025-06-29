@@ -1,7 +1,9 @@
 const authService = require("./auth.service");
-const userService = require('./userService');
+const petService = require("./pet.service");
+const medicalRecordService = require("./medicalRecord.service");
 
 module.exports = {
-    authService,
-    userService,
-}
+  authService,
+  petService,
+  medicalRecordService,
+};
