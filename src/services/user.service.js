@@ -29,6 +29,7 @@ const getUserById = async (userId) => {
       phoneNumber: user.phoneNumber || null,
       address: user.address || null,
       background: user.background || null,
+      wishList: user.wishList || null,
     };
     return result;
   } catch (error) {

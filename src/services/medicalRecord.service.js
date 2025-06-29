@@ -2,7 +2,7 @@ const db = require("../models/");
 
 const getPetMedicalRecord = async (petId) => {
     try {
-        const pet = await db.MedicalRecord.findOne({pet: petId}).populate("pet").populate("performedBy");
+        const pet = await db.MedicalRecord.find({pet: petId}).populate("pet").populate("performedBy");
         if (!pet) {
             throw new Error("Pet not found");
         }

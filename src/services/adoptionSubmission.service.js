@@ -1,9 +1,9 @@
 const db = require("../models/");
 
 
-const getAdtoptionRequestList = async (userId) => {
+const getAdtoptionRequestList = async (id) => {
     try {
-        const adoptionRequest = await db.AdoptionSubmission.find({ performedBy: userId }).populate("performedBy").populate("adoptionForm").populate("answers.questionId");
+        const adoptionRequest = await db.AdoptionSubmission.find({ performedBy: id }).populate("performedBy").populate("adoptionForm").populate("answers.questionId");
         if (!adoptionRequest) {
             throw new Error("No adoption requests found for this user");
         }
