@@ -51,8 +51,6 @@ app.use("/pets", petRouter);
 app.use("/auth", authRouter);
 app.use("/users", userRouter);
 app.use("/shelters", shelterRouter);
-
-
 app.use("/pets/:petId/medical-records", medicalRecordRouter);
 app.use("/pets/:petId/adoption-submissions", adoptionSubmissionRouter);
 // app.use("/shelters/:shelterId/adoptionForms", );

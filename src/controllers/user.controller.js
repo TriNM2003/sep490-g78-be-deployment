@@ -57,12 +57,16 @@ const getUsersList = async (req, res) => {
     const users = await userService.getAllUsers();
     const formattedOutput = users.map(user => {
       return {
+        _id: user._id,
       avatar: user.avatar,
       fullName: user.fullName || null,
       email: user.email,
       roles: user.roles,
       status: user.status,
-      createdAt: user.createdAt
+      phoneNumber: user.phoneNumber,
+      warningCount: user.warningCount,
+      createdAt: user.createdAt,
+      updatedAt: user.updatedAt
     }})
     res.status(200).json({
       status: 200,

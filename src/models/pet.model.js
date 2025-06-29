@@ -7,6 +7,11 @@ const petSchema = new mongoose.Schema(
       required: true,
       trim: true,
     },
+    petCode: {
+      type: String,
+      required: true,
+      unique: true,
+    },
     isMale: {
       type: Boolean,
       required: true,
