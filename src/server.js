@@ -4,11 +4,12 @@ const bodyParser = require("body-parser");
 const httpsErrors = require("http-errors");
 const cors = require("cors");
 require("dotenv").config();
+
 const cookieParser = require("cookie-parser");
 
 const passport = require("./configs/passport.config");
 
-const {userRouter, petRouter, authRouter, medicalRecordRouter, adoptionSubmissionRouter} = require("./routes");
+const {userRouter, petRouter, authRouter, medicalRecordRouter, adoptionSubmissionRouter, shelterRouter, adoptionTemplateRouter} = require("./routes");
 const path = require("path");
 const http = require("http");
 const db = require("./models");
@@ -50,6 +51,8 @@ app.use("/auth", authRouter);
 app.use("/users", userRouter);
 app.use("/medical-records", medicalRecordRouter);
 app.use("/adoption-submissions", adoptionSubmissionRouter);
+app.use("/shelters", shelterRouter);
+app.use("/shelters/:shelterId/adoptionTemplates", adoptionTemplateRouter);
 
 app.use(async (req, res, next) => {
   next(httpsErrors(404, "Bad Request"));
