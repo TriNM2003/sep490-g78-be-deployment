@@ -54,6 +54,7 @@ const getShelterRequestByUserId = async (userId) => {
         shelterRequest: shelter.map(item => {
           return {
             name: item.name,
+            shelterCode: item.shelterCode,
             email: item.email,
             hotline: item.hotline,
             address: item.address,
@@ -76,6 +77,11 @@ const sendShelterEstablishmentRequest = async (requesterId, shelterRequestData, 
           throw new Error("Không tìm thấy giấy phép hoạt động! Vui lòng đính kèm giấy phép hoạt động")
         }
 
+        const isShelterCodeExist = await Shelter.findOne({shelterCode: shelterRequestData.shelterCode});
+        if(isShelterCodeExist){
+          throw new Error("Mã trạm đã tồn tại!")
+        }
+
         const isNotEligible = await Shelter.findOne({
           "members._id": requesterId,
           status: { $in: ["active", "banned", "verifying"] },
@@ -92,7 +98,7 @@ const sendShelterEstablishmentRequest = async (requesterId, shelterRequestData, 
 
         const uploadResult = await cloudinary.uploader.upload(shelterLicense[0].path, {
           folder: "shelter_licenses",
-          resource_type: "auto",
+          resource_type: "raw",
         });
         // Xoa file o local
         fs.unlink(shelterLicense[0].path, (err) => {
@@ -102,7 +108,7 @@ const sendShelterEstablishmentRequest = async (requesterId, shelterRequestData, 
 
         const shelter = await Shelter.create({
           name: shelterRequestData.name,
-          shelterCode: generateCodename(shelterRequestData.name),
+          shelterCode: shelterRequestData.shelterCode,
           bio: "",
           email: shelterRequestData.email,
           hotline: shelterRequestData.hotline,
@@ -222,7 +228,18 @@ const editShelterProfile = async (shelterId, updatedData) => {
     throw error;
   }
 };
-
+const getShelterMembers = async (shelterId) => {
+  try {
+      const shelter = await Shelter.findById(shelterId).populate("members._id");
+      if(!shelter){
+        throw new Error("Không tìm thấy shelter")
+      }
+      
+      return shelter.members;
+  } catch (error) {
+    throw error;
+  }
+}
 
 
 
@@ -435,6 +452,7 @@ const shelterService = {
   getShelterRequestByUserId,
   getShelterProfile,
   editShelterProfile,
+  getShelterMembers,
 
   // ADMIN
   getAllShelter,
