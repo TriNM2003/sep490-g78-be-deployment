@@ -80,7 +80,21 @@ const editProfile = async (userId, profileData, files) => {
   try {
     const user = await db.User.findById(userId);
     if (!user) throw new Error("User not found");
-
+    let parsedLocation = user.location;
+    if (profileData.location) {
+      try {
+        parsedLocation = JSON.parse(profileData.location);
+        if (
+          typeof parsedLocation.lat !== "number" ||
+          typeof parsedLocation.lng !== "number"
+        ) {
+          throw new Error("Location không hợp lệ!");
+        }
+      } catch (err) {
+        console.error("Không thể parse location:", err);
+        throw new Error("Dữ liệu location gửi lên không hợp lệ!");
+      }
+    }
     let newAvatar = user.avatar;
     let newBackground = user.background;
 
@@ -186,6 +200,7 @@ const editProfile = async (userId, profileData, files) => {
       dob: profileData.dob ? new Date(profileData.dob) : user.dob,
       phoneNumber: profileData.phoneNumber || user.phoneNumber,
       address: profileData.address || user.address,
+      location: parsedLocation, 
       avatar: newAvatar,
       background: newBackground,
     };
@@ -198,6 +213,7 @@ const editProfile = async (userId, profileData, files) => {
           dob: newProfile.dob,
           phoneNumber: newProfile.phoneNumber,
           address: newProfile.address,
+          location: newProfile.location,
           avatar: newProfile.avatar,
           background: newProfile.background,
         },
