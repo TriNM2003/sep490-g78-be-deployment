@@ -20,6 +20,14 @@ const sendShelterEstablishmentRequest = async (req, res, next) => {
         res.status(404).json({ message: error.message });
     }
 }
+const cancelShelterEstabilshmentRequest = async (req, res, next) => {
+    try {
+        const response = await shelterService.cancelShelterEstabilshmentRequest(req.params.requestId);
+        res.status(200).json(response);
+    } catch (error) {
+        res.status(404).json({ message: error.message });
+    }
+}
 const getShelterProfile = async (req, res, next) => {
   try {
         const {shelterId} = req.params;
@@ -48,6 +56,41 @@ async function getAll(req, res,next) {
     try {
         const shelters = await shelterService.getAll();
         res.status(200).json(shelters);
+      } catch (error) {
+        res.status(400).json({ message: error.message });
+      }
+}
+async function getShelterMembers(req, res,next) {
+    try {
+        const shelterMembers = await shelterService.getShelterMembers(req.params.shelterId);
+        res.status(200).json(shelterMembers);
+      } catch (error) {
+        res.status(400).json({ message: error.message });
+      }
+}
+// unfinished
+async function inviteShelterMember(req, res,next) {
+    try {
+        const {shelterId, userId, reason} = req.body;
+        const response = await shelterService.inviteShelterMember(shelterId, userId, reason);
+        res.status(200).json(response);
+      } catch (error) {
+        res.status(400).json({ message: error.message });
+      }
+}
+async function getShelterInvitationsAndRequests(req, res,next) {
+    try {
+        const {shelterId} = req.params;
+        const response = await shelterService.getShelterInvitationsAndRequests(shelterId);
+        res.status(200).json(response);
+      } catch (error) {
+        res.status(400).json({ message: error.message });
+      }
+}
+async function getUserInvitationsAndRequests(req, res,next) {
+    try {
+        const response = await shelterService.getUserInvitationsAndRequests(req.payload.id);
+        res.status(200).json(response);
       } catch (error) {
         res.status(400).json({ message: error.message });
       }
@@ -97,6 +140,11 @@ const shelterController = {
     getShelterProfile,
     editShelterProfile,
     getAll,
+    getShelterMembers,
+    inviteShelterMember,
+    getShelterInvitationsAndRequests,
+    getUserInvitationsAndRequests,
+    cancelShelterEstabilshmentRequest,
 
     //ADMIN
     getAllShelter,

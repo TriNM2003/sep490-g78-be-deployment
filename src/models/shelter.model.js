@@ -78,13 +78,17 @@ const shelterSchema = new mongoose.Schema(
         },
         sender: {
           type: mongoose.Schema.Types.ObjectId,
-          ref: "user",
+          ref: "User",
           required: [true, "Người gửi lời mời là bắt buộc"],
         },
         receiver: {
           type: mongoose.Schema.Types.ObjectId,
-          ref: "user",
+          ref: "User",
           required: [true, "Người nhận lời mời là bắt buộc"],
+        },
+        reason: {
+          type: String,
+          required: [true, "Phải có lý do"],
         },
         status: {
           type: String,
@@ -146,7 +150,7 @@ const shelterSchema = new mongoose.Schema(
     status: {
       type: String,
       enum: {
-        values: ["verifying", "active", "banned", "rejected"],
+        values: ["verifying", "active", "banned", "rejected", "cancelled"],
         message: "Trạng thái không hợp lệ",
       },
       default: "verifying",
