@@ -29,11 +29,14 @@ shelterRouter.put("/edit-profile/:shelterId",
 );
 shelterRouter.get("/get-all", shelterController.getAll);
 shelterRouter.get("/get-members/:shelterId", 
-  // [verifyAccessToken, isShelterManager],
+  [verifyAccessToken, isShelterManager],
    shelterController.getShelterMembers);
-shelterRouter.post("/invite-member", [verifyAccessToken, isShelterManager], shelterController.inviteShelterMember);
+  shelterRouter.get("/find-eligible-users/:shelterId", 
+  [verifyAccessToken, isShelterManager],
+   shelterController.findEligibleUsersToInvite);
+shelterRouter.post("/invite-members/:shelterId", [verifyAccessToken, isShelterManager], shelterController.inviteShelterMembers);
 shelterRouter.get("/get-shelter-invitations-and-requests/:shelterId", 
-  // [verifyAccessToken, isShelterManager], 
+  [verifyAccessToken, isShelterManager], 
   shelterController.getShelterInvitationsAndRequests);
 shelterRouter.get("/get-user-invitations-and-requests", verifyAccessToken, shelterController.getUserInvitationsAndRequests);
 

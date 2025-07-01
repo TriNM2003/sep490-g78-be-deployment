@@ -2,6 +2,7 @@ const {Shelter, User, Pet, Post, Blog, Report, Donation} = require("../models/in
 const {cloudinary} = require("../configs/cloudinary");
 const fs = require("fs");
 const generateCodename = require("../utils/codeNameGenerator");
+const mongoose = require("mongoose");
 
 //USER
 async function getAll() {
@@ -115,6 +116,7 @@ const sendShelterEstablishmentRequest = async (requesterId, shelterRequestData, 
           hotline: shelterRequestData.hotline,
           avatar: "",
           address: shelterRequestData.address,
+          location: shelterRequestData.location,
           background: "",
           members: [
             {
@@ -183,7 +185,7 @@ const editShelterProfile = async (shelterId, updatedData) => {
     const updatedFields = {};
 
     // Các trường cơ bản
-    const basicFields = ["name", "bio", "email", "hotline", "address"];
+    const basicFields = ["name", "bio", "email", "hotline", "address", "location"];
     for (const field of basicFields) {
       if (updatedData[field] !== undefined) {
         updatedFields[field] = updatedData[field];
@@ -225,6 +227,7 @@ const editShelterProfile = async (shelterId, updatedData) => {
       avatar: updatedShelter.avatar,
       address: updatedShelter.address,
       background: updatedShelter.background,
+
     };
   } catch (error) {
     throw error;
@@ -259,6 +262,25 @@ const getShelterMembers = async (shelterId) => {
       if(!shelter){
         throw new Error("Không tìm thấy shelter")
       }
+      const formatUserOutput = (rawUser) => {
+        const u = rawUser._id; // bản gốc nằm trong _id
+        return {
+          id: u._id?.toString?.() || "",
+
+          avatar: u.avatar || null,
+          background: u.background || null,
+          bio: u.bio || null,
+          email: u.email || null,
+          fullName: u.fullName || null,
+          phoneNumber: u.phoneNumber || null,
+          status: u.status || null,
+          warningCount: u.warningCount ?? 0,
+
+          userRoles: u.roles || [],
+          shelterRoles: rawUser.roles || [], // từ field ngoài cùng
+        };
+      };
+
       // const shelterMember = shelter.members.map(member => {
       //   return {
       //     avatar: member._id.name,
@@ -270,68 +292,135 @@ const getShelterMembers = async (shelterId) => {
       //     updatedAt:
       //   }
       // })
-      return shelter.members;
+      const formattedUsers = shelter.members.map(formatUserOutput);
+      // console.log(formattedUsers)
+      return formattedUsers;
   } catch (error) {
     throw error;
   }
 }
-// shelter gui yeu cau cho user
-const inviteShelterMember = async (shelterId, userId, reason) => {
+// tim user du dieu kien de invite
+const findEligibleUsersToInvite = async (shelterId) => {
   try {
-    if (!mongoose.Types.ObjectId.isValid(shelterId) || !mongoose.Types.ObjectId.isValid(userId)) {
-      throw new Error("ID không hợp lệ");
-    }
+    // 1. Không thuộc trạm cứu hộ hiện tại
+    const currentMemberIds = (await getShelterMembers(shelterId)).map(member => member.id);
+    const notCurrentMembers = await User.find({
+        _id: { $nin: currentMemberIds },
+    });
+    // console.log(notCurrentMembers)
 
+    // 2. Tài khoản đã kích hoạt
+    const activatedAccount = notCurrentMembers.filter(user => user.status === "active");
+    // console.log(activatedAccount);
+
+    // 3. Không là thành viên của trạm cứu hộ nào khác
+    const allShelterMembers = await Shelter.find({status: "active"}).select("members");
+    const memberIdSet = new Set(allShelterMembers.map(id => id.toString()));
+    const notInAnyShelter = activatedAccount.filter(
+        (user) => !memberIdSet.has(user._id)
+    );
+    // console.log(notInAnyShelter);
+
+
+    // 3. Không có yêu cầu thành lập trạm cứu hộ nào
+    const verifyingShelters = await Shelter.find({
+      status: "verifying",
+    }).select("members");
+    const verifyingCreators = new Set(
+      verifyingShelters
+        .filter((s) => s.members?.length > 0)
+        .map((s) => s.members[0])
+    );
+    const eligibleUsers = notInAnyShelter.filter(
+      (user) => !verifyingCreators.has(user._id)
+    );
+    // console.log(eligibleUsers);
+    return eligibleUsers.map(user => {
+      return {
+        email: user.email,
+        avatar: user.avatar || "https://static.vecteezy.com/system/resources/thumbnails/009/292/244/small/default-avatar-icon-of-social-media-user-vector.jpg"
+      }
+    });
+  } catch (error) {
+    console.error("Lỗi khi tìm user đủ điều kiện:", error.message);
+    throw error;
+  }
+};
+
+
+// shelter gui yeu cau cho user
+const inviteShelterMembers = async (shelterId, emailsList = [], roles) => {
+  try {
     const shelter = await Shelter.findById(shelterId);
     if (!shelter) {
       throw new Error("Không tìm thấy shelter");
     }
 
-    // 1. Check nếu user đã là member
-    const isMember = shelter.members.some(member =>
-      member._id.toString() === userId.toString()
-    );
-    if (isMember) {
-      throw new Error("Người dùng đã là thành viên của trạm cứu hộ này");
+    const invitationsToSend = [];
+
+    for (const email of emailsList) {
+      const user = await User.findOne({ email });
+      if (!user) {
+        console.warn(`Không tìm thấy người dùng với email ${email}`);
+        continue;
+      }
+
+      // Check nếu user đã là member
+      const isMember = shelter.members.some(
+        (member) => member._id.toString() === user._id.toString()
+      );
+      if (isMember) {
+        console.warn(`${email} đã là thành viên`);
+        continue;
+      }
+
+      // Check nếu đã có lời mời đang pending
+      const existing = shelter.invitations.find(
+        (inv) =>
+          inv.receiver.toString() === user._id.toString() &&
+          inv.sender.toString() === shelterId.toString() &&
+          inv.status === "pending"
+      );
+      if (existing) {
+        console.warn(`Đã có lời mời pending cho ${email}`);
+        continue;
+      }
+
+      // Tạo invitation mới
+      const newInvitation = {
+        _id: new mongoose.Types.ObjectId(),
+        sender: shelter._id,
+        receiver: user._id,
+        roles, 
+        status: "pending",
+        createdAt: new Date(),
+        updatedAt: new Date(),
+        expireAt: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000), // 7 ngày
+      };
+
+      invitationsToSend.push(newInvitation);
     }
 
-    // 2. Check nếu đã có lời mời đang pending
-    const existing = shelter.invitations.find(inv =>
-      inv.receiver.toString() === userId.toString() &&
-      inv.sender.toString() === shelterId.toString() &&
-      inv.status === "pending"
-    );
-    if (existing) {
-      throw new Error("Đã gửi lời mời đến người dùng này rồi");
+    // Push tất cả invitation vào shelter
+    if (invitationsToSend.length > 0) {
+      await Shelter.findByIdAndUpdate(
+        shelterId,
+        { $push: { invitations: { $each: invitationsToSend } } },
+        { new: true }
+      );
     }
-
-    // 3. Tạo invitation mới
-    const newInvitation = {
-      _id: new mongoose.Types.ObjectId(),
-      sender: shelter._id,
-      receiver: userId,
-      reason: reason || "Trạm cứu hộ muốn mời bạn tham gia làm thành viên",
-      status: "pending",
-      createdAt: new Date(),
-      updatedAt: new Date(),
-      expireAt: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000), // 7 ngày
-    };
-
-    // update them invitaion moi
-    await Shelter.findByIdAndUpdate(
-      shelterId,
-      { $push: { invitations: newInvitation } },
-      { new: true }
-    );
 
     return {
-      message: "Đã gửi lời mời thành công",
-      invitation: newInvitation,
+      message: "Đã gửi lời mời",
+      count: invitationsToSend.length,
+      invitations: invitationsToSend,
     };
   } catch (error) {
+    console.error(error);
     throw error;
   }
 };
+
 // shelter lay danh sach cac yeu cau 
 const getShelterInvitationsAndRequests = async (shelterId) => {
   try {
@@ -665,7 +754,8 @@ const shelterService = {
   getShelterProfile,
   editShelterProfile,
   getShelterMembers,
-  inviteShelterMember,
+  findEligibleUsersToInvite,
+  inviteShelterMembers,
   getShelterInvitationsAndRequests,
   getUserInvitationsAndRequests,
   cancelShelterEstabilshmentRequest,

@@ -23,8 +23,9 @@ const shelterSchema = new mongoose.Schema(
       match: [/^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$/, "Email không hợp lệ"],
     },
     hotline: {
-      type: Number,
+      type: String,
       required: [true, "Hotline là bắt buộc"],
+      match: [/^((\+84)|0)(3|5|7|8|9)\d{8}$/, "Hotline không đúng định dạng số điện thoại Việt Nam"]
     },
     avatar: {
       type: String,
@@ -86,10 +87,10 @@ const shelterSchema = new mongoose.Schema(
           ref: "User",
           required: [true, "Người nhận lời mời là bắt buộc"],
         },
-        reason: {
+        roles: [{
           type: String,
-          required: [true, "Phải có lý do"],
-        },
+          required: [true, "Người nhận lời mời phải được gắn ít nhất 1 vai trò"],
+        }],
         status: {
           type: String,
           enum: {

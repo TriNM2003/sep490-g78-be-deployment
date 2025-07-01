@@ -13,7 +13,7 @@ const getShelterRequestByUserId = async (req, res, next) => {
 const sendShelterEstablishmentRequest = async (req, res, next) => {
     try {
         const {id} = req.payload;
-        const requestData = req.body;
+        const requestData = {...req.body, location: JSON.parse(req?.body.location)};
         const response = await shelterService.sendShelterEstablishmentRequest(id, requestData, req.files);
         res.status(200).json(response);
     } catch (error) {
@@ -42,10 +42,12 @@ const editShelterProfile = async (req, res, next) => {
   try {
         const {shelterId} = req.params;
         const updatedData = {
-            ...req.body,
-            avatar: req.files?.avatar?.[0],
-            background: req.files?.background?.[0],
+          ...req.body,
+          location: JSON.parse(req?.body.location),
+          avatar: req.files?.avatar?.[0],
+          background: req.files?.background?.[0],
         };
+        console.log(updatedData)
         const response = await shelterService.editShelterProfile(shelterId, updatedData);
         res.status(200).json(response);
   } catch (error) {
@@ -68,11 +70,20 @@ async function getShelterMembers(req, res,next) {
         res.status(400).json({ message: error.message });
       }
 }
-// unfinished
-async function inviteShelterMember(req, res,next) {
+async function findEligibleUsersToInvite(req, res,next) {
     try {
-        const {shelterId, userId, reason} = req.body;
-        const response = await shelterService.inviteShelterMember(shelterId, userId, reason);
+        const {shelterId} = req.params;
+        const response = await shelterService.findEligibleUsersToInvite(shelterId);
+        res.status(200).json(response);
+      } catch (error) {
+        res.status(400).json({ message: error.message });
+      }
+}
+async function inviteShelterMembers(req, res,next) {
+    try {
+        const {emailsList, roles} = req.body;
+        console.log(req.body)
+        const response = await shelterService.inviteShelterMembers(req.params.shelterId, emailsList, roles);
         res.status(200).json(response);
       } catch (error) {
         res.status(400).json({ message: error.message });
@@ -141,7 +152,8 @@ const shelterController = {
     editShelterProfile,
     getAll,
     getShelterMembers,
-    inviteShelterMember,
+    findEligibleUsersToInvite,
+    inviteShelterMembers,
     getShelterInvitationsAndRequests,
     getUserInvitationsAndRequests,
     cancelShelterEstabilshmentRequest,
