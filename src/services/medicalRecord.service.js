@@ -14,7 +14,7 @@ const getMedicalRecordsByPet = async (petId, page = 1, limit = 3) => {
   const [records, total] = await Promise.all([
     MedicalRecord.find({ pet: petId })
       .populate("performedBy", "fullName email")
-      .sort({ procedureDate: -1 })
+      .sort({ createdAt: -1, _id: -1 })
       .skip(skip)
       .limit(limit),
     MedicalRecord.countDocuments({ pet: petId }),
