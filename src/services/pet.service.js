@@ -37,13 +37,19 @@ const createPet = async (petData) => {
 
     const shelterCode = shelter.shelterCode;
 
-    // Đếm số pet hiện có của shelter này
-    const petCount = await Pet.countDocuments({ shelter: petData.shelter });
-
+    // Tìm petCode lớn nhất trong collection
+    const lastPet = await Pet.findOne({
+      petCode: { $regex: `^${shelterCode}\\d+$` },
+    })
+      .sort({ petCode: -1 })
+      .limit(1);
+    let nextNumber = 1;
+    if (lastPet && lastPet.petCode) {
+      const match = lastPet.petCode.match(/\d+$/);
+      if (match) nextNumber = parseInt(match[0], 10) + 1;
+    }
     // Sinh mã petCode mới
-    const petCode = `${shelterCode}${petCount + 1}`;
-
-    // Gán petCode vào petData
+    const petCode = `${shelterCode}${nextNumber}`;
     petData.petCode = petCode;
 
     const pet = new Pet(petData);
