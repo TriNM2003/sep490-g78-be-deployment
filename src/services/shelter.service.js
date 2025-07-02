@@ -2,6 +2,7 @@ const {Shelter, User, Pet, Post, Blog, Report, Donation} = require("../models/in
 const {cloudinary} = require("../configs/cloudinary");
 const fs = require("fs");
 const generateCodename = require("../utils/codeNameGenerator");
+const db = require("../models/index");
 
 //USER
 async function getAll() {
