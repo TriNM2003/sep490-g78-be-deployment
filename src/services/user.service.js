@@ -45,31 +45,31 @@ const changePassword = async (
 ) => {
   try {
     const user = await db.User.findById(userId);
-    if (!user) throw new Error("User not found");
+    if (!user) throw new Error("Không tìm thấy người dùng");
     if (newPassword !== confirmPassword)
-      throw new Error("New password and confirmation do not match");
+      throw new Error("Mật khẩu mới và xác nhận mật khẩu không khớp");
     if (newPassword.length < 8)
-      throw new Error("New password must be at least 8 characters long");
+      throw new Error("Mật khẩu mới phải có ít nhất 8 ký tự");
     if (/\s/.test(newPassword))
-      throw new Error("New password cannot contain spaces");
+      throw new Error("Mật khẩu mới không được chứa khoảng trắng");
     const isNewPasswordSameAsOld = await bcrypt.compare(
       newPassword,
       user.password
     );
     if (isNewPasswordSameAsOld)
-      throw new Error("New password cannot be the same as the old password");
+      throw new Error("Mật khẩu mới không được trùng với mật khẩu cũ");
     if (!/[A-Z]/.test(newPassword) || !/\d/.test(newPassword))
       throw new Error(
-        "New password must contain at least one uppercase letter and one number"
+        "Mật khẩu mới phải chứa ít nhất một chữ hoa và một chữ số"
       );
     const isMatch = await bcrypt.compare(oldPassword, user.password);
-    if (!isMatch) throw new Error("Old password is incorrect");
+    if (!isMatch) throw new Error("Mật khẩu cũ không chính xác");
 
     const hashedPassword = await bcrypt.hash(newPassword, 10);
     await db.User.findByIdAndUpdate(userId, {
       password: hashedPassword,
     });
-    return { message: "Password changed successfully" };
+    return { message: "Đổi mật khẩu thành công" };
   } catch (error) {
     throw error;
   }
@@ -79,8 +79,22 @@ const editProfile = async (userId, profileData, files) => {
   const tempFilePaths = [];
   try {
     const user = await db.User.findById(userId);
-    if (!user) throw new Error("User not found");
-
+    if (!user) throw new Error("Không tìm thấy người dùng");
+    let parsedLocation = user.location;
+    if (profileData.location) {
+      try {
+        parsedLocation = JSON.parse(profileData.location);
+        if (
+          typeof parsedLocation.lat !== "number" ||
+          typeof parsedLocation.lng !== "number"
+        ) {
+          throw new Error("Location không hợp lệ!");
+        }
+      } catch (err) {
+        console.error("Không thể parse location:", err);
+        throw new Error("Dữ liệu location gửi lên không hợp lệ!");
+      }
+    }
     let newAvatar = user.avatar;
     let newBackground = user.background;
 
@@ -127,10 +141,10 @@ const editProfile = async (userId, profileData, files) => {
         );
         newBackground = uploadResult.secure_url;
         fs.unlink(backgroundFile.path, (err) => {
-          if (err) console.error("Error deleting local background file:", err);
+          if (err) console.error("Lỗi khi xóa file:", err);
         });
       } catch (error) {
-        console.error("Cloudinary Upload Error:", error);
+        console.error("Cập nhật cloudinary lỗi:", error);
         for (const filePath of tempFilePaths) {
           fs.unlink(filePath, (err) => {
             if (err)
@@ -186,6 +200,7 @@ const editProfile = async (userId, profileData, files) => {
       dob: profileData.dob ? new Date(profileData.dob) : user.dob,
       phoneNumber: profileData.phoneNumber || user.phoneNumber,
       address: profileData.address || user.address,
+      location: parsedLocation, 
       avatar: newAvatar,
       background: newBackground,
     };
@@ -198,13 +213,14 @@ const editProfile = async (userId, profileData, files) => {
           dob: newProfile.dob,
           phoneNumber: newProfile.phoneNumber,
           address: newProfile.address,
+          location: newProfile.location,
           avatar: newProfile.avatar,
           background: newProfile.background,
         },
       },
       { new: true }
     );
-    console.log("Updated user:", updatedUser);
+    //console.log("Updated user:", updatedUser);
     return updatedUser;
   } catch (error) {
     throw error;
