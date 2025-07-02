@@ -334,8 +334,21 @@ const findEligibleUsersToInvite = async (shelterId) => {
     const eligibleUsers = notInAnyShelter.filter(
       (user) => !verifyingCreators.has(user._id)
     );
+
+    // 4. Không có lời mời hoặc yêu cầu đang chờ xử lý trong shelter hiện tại
+    const currentShelter = await Shelter.findById(shelterId).select("invitations");
+    const pendingReceivers = new Set(
+      currentShelter.invitations
+        .filter(inv => inv.status === "pending")
+        .map(inv => inv.receiver.toString())
+    );
+
+    const finalEligibleUsers = eligibleUsers.filter(
+      user => !pendingReceivers.has(user._id.toString())
+    );
+
     // console.log(eligibleUsers);
-    return eligibleUsers.map(user => {
+    return finalEligibleUsers.map(user => {
       return {
         email: user.email,
         avatar: user.avatar || "https://static.vecteezy.com/system/resources/thumbnails/009/292/244/small/default-avatar-icon-of-social-media-user-vector.jpg"
@@ -349,7 +362,7 @@ const findEligibleUsersToInvite = async (shelterId) => {
 
 
 // shelter gui yeu cau cho user
-const inviteShelterMembers = async (shelterId, emailsList = [], roles) => {
+const inviteShelterMembers = async (shelterId, senderId, emailsList = [], roles) => {
   try {
     const shelter = await Shelter.findById(shelterId);
     if (!shelter) {
@@ -378,7 +391,6 @@ const inviteShelterMembers = async (shelterId, emailsList = [], roles) => {
       const existing = shelter.invitations.find(
         (inv) =>
           inv.receiver.toString() === user._id.toString() &&
-          inv.sender.toString() === shelterId.toString() &&
           inv.status === "pending"
       );
       if (existing) {
@@ -389,8 +401,9 @@ const inviteShelterMembers = async (shelterId, emailsList = [], roles) => {
       // Tạo invitation mới
       const newInvitation = {
         _id: new mongoose.Types.ObjectId(),
-        sender: shelter._id,
+        sender: senderId,
         receiver: user._id,
+        type: "invitation",
         roles, 
         status: "pending",
         createdAt: new Date(),
@@ -424,56 +437,108 @@ const inviteShelterMembers = async (shelterId, emailsList = [], roles) => {
 // shelter lay danh sach cac yeu cau 
 const getShelterInvitationsAndRequests = async (shelterId) => {
   try {
-      const shelter = await Shelter.findById(shelterId).populate([
-      { path: "invitations.sender" },
-      { path: "invitations.receiver" }
+    const shelter = await Shelter.findById(shelterId).populate([
+      { path: "invitations.sender", select: "email fullName avatar" },
+      { path: "invitations.receiver", select: "email fullName avatar" },
     ]);
 
-      if(!shelter){
-        throw new Error("Không tìm thấy shelter")
-      }
-      
-      return shelter.invitations;
-  } catch (error) {
-    throw error;
-  }
-}
-// user lay danh sach cac yeu cau
-const getUserInvitationsAndRequests = async (userId) => {
-  try {
-    const shelters = await Shelter.find({
-      $or: [
-        { "invitations.sender": userId },
-        { "invitations.receiver": userId }
-      ]
-    });
+    if (!shelter) {
+      throw new Error("Không tìm thấy shelter");
+    }
 
-    const results = shelters.flatMap(shelter =>
-      shelter.invitations
-        .filter(inv =>
-          inv.sender?.toString() === userId.toString() ||
-          inv.receiver?.toString() === userId.toString()
-        )
-        .map(inv => {
-          const type = inv.sender.toString() === userId.toString() ? "request" : "invitation";
+    // Mapping dữ liệu đúng interface
+    const formatted = shelter.invitations.map((invitation) => ({
+      requestId: invitation._id,
+      requestType: invitation.type || "No type found",
+      sender: {
+        id: invitation.sender._id,
+        email: invitation.sender.email,
+        fullName: invitation.sender.fullName,
+        avatar: invitation.sender.avatar,
+      },
+      receiver: {
+        id: invitation.receiver._id,
+        email: invitation.receiver.email,
+        fullName: invitation.receiver.fullName,
+        avatar: invitation.receiver.avatar,
+      },
+      shelter: {
+        id: shelter._id,
+        name: shelter.name,
+        avatar: shelter.avatar,
+        background: shelter.background,
+      },
+      roles: invitation.roles || [],
+      requestStatus: invitation.status,
+      createdAt: invitation.createdAt,
+      updatedAt: invitation.updatedAt,
+      expireAt: invitation.expireAt,
+    }));
 
-          return {
-            shelterId: shelter._id,
-            shelterName: shelter.name,
-            type, // "request" nếu user gửi yêu cầu, "invitation" nếu shelter mời user
-            reason: inv.reason,
-            createdAt: inv.createdAt,
-            updatedAt: inv.updatedAt,
-            expireAt: inv.expireAt,
-          };
-        })
-    );
-
-    return results;
+    return formatted;
   } catch (error) {
     throw error;
   }
 };
+// user lay danh sach cac yeu cau
+const getUserInvitationsAndRequests = async (userId) => {
+  try {
+    const shelters = await Shelter.find({
+      "invitations": {
+        $elemMatch: {
+          $or: [
+            { sender: userId },
+            { receiver: userId },
+          ],
+        },
+      },
+    })
+      .populate("invitations.sender", "email fullName avatar")
+      .populate("invitations.receiver", "email fullName avatar");
+
+    const results = shelters.flatMap((shelter) =>
+      shelter.invitations
+        .filter((inv) =>
+          inv.sender?._id?.toString() === userId.toString() ||
+          inv.receiver?._id?.toString() === userId.toString()
+        )
+        .map((inv) => ({
+          requestId: inv._id,
+          requestType: inv.type, // "invitation" hoặc "request"
+          sender: {
+            id: inv.sender._id,
+            email: inv.sender.email,
+            fullName: inv.sender.fullName,
+            avatar: inv.sender.avatar,
+          },
+          receiver: {
+            id: inv.receiver._id,
+            email: inv.receiver.email,
+            fullName: inv.receiver.fullName,
+            avatar: inv.receiver.avatar,
+          },
+          shelter: {
+            id: shelter._id,
+            name: shelter.name,
+            avatar: shelter.avatar,
+            background: shelter.background,
+          },
+          roles: inv.roles || [],
+          requestStatus: inv.status,
+          createdAt: inv.createdAt,
+          updatedAt: inv.updatedAt,
+          expireAt: inv.expireAt,
+        }))
+    );
+
+    return results;
+  } catch (error) {
+    console.error("Error in getUserInvitationsAndRequests:", error);
+    throw error;
+  }
+};
+
+
 // shelter xu ly yeu cau vao shelter
 // const reviewStaffRequest = async (shelterId, requestId, action) => {
 //   try {
@@ -532,13 +597,141 @@ const getUserInvitationsAndRequests = async (userId) => {
 //   }
 // };
 // user xu ly loi moi vao shelter
-// const reviewShelterInvitationRequest = async (shelterId, userId) => {
-//   try {
-      
-//   } catch (error) {
-//     throw error;
-//   }
-// }
+const reviewShelterInvitationRequest = async (shelterId, userId, decision) => {
+  // const session = await mongoose.startSession();
+  // session.startTransaction(); // nếu fail thì revert lại hết
+  try {
+    // 1. Tìm shelter hiện tại
+    const shelter = await Shelter.findById(shelterId);
+    if (!shelter) {
+      throw new Error("Không tìm thấy shelter");
+    }
+
+    // 2. Tìm invitation của user trong shelter này
+    const currInvitation = shelter.invitations.find(
+      (inv) => {
+        console.log(inv.receiver, userId);
+        return String(inv.receiver) === userId &&
+        inv.type === "invitation" &&
+        inv.status === "pending" && inv
+      }
+        
+    );
+    // console.log(currInvitation)
+    if (!currInvitation) {
+      throw new Error("Không tìm thấy lời mời phù hợp");
+    };
+
+    if (decision === "approve") {
+      // 3. Cập nhật invitation thành "accepted"
+      currInvitation.status = "accepted";
+      currInvitation.updatedAt = new Date();
+
+      // 4. Thêm user vào members nếu chưa có
+      const alreadyMember = shelter.members.some(
+        (m) => m._id === userId
+      );
+      if (!alreadyMember) {
+        shelter.members.push({
+          _id: userId,
+          roles: currInvitation.roles,
+        });
+      }
+
+      await shelter.save();
+
+      // 5. Huỷ các invitation/request khác của user từ các trạm khác
+      await Shelter.updateMany(
+        {
+          _id: { $ne: shelterId },
+          "invitations.receiver": userId,
+          "invitations.status": "pending",
+        },
+        {
+          $set: {
+            "invitations.$[elem].status": "cancelled",
+          },
+        },
+        {
+          arrayFilters: [
+            {
+              "elem.receiver": userId,
+              "elem.status": "pending",
+            },
+          ],
+        }
+      );
+    } else if (decision === "reject") {
+      // Chuyển invitation thành "declined"
+      currInvitation.status = "declined";
+      currInvitation.updatedAt = new Date();
+      await shelter.save();
+    } else {
+      throw new Error("Quyết định không hợp lệ");
+    }
+
+    // await session.commitTransaction();
+    // session.endSession();
+
+    return { success: true, message: "Xử lý thành công" };
+  } catch (error) {
+    // await session.abortTransaction();
+    // session.endSession();
+    throw error;
+  }
+};
+const kickShelterMember = async (shelterId, userId) => {
+  try {
+    const shelter = await Shelter.findById(shelterId);
+    if (!shelter) {
+      throw new Error("Không tìm thấy shelter");
+    }
+
+    // Tìm member trong danh sách members
+    const member = shelter.members.find(
+      (member) => String(member._id) === userId
+    );
+
+    if (!member) {
+      throw new Error("Thành viên không tồn tại trong shelter");
+    }
+
+    // Kiểm tra vai trò
+    let memberRole = null;
+
+    if (typeof member === "object" && member.roles) {
+      memberRole = member.roles;
+    } else {
+      const user = await User.findById(userId);
+      if (!user) throw new Error("Không tìm thấy người dùng");
+      memberRole = user.roles?.includes("manager") ? "manager" : "staff";
+    }
+
+    if (memberRole === "manager") {
+      throw new Error("Không thể kick người có vai trò quản lý (manager)");
+    }
+
+    await Shelter.findByIdAndUpdate(
+      shelterId,
+      {
+        $pull: {
+          members: typeof member === "object"
+            ? { _id: userId }
+            : userId,
+        },
+      },
+      { new: true }
+    );
+
+    return { message: "Đã xoá thành viên khỏi shelter" };
+  } catch (error) {
+    console.error("Lỗi khi xoá thành viên:", error.message);
+    throw error;
+  }
+};
+
+
+
 
 
 
@@ -759,7 +952,8 @@ const shelterService = {
   getShelterInvitationsAndRequests,
   getUserInvitationsAndRequests,
   cancelShelterEstabilshmentRequest,
-
+  reviewShelterInvitationRequest,
+  kickShelterMember,
 
   // ADMIN
   getAllShelter,

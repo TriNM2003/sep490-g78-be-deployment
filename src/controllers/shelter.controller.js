@@ -83,7 +83,7 @@ async function inviteShelterMembers(req, res,next) {
     try {
         const {emailsList, roles} = req.body;
         console.log(req.body)
-        const response = await shelterService.inviteShelterMembers(req.params.shelterId, emailsList, roles);
+        const response = await shelterService.inviteShelterMembers(req.params.shelterId, req.payload.id, emailsList, roles);
         res.status(200).json(response);
       } catch (error) {
         res.status(400).json({ message: error.message });
@@ -101,6 +101,24 @@ async function getShelterInvitationsAndRequests(req, res,next) {
 async function getUserInvitationsAndRequests(req, res,next) {
     try {
         const response = await shelterService.getUserInvitationsAndRequests(req.payload.id);
+        res.status(200).json(response);
+      } catch (error) {
+        res.status(400).json({ message: error.message });
+      }
+}
+async function reviewShelterInvitationRequest(req, res,next) {
+    try {
+        const { shelterId, decision} = req.body;
+        const response = await shelterService.reviewShelterInvitationRequest(shelterId, req.payload.id, decision);
+        res.status(200).json(response);
+      } catch (error) {
+        res.status(400).json({ message: error.message });
+      }
+}
+async function kickShelterMember(req, res,next) {
+    try {
+        const { shelterId, userId} = req.body;
+        const response = await shelterService.kickShelterMember(shelterId, userId);
         res.status(200).json(response);
       } catch (error) {
         res.status(400).json({ message: error.message });
@@ -157,6 +175,8 @@ const shelterController = {
     getShelterInvitationsAndRequests,
     getUserInvitationsAndRequests,
     cancelShelterEstabilshmentRequest,
+    reviewShelterInvitationRequest,
+    kickShelterMember,
 
     //ADMIN
     getAllShelter,

@@ -87,6 +87,10 @@ const shelterSchema = new mongoose.Schema(
           ref: "User",
           required: [true, "Người nhận lời mời là bắt buộc"],
         },
+        type: {
+          type: String,
+          enum: ["invitation", "request"]
+        },
         roles: [{
           type: String,
           required: [true, "Người nhận lời mời phải được gắn ít nhất 1 vai trò"],
