@@ -5,6 +5,7 @@ const adoptionSubmissionRouter = require("./adoptionSubmission.route");
 const medicalRecordRouter = require("./medicalRecord.route");
 const shelterRouter = require("./shelter.route");
 const adoptionTemplateRouter = require("./adoptionTemplate.route");
+const adoptionFormRouter = require("./adoptionForm.route");
 
 module.exports = {
     petRouter,
@@ -14,4 +15,5 @@ module.exports = {
     medicalRecordRouter,
     shelterRouter,
     adoptionTemplateRouter,
+    adoptionFormRouter,
 }
