@@ -10,9 +10,10 @@ const {
 const { cloudinary } = require("../configs/cloudinary");
 const fs = require("fs");
 const generateCodename = require("../utils/codeNameGenerator");
+const db = require("../models/index");
 
 const mongoose = require("mongoose");
-const db = require("../models/index");
+
 
 //USER
 async function getAll() {

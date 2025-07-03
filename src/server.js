@@ -8,6 +8,7 @@ const cookieParser = require("cookie-parser");
 
 const passport = require("./configs/passport.config");
 
+
 const {
   userRouter,
   petRouter,
@@ -18,7 +19,9 @@ const {
   adoptionTemplateRouter,
   speciesRouter,
   breedRouter,
+  adoptionFormRouter,
 } = require("./routes");
+
 
 const path = require("path");
 const http = require("http");
@@ -61,7 +64,7 @@ app.use("/users", userRouter);
 app.use("/shelters", shelterRouter);
 app.use("/pets/:petId/medical-records", medicalRecordRouter);
 app.use("/pets/:petId/adoption-submissions", adoptionSubmissionRouter);
-// app.use("/shelters/:shelterId/adoptionForms", );
+app.use("/shelters/:shelterId/adoptionForms", adoptionFormRouter );
 app.use("/shelters/:shelterId/adoptionTemplates", adoptionTemplateRouter);
 // app.use("/shelters/:shelterId/consentForms", );
 app.use("/species", speciesRouter);
