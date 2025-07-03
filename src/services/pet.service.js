@@ -83,6 +83,7 @@ const getPetList = async () => {
                 isMale: pet.isMale,
                 age: pet.age,
                 weight: pet.weight,
+                petCode: pet.petCode,
                 identificationFeature: pet.identificationFeature,
                 sterilizationStatus: pet.sterilizationStatus,
                   species: {
@@ -101,6 +102,7 @@ const getPetList = async () => {
                   foundLocation: pet.foundLocation,
                   tokenMoney: pet.tokenMoney,
                   shelter: {
+                    _id: pet.shelter._id,
                     name: pet.shelter.name,
                     bio: pet.shelter.bio,
                   },

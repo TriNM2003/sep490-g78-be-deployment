@@ -8,14 +8,13 @@ async function getAll(shelterId) {
       shelter: shelterId,
       status: "active",
     })
-      .populate("species", "name")
+      .populate("species", " _id name")
       .populate("createdBy", "fullName email avatar")
       .populate("shelter", "name")
       .lean();
     return templates?.map((t) => {
       return {
         ...t,
-        species: t?.species?.name,
         shelter: t?.shelter?.name,
       };
     });
@@ -42,13 +41,12 @@ async function create(data, createdBy, shelterId) {
 
     const newTemplate = await addData.save();
     const result = await db.AdoptionTemplate.findById(newTemplate._id)
-      .populate("species", "name")
+      .populate("species", "_id name")
       .populate("createdBy", "fullName email avatar")
       .lean();
 
     return {
       ...result,
-      species: result.species.name,
       createdBy: {
         fullName: result.createdBy.fullName,
         email: result.createdBy.email,
@@ -86,7 +84,7 @@ async function editTemplate(templateId, data, shelterId) {
       data,
       { new: true }
     )
-      .populate("species", "name")
+      .populate("species", "_id name")
       .populate("createdBy", "fullName email avatar")
       .lean();
     if (!updatedTemplate) {
@@ -94,7 +92,6 @@ async function editTemplate(templateId, data, shelterId) {
     }
     return {
       ...updatedTemplate,
-      species: updatedTemplate.species.name,
       createdBy: {
         fullName: updatedTemplate.createdBy.fullName,
         email: updatedTemplate.createdBy.email,

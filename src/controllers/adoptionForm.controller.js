@@ -16,7 +16,8 @@ const getFormsByShelter = async (req, res, next) => {
         .json({ message: "Trung tâm không tồn tại hoặc không hoạt động" });
     }
 
-    const forms = adoptionFormService.getFormsByShelter(shelterId);
+    const forms = await adoptionFormService.getFormsByShelter(shelterId);
+    
     res.status(200).json(forms);
   } catch (error) {
     res.status(400).json({ message: error.message });
