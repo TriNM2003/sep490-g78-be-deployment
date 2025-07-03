@@ -126,7 +126,25 @@ async function kickShelterMember(req, res,next) {
 }
 async function requestIntoShelter(req, res,next) {
     try {
-        const response = await shelterService.requestIntoShelter(req.params.shelterId, req.payload.id);
+        const response = await shelterService.requestIntoShelter(req.params.shelterEmail, req.payload.id);
+        res.status(200).json(response);
+      } catch (error) {
+        res.status(400).json({ message: error.message });
+      }
+}
+async function getEligibleShelters(req, res,next) {
+    try {
+        const response = await shelterService.getEligibleShelters(req.payload.id);
+        res.status(200).json(response);
+      } catch (error) {
+        res.status(400).json({ message: error.message });
+      }
+}
+async function reviewShelterRequest(req, res,next) {
+    try {
+        const {shelterId} = req.params;
+        const {requestId, decision} = req.body;
+        const response = await shelterService.reviewShelterRequest(shelterId, requestId, decision);
         res.status(200).json(response);
       } catch (error) {
         res.status(400).json({ message: error.message });
@@ -186,6 +204,8 @@ const shelterController = {
     reviewShelterInvitationRequest,
     kickShelterMember,
     requestIntoShelter,
+    getEligibleShelters,
+    reviewShelterRequest,
 
     //ADMIN
     getAllShelter,

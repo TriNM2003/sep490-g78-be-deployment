@@ -41,7 +41,9 @@ shelterRouter.get("/get-shelter-invitations-and-requests/:shelterId",
 shelterRouter.get("/get-user-invitations-and-requests", verifyAccessToken, shelterController.getUserInvitationsAndRequests);
 shelterRouter.put("/review-shelter-invitation", verifyAccessToken, shelterController.reviewShelterInvitationRequest);
 shelterRouter.put("/:shelterId/kick-member", [verifyAccessToken, isShelterManager], shelterController.kickShelterMember);
-shelterRouter.put("/send-staff-request/:shelterId", verifyAccessToken, shelterController.requestIntoShelter);
+shelterRouter.put("/send-staff-request/:shelterEmail", verifyAccessToken, shelterController.requestIntoShelter);
+shelterRouter.get("/eligible-shelters", verifyAccessToken, shelterController.getEligibleShelters);
+shelterRouter.put("/:shelterId/review-user-request", [verifyAccessToken, isShelterManager], shelterController.reviewShelterRequest);
 
 // ADMIN
 shelterRouter.get("/admin/get-shelters-list", [verifyAccessToken, isAdmin], shelterController.getAllShelter);

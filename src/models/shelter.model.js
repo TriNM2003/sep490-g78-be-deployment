@@ -77,15 +77,15 @@ const shelterSchema = new mongoose.Schema(
           type: mongoose.Schema.Types.ObjectId,
           default: () => new mongoose.Types.ObjectId(),
         },
-        sender: {
+        shelter: {
           type: mongoose.Schema.Types.ObjectId,
-          ref: "User",
-          required: [true, "Người gửi lời mời là bắt buộc"],
+          ref: "Shelter",
+          required: [true, "Trạm cứu hộ không thể trống"],
         },
-        receiver: {
+        user: {
           type: mongoose.Schema.Types.ObjectId,
           ref: "User",
-          required: [true, "Người nhận lời mời là bắt buộc"],
+          required: [true, "User không thể trống"],
         },
         type: {
           type: String,
