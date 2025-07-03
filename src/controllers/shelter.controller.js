@@ -124,6 +124,14 @@ async function kickShelterMember(req, res,next) {
         res.status(400).json({ message: error.message });
       }
 }
+async function requestIntoShelter(req, res,next) {
+    try {
+        const response = await shelterService.requestIntoShelter(req.params.shelterId, req.payload.id);
+        res.status(200).json(response);
+      } catch (error) {
+        res.status(400).json({ message: error.message });
+      }
+}
 
 
 // ADMIN
@@ -177,6 +185,7 @@ const shelterController = {
     cancelShelterEstabilshmentRequest,
     reviewShelterInvitationRequest,
     kickShelterMember,
+    requestIntoShelter,
 
     //ADMIN
     getAllShelter,

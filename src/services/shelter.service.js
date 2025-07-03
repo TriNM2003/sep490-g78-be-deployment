@@ -729,6 +729,64 @@ const kickShelterMember = async (shelterId, userId) => {
     throw error;
   }
 };
+const requestIntoShelter = async (shelterId, senderId) => {
+  try {
+    const shelter = await Shelter.findById(shelterId);
+    if (!shelter) {
+      throw new Error("Không tìm thấy shelter");
+    }
+
+    const user = await User.findById(senderId);
+    if (!user) {
+      throw new Error("Không tìm thấy người dùng");
+    }
+
+    // Check nếu đã là thành viên
+    const isMember = shelter.members.some(
+      (member) => member._id.toString() === user._id.toString()
+    );
+    if (isMember) {
+      throw new Error("Bạn đã là thành viên của trạm cứu hộ này");
+    }
+
+    // Check nếu đã gửi yêu cầu đang chờ xử lý
+    const existing = shelter.invitations.find(
+      (inv) =>
+        inv.receiver.toString() === user._id.toString() &&
+        inv.type === "request" &&
+        inv.status === "pending"
+    );
+    if (existing) {
+      throw new Error("Bạn đã gửi yêu cầu và đang chờ xét duyệt");
+    }
+
+    const newRequest = {
+      _id: new mongoose.Types.ObjectId(),
+      sender: senderId,
+      receiver: shelter._id,
+      type: "request",
+      roles: ["staff"],
+      status: "pending",
+      createdAt: new Date(),
+      updatedAt: new Date(),
+      expireAt: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000), // 7 ngày
+    };
+
+    await Shelter.findByIdAndUpdate(
+      shelterId,
+      { $push: { invitations: newRequest } },
+      { new: true }
+    );
+
+    return {
+      message: "Đã gửi yêu cầu tham gia shelter",
+      request: newRequest,
+    };
+  } catch (error) {
+    console.error(error);
+    throw error;
+  }
+};
 
 
 
@@ -954,6 +1012,7 @@ const shelterService = {
   cancelShelterEstabilshmentRequest,
   reviewShelterInvitationRequest,
   kickShelterMember,
+  requestIntoShelter,
 
   // ADMIN
   getAllShelter,
