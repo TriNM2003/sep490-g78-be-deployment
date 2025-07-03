@@ -14,6 +14,7 @@ shelterRouter.post("/send-shelter-request",
     verifyAccessToken, 
     cloudinary.upload.fields([{ name: "shelterLicense", maxCount: 1 }]), 
     shelterController.sendShelterEstablishmentRequest)
+shelterRouter.put("/cancel-shelter-request/:requestId", verifyAccessToken, shelterController.cancelShelterEstabilshmentRequest)
 shelterRouter.get("/get-shelter-request", verifyAccessToken, shelterController.getShelterRequestByUserId);
 shelterRouter.get("/get-profile/:shelterId", 
     [verifyAccessToken, isShelterManager],
@@ -27,8 +28,20 @@ shelterRouter.put("/edit-profile/:shelterId",
   shelterController.editShelterProfile
 );
 shelterRouter.get("/get-all", shelterController.getAll);
-
-
+shelterRouter.get("/get-members/:shelterId", 
+  [verifyAccessToken, isShelterManager],
+   shelterController.getShelterMembers);
+  shelterRouter.get("/find-eligible-users/:shelterId", 
+  [verifyAccessToken, isShelterManager],
+   shelterController.findEligibleUsersToInvite);
+shelterRouter.post("/invite-members/:shelterId", [verifyAccessToken, isShelterManager], shelterController.inviteShelterMembers);
+shelterRouter.get("/get-shelter-invitations-and-requests/:shelterId", 
+  [verifyAccessToken, isShelterManager], 
+  shelterController.getShelterInvitationsAndRequests);
+shelterRouter.get("/get-user-invitations-and-requests", verifyAccessToken, shelterController.getUserInvitationsAndRequests);
+shelterRouter.put("/review-shelter-invitation", verifyAccessToken, shelterController.reviewShelterInvitationRequest);
+shelterRouter.put("/:shelterId/kick-member", [verifyAccessToken, isShelterManager], shelterController.kickShelterMember);
+shelterRouter.put("/send-staff-request/:shelterId", verifyAccessToken, shelterController.requestIntoShelter);
 
 // ADMIN
 shelterRouter.get("/admin/get-shelters-list", [verifyAccessToken, isAdmin], shelterController.getAllShelter);
