@@ -815,6 +815,45 @@ const requestIntoShelter = async (shelterId, senderId) => {
     throw error;
   }
 };
+const getShelterCaringPetsCount = async (shelterId) => {
+  return await Pet.countDocuments({ shelter: shelterId, status: "caring" });
+};
+
+const getShelterAdoptedPetsCount = async (shelterId) => {
+  return await Pet.countDocuments({ shelter: shelterId, status: "adopted" });
+};
+
+const getShelterPostsCount = async (shelterId) => {
+  return await Post.countDocuments({ shelter: shelterId });
+};
+
+const getShelterMembersCount = async (shelterId) => {
+  const shelter = await Shelter.findById(shelterId);
+  return shelter?.members?.length || 0;
+};
+
+const getShelterPetGrowthByMonth = async (shelterId) => {
+  const now = new Date();
+  const firstDayOfYear = new Date(now.getFullYear(), 0, 1);
+  const result = await Pet.aggregate([
+    {
+      $match: {
+        shelter: new mongoose.Types.ObjectId(shelterId),
+        createdAt: { $gte: firstDayOfYear },
+      },
+    },
+    {
+      $group: {
+        _id: { $month: "$createdAt" },
+        count: { $sum: 1 },
+      },
+    },
+    {
+      $sort: { _id: 1 },
+    },
+  ]);
+  return result;
+};
 
 // ADMIN
 const getAllShelter = async () => {
@@ -1078,7 +1117,11 @@ const shelterService = {
   reviewShelterInvitationRequest,
   kickShelterMember,
   requestIntoShelter,
-
+  getShelterCaringPetsCount,
+  getShelterAdoptedPetsCount,
+  getShelterPostsCount,
+  getShelterMembersCount,
+  getShelterPetGrowthByMonth,
   // ADMIN
   getAllShelter,
   getAllShelterEstablishmentRequests,

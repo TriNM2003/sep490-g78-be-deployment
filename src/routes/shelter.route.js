@@ -42,7 +42,11 @@ shelterRouter.put(
   ]),
   shelterController.editShelterProfile
 );
-
+shelterRouter.get(
+  "/dashboard-statistics/:shelterId",
+  [verifyAccessToken, isShelterManager],
+  shelterController.getShelterDashboardStatistics
+);
 shelterRouter.get("/get-all", shelterController.getAll);
 shelterRouter.get(
   "/get-members/:shelterId",
