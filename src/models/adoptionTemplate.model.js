@@ -35,7 +35,7 @@ const adoptionTemplateSchema = new mongoose.Schema(
     },
     status: {
       type: String,
-      enum: ["active"],
+      enum: ["active","inactive"],
       default: "active",
     },
   },
