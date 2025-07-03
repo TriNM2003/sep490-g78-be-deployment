@@ -277,6 +277,7 @@ const shelterController = {
     requestIntoShelter,
     getEligibleShelters,
     reviewShelterRequest,
+    getShelterDashboardStatistics,
 
     //ADMIN
     getAllShelter,

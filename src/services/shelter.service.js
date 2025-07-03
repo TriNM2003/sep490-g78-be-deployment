@@ -572,8 +572,9 @@ const reviewShelterInvitationRequest = async (shelterId, userId, decision) => {
         inv.type === "invitation" &&
         inv.status === "pending" &&
         inv
+      }
       );
-    });
+
     // console.log(currInvitation)
     if (!currInvitation) {
       throw new Error("Không tìm thấy lời mời phù hợp");
