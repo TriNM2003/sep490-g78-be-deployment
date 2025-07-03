@@ -11,6 +11,15 @@ const getAllUsers = async (req, res) => {
 
 const getUserById = async (req, res) => {
   try {
+    const user = await userService.getUserById(req.params.id);
+    res.status(200).json(user);
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+};
+
+const getUserByToken = async (req, res) => {
+  try {
     const user = await userService.getUserById(req.payload.id);
     res.status(200).json(user);
   } catch (error) {
@@ -45,7 +54,7 @@ const editProfile = async (req, res) => {
     );
     res.status(200).json(result);
   } catch (error) {
-    console.error("Error in editProfile:", error.message);
+    console.error("Lỗi khi cập nhật thông tin:", error.message);
     res.status(400).json({ message: error.message });
   }
 };
@@ -82,7 +91,7 @@ const userController = {
   getUserById,
   changePassword,
   editProfile,
-
+  getUserByToken,
   //ADMIN
   getUsersList,
 };
