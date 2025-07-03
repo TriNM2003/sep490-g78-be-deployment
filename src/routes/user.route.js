@@ -9,7 +9,8 @@ const { isAdmin } = require("../middlewares/admin.middleware");
 userRouter.use(bodyParser.json());
 
 userRouter.get("/", userController.getAllUsers);
-userRouter.get("/user-profile",verifyAccessToken, userController.getUserById);
+userRouter.get("/get-user",verifyAccessToken, userController.getUserByToken);
+userRouter.get("/user-profile/:id", userController.getUserById);
 userRouter.put("/change-password", verifyAccessToken, userController.changePassword);
 userRouter.put("/edit-profile",
   cloudinary.upload.fields([

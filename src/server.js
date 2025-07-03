@@ -34,7 +34,7 @@ app.use(
     credentials: true,
   })
 );
-
+app.use(express.json());
 app.use(morgan("dev"));
 app.use(bodyParser.json());
 app.use(cookieParser());
