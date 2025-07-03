@@ -1,19 +1,26 @@
-const {Shelter, User, Pet, Post, Blog, Report, Donation} = require("../models/index")
-const {cloudinary} = require("../configs/cloudinary");
+const {
+  Shelter,
+  User,
+  Pet,
+  Post,
+  Blog,
+  Report,
+  Donation,
+} = require("../models/index");
+const { cloudinary } = require("../configs/cloudinary");
 const fs = require("fs");
 const generateCodename = require("../utils/codeNameGenerator");
+const db = require("../models/index");
 
 const mongoose = require("mongoose");
-const db = require("../models/index");
 
 
 //USER
 async function getAll() {
   try {
-    const shelters = await db.Shelter.find({status:"active"}).populate(
-      "members._id"
-    )
-    .lean();
+    const shelters = await db.Shelter.find({ status: "active" })
+      .populate("members._id")
+      .lean();
     return shelters.map((s) => {
       return {
         ...s,
@@ -32,151 +39,158 @@ async function getAll() {
 
 const getShelterRequestByUserId = async (userId) => {
   try {
-      const shelter = await Shelter.find({"members._id": userId});
-      let isEligible = true;  //check dieu kien gui yeu cau
-      let reason = 'Đủ điều kiện để tạo yêu cầu thành lập trạm cứu hộ' //ly do
-      for(let i=0; i< shelter.length; i++) {
-        if(["banned"].includes(shelter[i].status)){
-          reason = "Bạn đã bị ban khỏi việc thành lập trạm cứu hộ!"
-          isEligible = false;
-          break;
-        }
-        if(["active"].includes(shelter[i].status)){
-          reason = "Bạn đã thuộc về một trạm cứu hộ!"
-          isEligible = false;
-          break;
-        }
-        if(["verifying"].includes(shelter[i].status)){
-          reason = "Bạn có yêu cầu đang chờ xử lý!"
-          isEligible = false;
-          break;
-        }
-      };
-      return {
-        isEligible,
-        reason,
-        shelterRequest: shelter.map(item => {
-          return {
-            id: item._id,
-            name: item.name,
-            shelterCode: item.shelterCode,
-            email: item.email,
-            hotline: item.hotline,
-            address: item.address,
-            status: item.status,
-            shelterLicenseURL: item.shelterLicense.url,
-            aspiration: item.aspiration,
-            rejectReason: item.rejectReason,
-            createdAt: item.createdAt,
-            updatedAt: item.updatedAt,
-          };
-        })
-      };
+    const shelter = await Shelter.find({ "members._id": userId });
+    let isEligible = true; //check dieu kien gui yeu cau
+    let reason = "Đủ điều kiện để tạo yêu cầu thành lập trạm cứu hộ"; //ly do
+    for (let i = 0; i < shelter.length; i++) {
+      if (["banned"].includes(shelter[i].status)) {
+        reason = "Bạn đã bị ban khỏi việc thành lập trạm cứu hộ!";
+        isEligible = false;
+        break;
+      }
+      if (["active"].includes(shelter[i].status)) {
+        reason = "Bạn đã thuộc về một trạm cứu hộ!";
+        isEligible = false;
+        break;
+      }
+      if (["verifying"].includes(shelter[i].status)) {
+        reason = "Bạn có yêu cầu đang chờ xử lý!";
+        isEligible = false;
+        break;
+      }
+    }
+    return {
+      isEligible,
+      reason,
+      shelterRequest: shelter.map((item) => {
+        return {
+          id: item._id,
+          name: item.name,
+          shelterCode: item.shelterCode,
+          email: item.email,
+          hotline: item.hotline,
+          address: item.address,
+          status: item.status,
+          shelterLicenseURL: item.shelterLicense.url,
+          aspiration: item.aspiration,
+          rejectReason: item.rejectReason,
+          createdAt: item.createdAt,
+          updatedAt: item.updatedAt,
+        };
+      }),
+    };
   } catch (error) {
     throw error;
   }
-}
-const sendShelterEstablishmentRequest = async (requesterId, shelterRequestData, {shelterLicense}) => {
-    try {
-        if(!shelterLicense[0]){
-          throw new Error("Không tìm thấy giấy phép hoạt động! Vui lòng đính kèm giấy phép hoạt động")
-        }
-
-        const isShelterCodeExist = await Shelter.findOne({shelterCode: shelterRequestData.shelterCode});
-        if(isShelterCodeExist){
-          throw new Error("Mã trạm đã tồn tại!")
-        }
-
-        const isNotEligible = await Shelter.findOne({
-          "members._id": requesterId,
-          status: { $in: ["active", "banned", "verifying"] },
-        });
-        if(isNotEligible){
-          // Xoa file o local
-          fs.unlink(shelterLicense[0].path, (err) => {
-            if (err) console.error("Lỗi xóa file ở local:", err);
-          });
-          throw new Error(
-            "Tài khoản không đủ điều kiện để gửi yêu cầu!"
-          );
-        }
-
-        const uploadResult = await cloudinary.uploader.upload(shelterLicense[0].path, {
-          folder: "shelter_licenses",
-          resource_type: "raw",
-        });
-        // Xoa file o local
-        fs.unlink(shelterLicense[0].path, (err) => {
-          if (err)
-            console.error("Lỗi xóa file ở local:", err);
-        });
-
-        const shelter = await Shelter.create({
-          name: shelterRequestData.name,
-          shelterCode: shelterRequestData.shelterCode,
-          bio: "",
-          email: shelterRequestData.email,
-          hotline: shelterRequestData.hotline,
-          avatar: "",
-          address: shelterRequestData.address,
-          location: shelterRequestData.location,
-          background: "",
-          members: [
-            {
-                _id: requesterId,
-                roles: ["staff", "manager"],
-            }
-          ],
-          shelterLicense: {
-            fileName: shelterLicense[0]?.originalname,
-            url: uploadResult?.secure_url,
-            size: shelterLicense[0]?.size,
-            mimeType: shelterLicense[0]?.mimetype,
-            createAt: new Date(),
-            updateAt: new Date()
-          },
-          aspiration: shelterRequestData.aspiration,
-          foundationDate: new Date(),  //tam thoi
-          status: "verifying",
-          warningCount: 0,
-        });
-        
-        return {
-            status: 200,
-            message: "Gửi yêu cầu thành lập trạm cứu hộ thành công",
-            shelterRequest: shelter
-        }
-    } catch (error) {
-        // Xoa file o local
-        fs.unlink(shelterLicense[0].path, (err) => {
-          if (err)
-            console.error("Lỗi xóa file ở local:", err);
-        });
-        throw error;
+};
+const sendShelterEstablishmentRequest = async (
+  requesterId,
+  shelterRequestData,
+  { shelterLicense }
+) => {
+  try {
+    if (!shelterLicense[0]) {
+      throw new Error(
+        "Không tìm thấy giấy phép hoạt động! Vui lòng đính kèm giấy phép hoạt động"
+      );
     }
-}
+
+    const isShelterCodeExist = await Shelter.findOne({
+      shelterCode: shelterRequestData.shelterCode,
+    });
+    if (isShelterCodeExist) {
+      throw new Error("Mã trạm đã tồn tại!");
+    }
+
+    const isNotEligible = await Shelter.findOne({
+      "members._id": requesterId,
+      status: { $in: ["active", "banned", "verifying"] },
+    });
+    if (isNotEligible) {
+      // Xoa file o local
+      fs.unlink(shelterLicense[0].path, (err) => {
+        if (err) console.error("Lỗi xóa file ở local:", err);
+      });
+      throw new Error("Tài khoản không đủ điều kiện để gửi yêu cầu!");
+    }
+
+    const uploadResult = await cloudinary.uploader.upload(
+      shelterLicense[0].path,
+      {
+        folder: "shelter_licenses",
+        resource_type: "raw",
+      }
+    );
+    // Xoa file o local
+    fs.unlink(shelterLicense[0].path, (err) => {
+      if (err) console.error("Lỗi xóa file ở local:", err);
+    });
+
+    const shelter = await Shelter.create({
+      name: shelterRequestData.name,
+      shelterCode: shelterRequestData.shelterCode,
+      bio: "",
+      email: shelterRequestData.email,
+      hotline: shelterRequestData.hotline,
+      avatar: "",
+      address: shelterRequestData.address,
+      location: shelterRequestData.location,
+      background: "",
+      members: [
+        {
+          _id: requesterId,
+          roles: ["staff", "manager"],
+        },
+      ],
+      shelterLicense: {
+        fileName: shelterLicense[0]?.originalname,
+        url: uploadResult?.secure_url,
+        size: shelterLicense[0]?.size,
+        mimeType: shelterLicense[0]?.mimetype,
+        createAt: new Date(),
+        updateAt: new Date(),
+      },
+      aspiration: shelterRequestData.aspiration,
+      foundationDate: new Date(), //tam thoi
+      status: "verifying",
+      warningCount: 0,
+    });
+
+    return {
+      status: 200,
+      message: "Gửi yêu cầu thành lập trạm cứu hộ thành công",
+      shelterRequest: shelter,
+    };
+  } catch (error) {
+    // Xoa file o local
+    fs.unlink(shelterLicense[0].path, (err) => {
+      if (err) console.error("Lỗi xóa file ở local:", err);
+    });
+    throw error;
+  }
+};
 const getShelterProfile = async (shelterId) => {
   try {
-      const shelter = await Shelter.findById(shelterId);
+    const shelter = await Shelter.findById(shelterId);
 
-      if(!shelter){
-        throw new Error("Không tìm thấy shelter")
-      }
-      
-      return {
-        name: shelter.name,
-        shelterCode: shelter.shelterCode,
-        bio: shelter.bio,
-        email: shelter.email,
-        hotline: shelter.hotline,
-        avatar: shelter.avatar,
-        address: shelter.address,
-        background: shelter.background,
-      };
+    if (!shelter) {
+      throw new Error("Không tìm thấy shelter");
+    }
+
+    return {
+      name: shelter.name,
+      shelterCode: shelter.shelterCode,
+      bio: shelter.bio,
+      email: shelter.email,
+      hotline: shelter.hotline,
+      avatar: shelter.avatar,
+      address: shelter.address,
+      background: shelter.background,
+    };
   } catch (error) {
     throw error;
   }
-}
+};
 
 const editShelterProfile = async (shelterId, updatedData) => {
   try {
@@ -188,7 +202,14 @@ const editShelterProfile = async (shelterId, updatedData) => {
     const updatedFields = {};
 
     // Các trường cơ bản
-    const basicFields = ["name", "bio", "email", "hotline", "address", "location"];
+    const basicFields = [
+      "name",
+      "bio",
+      "email",
+      "hotline",
+      "address",
+      "location",
+    ];
     for (const field of basicFields) {
       if (updatedData[field] !== undefined) {
         updatedFields[field] = updatedData[field];
@@ -207,10 +228,13 @@ const editShelterProfile = async (shelterId, updatedData) => {
 
     // Upload background nếu có
     if (updatedData.background && typeof updatedData.background === "object") {
-      const result = await cloudinary.uploader.upload(updatedData.background.path, {
-        folder: "shelter_profiles",
-        resource_type: "image",
-      });
+      const result = await cloudinary.uploader.upload(
+        updatedData.background.path,
+        {
+          folder: "shelter_profiles",
+          resource_type: "image",
+        }
+      );
       updatedFields.background = result.secure_url;
       fs.unlink(updatedData.background.path, () => {}); // xóa file local
     }
@@ -230,100 +254,101 @@ const editShelterProfile = async (shelterId, updatedData) => {
       avatar: updatedShelter.avatar,
       address: updatedShelter.address,
       background: updatedShelter.background,
-
     };
   } catch (error) {
     throw error;
   }
 };
 const cancelShelterEstabilshmentRequest = async (requestId) => {
-    try {
-        const shelter = await Shelter.findOne({_id: requestId});
-        if (!shelter) {
-          throw new Error("Không tìm thấy shelter với requestId đã cho.");
-        }
-        if(["active", "banned", "rejected"].includes(shelter.status)){
-          throw new Error("Yêu cầu đã được xử lý trong quá khứ!")
-        }
-
-        await Shelter.findOneAndUpdate(
-            { _id: requestId },
-            { status: "cancelled"},
-          );
-
-        return {
-            status: 200,
-            message: "Hủy yêu cầu thành lập shelter thành công",
-        }
-    } catch (error) {
-        throw error;
-    }
-}
-const getShelterMembers = async (shelterId) => {
   try {
-      const shelter = await Shelter.findById(shelterId).populate("members._id");
-      if(!shelter){
-        throw new Error("Không tìm thấy shelter")
-      }
-      const formatUserOutput = (rawUser) => {
-        const u = rawUser._id; // bản gốc nằm trong _id
-        return {
-          id: u._id?.toString?.() || "",
+    const shelter = await Shelter.findOne({ _id: requestId });
+    if (!shelter) {
+      throw new Error("Không tìm thấy shelter với requestId đã cho.");
+    }
+    if (["active", "banned", "rejected"].includes(shelter.status)) {
+      throw new Error("Yêu cầu đã được xử lý trong quá khứ!");
+    }
 
-          avatar: u.avatar || null,
-          background: u.background || null,
-          bio: u.bio || null,
-          email: u.email || null,
-          fullName: u.fullName || null,
-          phoneNumber: u.phoneNumber || null,
-          status: u.status || null,
-          warningCount: u.warningCount ?? 0,
+    await Shelter.findOneAndUpdate({ _id: requestId }, { status: "cancelled" });
 
-          userRoles: u.roles || [],
-          shelterRoles: rawUser.roles || [], // từ field ngoài cùng
-        };
-      };
-
-      // const shelterMember = shelter.members.map(member => {
-      //   return {
-      //     avatar: member._id.name,
-      //     fullName: string;
-      //     email: string;
-      //     roles: [string];
-      //     status: string;
-      //     createdAt: Date;
-      //     updatedAt:
-      //   }
-      // })
-      const formattedUsers = shelter.members.map(formatUserOutput);
-      // console.log(formattedUsers)
-      return formattedUsers;
+    return {
+      status: 200,
+      message: "Hủy yêu cầu thành lập shelter thành công",
+    };
   } catch (error) {
     throw error;
   }
-}
+};
+const getShelterMembers = async (shelterId) => {
+  try {
+    const shelter = await Shelter.findById(shelterId).populate("members._id");
+    if (!shelter) {
+      throw new Error("Không tìm thấy shelter");
+    }
+    const formatUserOutput = (rawUser) => {
+      const u = rawUser._id; // bản gốc nằm trong _id
+      return {
+        id: u._id?.toString?.() || "",
+
+        avatar: u.avatar || null,
+        background: u.background || null,
+        bio: u.bio || null,
+        email: u.email || null,
+        fullName: u.fullName || null,
+        phoneNumber: u.phoneNumber || null,
+        status: u.status || null,
+        warningCount: u.warningCount ?? 0,
+
+        userRoles: u.roles || [],
+        shelterRoles: rawUser.roles || [], // từ field ngoài cùng
+      };
+    };
+
+    // const shelterMember = shelter.members.map(member => {
+    //   return {
+    //     avatar: member._id.name,
+    //     fullName: string;
+    //     email: string;
+    //     roles: [string];
+    //     status: string;
+    //     createdAt: Date;
+    //     updatedAt:
+    //   }
+    // })
+    const formattedUsers = shelter.members.map(formatUserOutput);
+    // console.log(formattedUsers)
+    return formattedUsers;
+  } catch (error) {
+    throw error;
+  }
+};
 // tim user du dieu kien de invite
 const findEligibleUsersToInvite = async (shelterId) => {
   try {
     // 1. Không thuộc trạm cứu hộ hiện tại
-    const currentMemberIds = (await getShelterMembers(shelterId)).map(member => member.id);
+    const currentMemberIds = (await getShelterMembers(shelterId)).map(
+      (member) => member.id
+    );
     const notCurrentMembers = await User.find({
-        _id: { $nin: currentMemberIds },
+      _id: { $nin: currentMemberIds },
     });
     // console.log(notCurrentMembers)
 
     // 2. Tài khoản đã kích hoạt
-    const activatedAccount = notCurrentMembers.filter(user => user.status === "active");
+    const activatedAccount = notCurrentMembers.filter(
+      (user) => user.status === "active"
+    );
     // console.log(activatedAccount);
 
     // 3. Không là thành viên của trạm cứu hộ nào khác
-    const allShelterMembers = await Shelter.find({status: "active"}).select("members");
-    const memberIdSet = new Set(allShelterMembers.map(id => id.toString()));
+    const allShelterMembers = await Shelter.find({ status: "active" }).select(
+      "members"
+    );
+    const memberIdSet = new Set(allShelterMembers.map((id) => id.toString()));
     const notInAnyShelter = activatedAccount.filter(
-        (user) => !memberIdSet.has(user._id)
+      (user) => !memberIdSet.has(user._id)
     );
     // console.log(notInAnyShelter);
-
 
     // 3. Không có yêu cầu thành lập trạm cứu hộ nào
     const verifyingShelters = await Shelter.find({
@@ -339,7 +364,9 @@ const findEligibleUsersToInvite = async (shelterId) => {
     );
 
     // 4. Không có lời mời hoặc yêu cầu đang chờ xử lý trong shelter hiện tại
-    const currentShelter = await Shelter.findById(shelterId).select("invitations");
+    const currentShelter = await Shelter.findById(shelterId).select(
+      "invitations"
+    );
     const pendingReceivers = new Set(
       currentShelter.invitations
         .filter(inv => inv.status === "pending")
@@ -347,22 +374,23 @@ const findEligibleUsersToInvite = async (shelterId) => {
     );
 
     const finalEligibleUsers = eligibleUsers.filter(
-      user => !pendingReceivers.has(user._id.toString())
+      (user) => !pendingReceivers.has(user._id.toString())
     );
 
     // console.log(eligibleUsers);
-    return finalEligibleUsers.map(user => {
+    return finalEligibleUsers.map((user) => {
       return {
         email: user.email,
-        avatar: user.avatar || "https://static.vecteezy.com/system/resources/thumbnails/009/292/244/small/default-avatar-icon-of-social-media-user-vector.jpg"
-      }
+        avatar:
+          user.avatar ||
+          "https://static.vecteezy.com/system/resources/thumbnails/009/292/244/small/default-avatar-icon-of-social-media-user-vector.jpg",
+      };
     });
   } catch (error) {
     console.error("Lỗi khi tìm user đủ điều kiện:", error.message);
     throw error;
   }
 };
-
 
 // shelter gui yeu cau cho user
 const inviteShelterMembers = async (shelterId, emailsList = [], roles) => {
@@ -407,7 +435,7 @@ const inviteShelterMembers = async (shelterId, emailsList = [], roles) => {
         shelter: shelterId,
         user: user._id,
         type: "invitation",
-        roles, 
+        roles,
         status: "pending",
         createdAt: new Date(),
         updatedAt: new Date(),
@@ -437,7 +465,7 @@ const inviteShelterMembers = async (shelterId, emailsList = [], roles) => {
   }
 };
 
-// shelter lay danh sach cac yeu cau 
+// shelter lay danh sach cac yeu cau
 const getShelterInvitationsAndRequests = async (shelterId) => {
   try {
     const shelter = await Shelter.findById(shelterId).populate([
@@ -526,7 +554,6 @@ const getUserInvitationsAndRequests = async (userId) => {
   }
 };
 
-
 // user xu ly loi moi vao shelter
 const reviewShelterInvitationRequest = async (shelterId, userId, decision) => {
   // const session = await mongoose.startSession();
@@ -543,14 +570,14 @@ const reviewShelterInvitationRequest = async (shelterId, userId, decision) => {
       (inv) => {
         return String(inv.user) === userId &&
         inv.type === "invitation" &&
-        inv.status === "pending" && inv
-      }
-        
-    );
+        inv.status === "pending" &&
+        inv
+      );
+    });
     // console.log(currInvitation)
     if (!currInvitation) {
       throw new Error("Không tìm thấy lời mời phù hợp");
-    };
+    }
 
     if (decision === "approve") {
       // 3. Cập nhật invitation thành "accepted"
@@ -558,9 +585,7 @@ const reviewShelterInvitationRequest = async (shelterId, userId, decision) => {
       currInvitation.updatedAt = new Date();
 
       // 4. Thêm user vào members nếu chưa có
-      const alreadyMember = shelter.members.some(
-        (m) => m._id === userId
-      );
+      const alreadyMember = shelter.members.some((m) => m._id === userId);
       if (!alreadyMember) {
         shelter.members.push({
           _id: userId,
@@ -645,9 +670,7 @@ const kickShelterMember = async (shelterId, userId) => {
       shelterId,
       {
         $pull: {
-          members: typeof member === "object"
-            ? { _id: userId }
-            : userId,
+          members: typeof member === "object" ? { _id: userId } : userId,
         },
       },
       { new: true }
@@ -717,6 +740,7 @@ const requestIntoShelter = async (shelterEmail,senderId) => {
     throw error;
   }
 };
+
 const getEligibleShelters = async (userId) => {
   try {
     const shelters = await Shelter.find({
@@ -807,215 +831,291 @@ const reviewShelterRequest = async (shelterId, requestId, decision) => {
 };
 
 
+const getShelterCaringPetsCount = async (shelterId) => {
+  return await Pet.countDocuments({ shelter: shelterId, status: "caring" });
+};
 
+const getShelterAdoptedPetsCount = async (shelterId) => {
+  return await Pet.countDocuments({ shelter: shelterId, status: "adopted" });
+};
 
+const getShelterPostsCount = async (shelterId) => {
+  return await Post.countDocuments({ shelter: shelterId });
+};
 
+const getShelterMembersCount = async (shelterId) => {
+  const shelter = await Shelter.findById(shelterId);
+  return shelter?.members?.length || 0;
+};
 
-
-
-
+const getShelterPetGrowthByMonth = async (shelterId) => {
+  const now = new Date();
+  const firstDayOfYear = new Date(now.getFullYear(), 0, 1);
+  const result = await Pet.aggregate([
+    {
+      $match: {
+        shelter: new mongoose.Types.ObjectId(shelterId),
+        createdAt: { $gte: firstDayOfYear },
+      },
+    },
+    {
+      $group: {
+        _id: { $month: "$createdAt" },
+        count: { $sum: 1 },
+      },
+    },
+    {
+      $sort: { _id: 1 },
+    },
+  ]);
+  return result;
+};
 
 // ADMIN
 const getAllShelter = async () => {
-    try {
-        const shelters = await Shelter.find({status: {$in: ["active", "banned"]}});
-        return shelters.map((shelter, index) => {
-          return {
-            _id: shelter?._id,
-            avatar: shelter?.avatar,
-            shelterCode: shelter?.shelterCode,
-            name: shelter?.name,
-            email: shelter?.email,
-            hotline: shelter?.hotline,
-            address: shelter?.address,
-            createdBy: {
-              fullName: shelter.members[0]._id.fullName,
-              avatar: shelter.members[0]._id.avatar,
-            },
-            membersCount: shelter?.members.length,
-            invitationsCount: shelter?.invitations.length,
-            shelterLicenseURL: shelter?.shelterLicense.url,
-            foundationDate: shelter?.foundationDate,
-            warningCount: shelter?.warningCount,
-            status: shelter?.status,
-            createdAt: shelter?.createdAt,
-            updatedAt: shelter?.updatedAt,
-          };
-        });
-    } catch (error) {
-        throw error;
-    }
-}
+  try {
+    const shelters = await Shelter.find({
+      status: { $in: ["active", "banned"] },
+    });
+    return shelters.map((shelter, index) => {
+      return {
+        _id: shelter?._id,
+        avatar: shelter?.avatar,
+        shelterCode: shelter?.shelterCode,
+        name: shelter?.name,
+        email: shelter?.email,
+        hotline: shelter?.hotline,
+        address: shelter?.address,
+        createdBy: {
+          fullName: shelter.members[0]._id.fullName,
+          avatar: shelter.members[0]._id.avatar,
+        },
+        membersCount: shelter?.members.length,
+        invitationsCount: shelter?.invitations.length,
+        shelterLicenseURL: shelter?.shelterLicense.url,
+        foundationDate: shelter?.foundationDate,
+        warningCount: shelter?.warningCount,
+        status: shelter?.status,
+        createdAt: shelter?.createdAt,
+        updatedAt: shelter?.updatedAt,
+      };
+    });
+  } catch (error) {
+    throw error;
+  }
+};
 const getAllShelterEstablishmentRequests = async () => {
-    try {
-        const shelters = await Shelter.find({}).populate("members._id");
-        return shelters.map((shelter, index) => {
-          return {
-            _id: shelter._id,
-            avatar: shelter.avatar,
-            shelterCode: shelter.shelterCode,
-            status: shelter.status,
-            name: shelter.name,
-            email: shelter.email,
-            hotline: shelter.hotline,
-            address: shelter.address,
-            aspiration: shelter.aspiration,
-            createdBy: {
-              fullName: shelter.members[0]._id.fullName,
-              avatar: shelter.members[0]._id.avatar,
-            },
-            rejectReason: shelter.rejectReason,
-            shelterLicenseURL: shelter.shelterLicense.url,
-            createdAt: shelter.createdAt,
-            updateAt: shelter.updatedAt,
-          };
-        });
-    } catch (error) {
-        throw error;
-    }
-}
+  try {
+    const shelters = await Shelter.find({}).populate("members._id");
+    return shelters.map((shelter, index) => {
+      return {
+        _id: shelter._id,
+        avatar: shelter.avatar,
+        shelterCode: shelter.shelterCode,
+        status: shelter.status,
+        name: shelter.name,
+        email: shelter.email,
+        hotline: shelter.hotline,
+        address: shelter.address,
+        aspiration: shelter.aspiration,
+        createdBy: {
+          fullName: shelter.members[0]._id.fullName,
+          avatar: shelter.members[0]._id.avatar,
+        },
+        rejectReason: shelter.rejectReason,
+        shelterLicenseURL: shelter.shelterLicense.url,
+        createdAt: shelter.createdAt,
+        updateAt: shelter.updatedAt,
+      };
+    });
+  } catch (error) {
+    throw error;
+  }
+};
 const getOverviewStatistic = async () => {
-    try {
-        const calculateDifference = (current, before) => {
-            return ["Infinity%", "NaN%"].includes(((current - before) / before * 100).toFixed(2) + "%") 
-            ? "0%" 
-            : (((current - before) / before * 100).toFixed(2) + "%");
-        }
-        // Dau thang
-        const startOfThisMonth = new Date(new Date().getFullYear(), new Date().getMonth(), 1);
+  try {
+    const calculateDifference = (current, before) => {
+      return ["Infinity%", "NaN%"].includes(
+        (((current - before) / before) * 100).toFixed(2) + "%"
+      )
+        ? "0%"
+        : (((current - before) / before) * 100).toFixed(2) + "%";
+    };
+    // Dau thang
+    const startOfThisMonth = new Date(
+      new Date().getFullYear(),
+      new Date().getMonth(),
+      1
+    );
 
-        const totalSheltersLastMonth = await Shelter.countDocuments({createdAt: { $lt: startOfThisMonth}});
-        const totalShelters = await Shelter.countDocuments();
-        const shelterChangePercent = calculateDifference(totalShelters, totalSheltersLastMonth);
+    const totalSheltersLastMonth = await Shelter.countDocuments({
+      createdAt: { $lt: startOfThisMonth },
+    });
+    const totalShelters = await Shelter.countDocuments();
+    const shelterChangePercent = calculateDifference(
+      totalShelters,
+      totalSheltersLastMonth
+    );
 
-        const totalUsersLastMonth = await User.countDocuments({createdAt: { $lt: startOfThisMonth}});
-        const totalUsers = await User.countDocuments();
-        const userChangePercent = calculateDifference(totalUsers, totalUsersLastMonth);
+    const totalUsersLastMonth = await User.countDocuments({
+      createdAt: { $lt: startOfThisMonth },
+    });
+    const totalUsers = await User.countDocuments();
+    const userChangePercent = calculateDifference(
+      totalUsers,
+      totalUsersLastMonth
+    );
 
-        const rescuedPetsLastMonth = await Pet.countDocuments({createdAt: { $lt: startOfThisMonth}});
-        const rescuedPets = await Pet.countDocuments();
-        const rescuedPetsChangePercent = calculateDifference(rescuedPets, rescuedPetsLastMonth);
+    const rescuedPetsLastMonth = await Pet.countDocuments({
+      createdAt: { $lt: startOfThisMonth },
+    });
+    const rescuedPets = await Pet.countDocuments();
+    const rescuedPetsChangePercent = calculateDifference(
+      rescuedPets,
+      rescuedPetsLastMonth
+    );
 
-        const adoptedPetsLastMonth = await Pet.countDocuments({createdAt: { $lt: startOfThisMonth}, status: "adopted"});
-        const adoptedPets = await Pet.countDocuments({ status: "adopted" });
-        const adoptedPetsChangePercent = calculateDifference(adoptedPets, adoptedPetsLastMonth);
+    const adoptedPetsLastMonth = await Pet.countDocuments({
+      createdAt: { $lt: startOfThisMonth },
+      status: "adopted",
+    });
+    const adoptedPets = await Pet.countDocuments({ status: "adopted" });
+    const adoptedPetsChangePercent = calculateDifference(
+      adoptedPets,
+      adoptedPetsLastMonth
+    );
 
-        const totalPostsLastMonth = await Post.countDocuments({createdAt: { $lt: startOfThisMonth}});
-        const totalPosts = await Post.countDocuments();
-        const totalPostsChangePercent = calculateDifference(totalPosts, totalPostsLastMonth);
+    const totalPostsLastMonth = await Post.countDocuments({
+      createdAt: { $lt: startOfThisMonth },
+    });
+    const totalPosts = await Post.countDocuments();
+    const totalPostsChangePercent = calculateDifference(
+      totalPosts,
+      totalPostsLastMonth
+    );
 
-        const totalBlogsLastMonth = await Blog.countDocuments({createdAt: { $lt: startOfThisMonth}});
-        const totalBlogs = await Blog.countDocuments();
-        const totalBlogsChangePercent = calculateDifference(totalBlogs, totalBlogsLastMonth);
+    const totalBlogsLastMonth = await Blog.countDocuments({
+      createdAt: { $lt: startOfThisMonth },
+    });
+    const totalBlogs = await Blog.countDocuments();
+    const totalBlogsChangePercent = calculateDifference(
+      totalBlogs,
+      totalBlogsLastMonth
+    );
 
-        const totalReportsLastMonth = await Blog.countDocuments({createdAt: { $lt: startOfThisMonth}});
-        const totalReports = await Report.countDocuments();
-        const totalReportsChangePercent = calculateDifference(totalReports, totalReportsLastMonth);
+    const totalReportsLastMonth = await Blog.countDocuments({
+      createdAt: { $lt: startOfThisMonth },
+    });
+    const totalReports = await Report.countDocuments();
+    const totalReportsChangePercent = calculateDifference(
+      totalReports,
+      totalReportsLastMonth
+    );
 
-        const totalDonationLastMonth = await Donation.aggregate([
-          {
-            $match: {
-              createdAt: { $lte: startOfThisMonth},
-            },
+    const totalDonationLastMonth = await Donation.aggregate([
+      {
+        $match: {
+          createdAt: { $lte: startOfThisMonth },
+        },
+      },
+      { $group: { _id: null, total: { $sum: "$amount" } } },
+    ]);
+    const donationAmountLastMonth = totalDonationLastMonth[0]?.total || 0;
+    const totalDonation = await Donation.aggregate([
+      { $group: { _id: null, total: { $sum: "$amount" } } },
+    ]);
+    const donationAmount = totalDonation[0]?.total || 0;
+    const donationAmountChangePercent = calculateDifference(
+      totalDonation,
+      donationAmountLastMonth
+    );
+
+    return {
+      status: 200,
+      message: "Lấy dữ liệu thống tổng quan thành công!",
+      overviewStatistics: {
+        shelter: {
+          totalShelters,
+          shelterChangePercent,
+        },
+        user: {
+          totalUsers,
+          userChangePercent,
+        },
+        pet: {
+          rescuedPets: {
+            current: rescuedPets,
+            changePercent: rescuedPetsChangePercent,
           },
-          { $group: { _id: null, total: { $sum: "$amount" } } },
-        ]);
-        const donationAmountLastMonth = totalDonationLastMonth[0]?.total || 0;
-        const totalDonation = await Donation.aggregate([
-          { $group: { _id: null, total: { $sum: "$amount" } } },
-        ]);
-        const donationAmount = totalDonation[0]?.total || 0;
-        const donationAmountChangePercent = calculateDifference(totalDonation, donationAmountLastMonth);
-
-        return {
-            status: 200,
-            message: "Lấy dữ liệu thống tổng quan thành công!",
-            overviewStatistics: {
-                shelter: {
-                    totalShelters,
-                    shelterChangePercent
-                },
-                user: {
-                    totalUsers,
-                    userChangePercent,
-                },
-                pet: {
-                    rescuedPets: {
-                        current: rescuedPets,
-                        changePercent: rescuedPetsChangePercent
-                    },
-                    adoptedPets: {
-                        current: adoptedPets,
-                        changePercent: adoptedPetsChangePercent
-                    }
-                },
-                post: {
-                    totalPosts,
-                    totalPostsChangePercent
-                },
-                blog: {
-                    totalBlogs,
-                    totalBlogsChangePercent
-                },
-                report: {
-                    totalReports,
-                    totalReportsChangePercent
-                },
-                donation: {
-                    donationAmount,
-                    donationAmountChangePercent
-                }
-            }
-        };
-    } catch (error) {
-        throw error;
+          adoptedPets: {
+            current: adoptedPets,
+            changePercent: adoptedPetsChangePercent,
+          },
+        },
+        post: {
+          totalPosts,
+          totalPostsChangePercent,
+        },
+        blog: {
+          totalBlogs,
+          totalBlogsChangePercent,
+        },
+        report: {
+          totalReports,
+          totalReportsChangePercent,
+        },
+        donation: {
+          donationAmount,
+          donationAmountChangePercent,
+        },
+      },
+    };
+  } catch (error) {
+    throw error;
+  }
+};
+const reviewShelterEstablishmentRequest = async ({
+  requestId,
+  decision = "reject",
+  rejectReason = "No reason",
+}) => {
+  try {
+    const shelter = await Shelter.findOne({ _id: requestId });
+    if (!shelter) {
+      throw new Error("Không tìm thấy shelter với requestId đã cho.");
     }
-}
-const reviewShelterEstablishmentRequest = async ({requestId, decision = "reject", rejectReason = "No reason"}) => {
-    try {
-        const shelter = await Shelter.findOne({_id: requestId});
-        if (!shelter) {
-          throw new Error("Không tìm thấy shelter với requestId đã cho.");
-        }
-        if(["active", "banned", "rejected"].includes(shelter.status)){
-          throw new Error("Yêu cầu đã được xử lý trong quá khứ!")
-        }
-
-        // hoan thanh viec thanh lap shelter
-        if (decision === "approve") {
-          await Shelter.findOneAndUpdate(
-            { _id: requestId },
-            { status: "active" },
-          );
-        } else if (decision === "reject") {
-          await Shelter.findOneAndUpdate(
-            { _id: requestId },
-            { status: "rejected",
-              rejectReason: rejectReason,
-             },
-          );
-          return {
-            status: 200,
-            message: "Xử lý yêu cầu thành lập shelter thành công",
-            decision: decision === "approve" ? "Chấp thuận" : "Từ chối"
-          }
-        }else{
-            throw new Error("Thiếu quyết định!")
-        }
-
-        // reject cac yeu cau moi vao shelter (neu co)
-        
-
-        return {
-            status: 200,
-            message: "Xử lý yêu cầu thành lập shelter thành công",
-            decision: decision === "approve" ? "Chấp thuận" : "Từ chối"
-        }
-    } catch (error) {
-        throw error;
+    if (["active", "banned", "rejected"].includes(shelter.status)) {
+      throw new Error("Yêu cầu đã được xử lý trong quá khứ!");
     }
-}
 
+    // hoan thanh viec thanh lap shelter
+    if (decision === "approve") {
+      await Shelter.findOneAndUpdate({ _id: requestId }, { status: "active" });
+    } else if (decision === "reject") {
+      await Shelter.findOneAndUpdate(
+        { _id: requestId },
+        { status: "rejected", rejectReason: rejectReason }
+      );
+      return {
+        status: 200,
+        message: "Xử lý yêu cầu thành lập shelter thành công",
+        decision: decision === "approve" ? "Chấp thuận" : "Từ chối",
+      };
+    } else {
+      throw new Error("Thiếu quyết định!");
+    }
+
+    // reject cac yeu cau moi vao shelter (neu co)
+
+    return {
+      status: 200,
+      message: "Xử lý yêu cầu thành lập shelter thành công",
+      decision: decision === "approve" ? "Chấp thuận" : "Từ chối",
+    };
+  } catch (error) {
+    throw error;
+  }
+};
 
 const shelterService = {
   // USER
@@ -1035,6 +1135,11 @@ const shelterService = {
   requestIntoShelter,
   getEligibleShelters,
   reviewShelterRequest,
+  getShelterCaringPetsCount,
+  getShelterAdoptedPetsCount,
+  getShelterPostsCount,
+  getShelterMembersCount,
+  getShelterPetGrowthByMonth,
 
   // ADMIN
   getAllShelter,
@@ -1043,4 +1148,4 @@ const shelterService = {
   reviewShelterEstablishmentRequest,
 };
 
-module.exports = shelterService; 
+module.exports = shelterService;

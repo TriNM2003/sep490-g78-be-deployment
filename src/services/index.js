@@ -9,5 +9,7 @@ module.exports = {
     petService,
     adoptionSubmissionService,
     medicalRecordService,
-    shelterService
+    shelterService,
+    adoptionTemplateService,
+    adoptionFormService,
 }

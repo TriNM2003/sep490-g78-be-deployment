@@ -6,20 +6,21 @@ const createMedicalRecord = async (req, res) => {
     console.log("userId in createMedicalRecord:", userId);
     const record = await medicalRecordService.createMedicalRecord({
       ...req.body,
-      performedBy: userId,
     });
     res.status(201).json(record);
   } catch (error) {
     res.status(500).json({ message: error.message });
-    s;
   }
 };
 const getMedicalRecordsByPet = async (req, res) => {
   try {
-    const { petId } = req.query;
+    const petId = req.params.petId || req.query.petId;
+    const page = parseInt(req.query.page) || 1;
+    const limit = parseInt(req.query.limit) || 3;
     if (!petId) return res.status(400).json({ message: "petId is required" });
-    const records = await medicalRecordService.getMedicalRecordsByPet(petId);
-    res.status(200).json({ records });
+    const { records, total } =
+      await medicalRecordService.getMedicalRecordsByPet(petId, page, limit);
+    res.status(200).json({ records, total, page, limit });
   } catch (error) {
     res.status(500).json({ message: error.message });
   }
@@ -51,14 +52,14 @@ const deleteMedicalRecord = async (req, res) => {
   }
 };
 const getPetMedicalRecord = async (req, res) => {
-    try {
-        const { petId } = req.params; // Assuming the pet ID is in the request parameters
-        const medicalRecord = await medicalRecordService.getPetMedicalRecord(petId);
-        res.status(200).json(medicalRecord);
-    } catch (error) {
-        res.status(500).json({ message: error.message });
-    }
-}
+  try {
+    const { petId } = req.params; // Assuming the pet ID is in the request parameters
+    const medicalRecord = await medicalRecordService.getPetMedicalRecord(petId);
+    res.status(200).json(medicalRecord);
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+};
 const getMedicalRecordById = async (req, res) => {
   try {
     const record = await medicalRecordService.getMedicalRecordById(
@@ -80,4 +81,3 @@ module.exports = {
   getMedicalRecordsByPet,
   getPetMedicalRecord,
 };
-
