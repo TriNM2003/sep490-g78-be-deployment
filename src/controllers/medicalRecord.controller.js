@@ -9,7 +9,7 @@ const createMedicalRecord = async (req, res) => {
     });
     res.status(201).json(record);
   } catch (error) {
-    res.status(500).json({ message: error.message });
+    res.status(400).json({ message: error.message });
   }
 };
 const getMedicalRecordsByPet = async (req, res) => {
@@ -22,7 +22,7 @@ const getMedicalRecordsByPet = async (req, res) => {
       await medicalRecordService.getMedicalRecordsByPet(petId, page, limit);
     res.status(200).json({ records, total, page, limit });
   } catch (error) {
-    res.status(500).json({ message: error.message });
+    res.status(400).json({ message: error.message });
   }
 };
 const updateMedicalRecord = async (req, res) => {
@@ -35,7 +35,7 @@ const updateMedicalRecord = async (req, res) => {
       return res.status(404).json({ message: "Medical record not found" });
     res.status(200).json(record);
   } catch (error) {
-    res.status(500).json({ message: error.message });
+    res.status(400).json({ message: error.message });
   }
 };
 
@@ -48,7 +48,7 @@ const deleteMedicalRecord = async (req, res) => {
       return res.status(404).json({ message: "Medical record not found" });
     res.status(200).json({ message: "Medical record deleted successfully" });
   } catch (error) {
-    res.status(500).json({ message: error.message });
+    res.status(400).json({ message: error.message });
   }
 };
 const getPetMedicalRecord = async (req, res) => {
@@ -57,7 +57,7 @@ const getPetMedicalRecord = async (req, res) => {
     const medicalRecord = await medicalRecordService.getPetMedicalRecord(petId);
     res.status(200).json(medicalRecord);
   } catch (error) {
-    res.status(500).json({ message: error.message });
+    res.status(400).json({ message: error.message });
   }
 };
 const getMedicalRecordById = async (req, res) => {
@@ -69,7 +69,7 @@ const getMedicalRecordById = async (req, res) => {
       return res.status(404).json({ message: "Medical record not found" });
     res.status(200).json(record);
   } catch (error) {
-    res.status(500).json({ message: error.message });
+    res.status(400).json({ message: error.message });
   }
 };
 

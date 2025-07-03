@@ -104,7 +104,6 @@ async function inviteShelterMembers(req, res, next) {
     const { emailsList, roles } = req.body;
     const response = await shelterService.inviteShelterMembers(
       req.params.shelterId,
-      req.payload.id,
       emailsList,
       roles
     );

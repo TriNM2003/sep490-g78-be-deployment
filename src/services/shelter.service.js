@@ -178,6 +178,7 @@ const getShelterProfile = async (shelterId) => {
     }
 
     return {
+      _id: shelter._id,
       name: shelter.name,
       shelterCode: shelter.shelterCode,
       bio: shelter.bio,
