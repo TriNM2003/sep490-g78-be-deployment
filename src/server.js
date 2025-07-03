@@ -9,14 +9,25 @@ const cookieParser = require("cookie-parser");
 const passport = require("./configs/passport.config");
 
 
-const {userRouter, petRouter, authRouter, medicalRecordRouter, adoptionSubmissionRouter, shelterRouter, adoptionTemplateRouter, adoptionFormRouter} = require("./routes");
+const {
+  userRouter,
+  petRouter,
+  authRouter,
+  medicalRecordRouter,
+  adoptionSubmissionRouter,
+  shelterRouter,
+  adoptionTemplateRouter,
+  speciesRouter,
+  breedRouter,
+  adoptionFormRouter,
+} = require("./routes");
+
 
 const path = require("path");
 const http = require("http");
 const db = require("./models");
 const app = express();
 const session = require("express-session");
-
 
 // Sử dụng cors middleware để cho phép request từ localhost:3000
 app.use(
@@ -56,13 +67,13 @@ app.use("/pets/:petId/adoption-submissions", adoptionSubmissionRouter);
 app.use("/shelters/:shelterId/adoptionForms", adoptionFormRouter );
 app.use("/shelters/:shelterId/adoptionTemplates", adoptionTemplateRouter);
 // app.use("/shelters/:shelterId/consentForms", );
+app.use("/species", speciesRouter);
+app.use("/breeds", breedRouter);
 
 // app.use("/posts", );
 // app.use("/posts/:postId/comments", );
 // app.use("/notifications", );
-app.use("/uploads", express.static("uploads"));
-
-
+app.use("/uploads", express.static(path.join(__dirname, "../uploads")));
 
 app.use(async (req, res, next) => {
   next(httpsErrors(404, "Bad Request"));
