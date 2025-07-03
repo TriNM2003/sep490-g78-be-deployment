@@ -223,6 +223,9 @@ const editProfile = async (userId, profileData, files) => {
     //console.log("Updated user:", updatedUser);
     return updatedUser;
   } catch (error) {
+    fs.unlink(tempFilePaths, (err) => {
+      if (err) console.error("Error deleting temp files:", err);
+    });
     throw error;
   }
 };

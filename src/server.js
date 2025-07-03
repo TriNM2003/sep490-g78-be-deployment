@@ -9,7 +9,7 @@ const cookieParser = require("cookie-parser");
 const passport = require("./configs/passport.config");
 
 
-const {userRouter, petRouter, authRouter, medicalRecordRouter, adoptionSubmissionRouter, shelterRouter, adoptionTemplateRouter} = require("./routes");
+const {userRouter, petRouter, authRouter, medicalRecordRouter, adoptionSubmissionRouter, shelterRouter, adoptionTemplateRouter, postRouter} = require("./routes");
 
 const path = require("path");
 const http = require("http");
@@ -57,7 +57,7 @@ app.use("/pets/:petId/adoption-submissions", adoptionSubmissionRouter);
 app.use("/shelters/:shelterId/adoptionTemplates", adoptionTemplateRouter);
 // app.use("/shelters/:shelterId/consentForms", );
 
-// app.use("/posts", );
+app.use("/posts", postRouter);
 // app.use("/posts/:postId/comments", );
 // app.use("/notifications", );
 app.use("/uploads", express.static("uploads"));

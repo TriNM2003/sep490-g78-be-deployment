@@ -7,6 +7,14 @@ const reportSchema = new mongoose.Schema(
       enum: ["user", "post"],
       required: true,
     },
+    postReported: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "Post",
+    },
+    userReported: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "User",
+    },
     reportedBy: {
       type: mongoose.Schema.Types.ObjectId,
       ref: "User",
