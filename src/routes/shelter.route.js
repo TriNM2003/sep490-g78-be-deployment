@@ -48,46 +48,22 @@ shelterRouter.get(
   shelterController.getShelterDashboardStatistics
 );
 shelterRouter.get("/get-all", shelterController.getAll);
-shelterRouter.get(
-  "/get-members/:shelterId",
+shelterRouter.get("/get-members/:shelterId", 
   [verifyAccessToken, isShelterManager],
-  shelterController.getShelterMembers
-);
-shelterRouter.get(
-  "/find-eligible-users/:shelterId",
+   shelterController.getShelterMembers);
+  shelterRouter.get("/find-eligible-users/:shelterId", 
   [verifyAccessToken, isShelterManager],
-  shelterController.findEligibleUsersToInvite
-);
-shelterRouter.post(
-  "/invite-members/:shelterId",
-  [verifyAccessToken, isShelterManager],
-  shelterController.inviteShelterMembers
-);
-shelterRouter.get(
-  "/get-shelter-invitations-and-requests/:shelterId",
-  [verifyAccessToken, isShelterManager],
-  shelterController.getShelterInvitationsAndRequests
-);
-shelterRouter.get(
-  "/get-user-invitations-and-requests",
-  verifyAccessToken,
-  shelterController.getUserInvitationsAndRequests
-);
-shelterRouter.put(
-  "/review-shelter-invitation",
-  verifyAccessToken,
-  shelterController.reviewShelterInvitationRequest
-);
-shelterRouter.put(
-  "/:shelterId/kick-member",
-  [verifyAccessToken, isShelterManager],
-  shelterController.kickShelterMember
-);
-shelterRouter.put(
-  "/send-staff-request/:shelterId",
-  verifyAccessToken,
-  shelterController.requestIntoShelter
-);
+   shelterController.findEligibleUsersToInvite);
+shelterRouter.post("/invite-members/:shelterId", [verifyAccessToken, isShelterManager], shelterController.inviteShelterMembers);
+shelterRouter.get("/get-shelter-invitations-and-requests/:shelterId", 
+  [verifyAccessToken, isShelterManager], 
+  shelterController.getShelterInvitationsAndRequests);
+shelterRouter.get("/get-user-invitations-and-requests", verifyAccessToken, shelterController.getUserInvitationsAndRequests);
+shelterRouter.put("/review-shelter-invitation", verifyAccessToken, shelterController.reviewShelterInvitationRequest);
+shelterRouter.put("/:shelterId/kick-member", [verifyAccessToken, isShelterManager], shelterController.kickShelterMember);
+shelterRouter.put("/send-staff-request/:shelterEmail", verifyAccessToken, shelterController.requestIntoShelter);
+shelterRouter.get("/eligible-shelters", verifyAccessToken, shelterController.getEligibleShelters);
+shelterRouter.put("/:shelterId/review-user-request", [verifyAccessToken, isShelterManager], shelterController.reviewShelterRequest);
 
 // ADMIN
 shelterRouter.get(

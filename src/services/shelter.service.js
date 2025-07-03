@@ -369,8 +369,8 @@ const findEligibleUsersToInvite = async (shelterId) => {
     );
     const pendingReceivers = new Set(
       currentShelter.invitations
-        .filter((inv) => inv.status === "pending")
-        .map((inv) => inv.receiver.toString())
+        .filter(inv => inv.status === "pending")
+        .map(inv => inv.user.toString())
     );
 
     const finalEligibleUsers = eligibleUsers.filter(
@@ -393,12 +393,7 @@ const findEligibleUsersToInvite = async (shelterId) => {
 };
 
 // shelter gui yeu cau cho user
-const inviteShelterMembers = async (
-  shelterId,
-  senderId,
-  emailsList = [],
-  roles
-) => {
+const inviteShelterMembers = async (shelterId, emailsList = [], roles) => {
   try {
     const shelter = await Shelter.findById(shelterId);
     if (!shelter) {
@@ -426,7 +421,7 @@ const inviteShelterMembers = async (
       // Check nếu đã có lời mời đang pending
       const existing = shelter.invitations.find(
         (inv) =>
-          inv.receiver.toString() === user._id.toString() &&
+          inv.user.toString() === user._id.toString() &&
           inv.status === "pending"
       );
       if (existing) {
@@ -437,8 +432,8 @@ const inviteShelterMembers = async (
       // Tạo invitation mới
       const newInvitation = {
         _id: new mongoose.Types.ObjectId(),
-        sender: senderId,
-        receiver: user._id,
+        shelter: shelterId,
+        user: user._id,
         type: "invitation",
         roles,
         status: "pending",
@@ -474,35 +469,30 @@ const inviteShelterMembers = async (
 const getShelterInvitationsAndRequests = async (shelterId) => {
   try {
     const shelter = await Shelter.findById(shelterId).populate([
-      { path: "invitations.sender", select: "email fullName avatar" },
-      { path: "invitations.receiver", select: "email fullName avatar" },
+      { path: "invitations.shelter", select: "email name avatar" },
+      { path: "invitations.user", select: "email fullName avatar" },
     ]);
 
     if (!shelter) {
       throw new Error("Không tìm thấy shelter");
     }
+    console.log(shelter)
 
     // Mapping dữ liệu đúng interface
     const formatted = shelter.invitations.map((invitation) => ({
       requestId: invitation._id,
       requestType: invitation.type || "No type found",
-      sender: {
-        id: invitation.sender._id,
-        email: invitation.sender.email,
-        fullName: invitation.sender.fullName,
-        avatar: invitation.sender.avatar,
-      },
-      receiver: {
-        id: invitation.receiver._id,
-        email: invitation.receiver.email,
-        fullName: invitation.receiver.fullName,
-        avatar: invitation.receiver.avatar,
-      },
       shelter: {
-        id: shelter._id,
-        name: shelter.name,
-        avatar: shelter.avatar,
-        background: shelter.background,
+        id: invitation.shelter._id,
+        email: invitation.shelter.email,
+        name: invitation.shelter.fullName,
+        avatar: invitation.shelter.avatar,
+      },
+      user: {
+        id: invitation.user._id,
+        email: invitation.user.email,
+        fullName: invitation.user.fullName,
+        avatar: invitation.user.avatar,
       },
       roles: invitation.roles || [],
       requestStatus: invitation.status,
@@ -519,44 +509,36 @@ const getShelterInvitationsAndRequests = async (shelterId) => {
 // user lay danh sach cac yeu cau
 const getUserInvitationsAndRequests = async (userId) => {
   try {
+    // Tìm tất cả shelter có invitation liên quan đến user
     const shelters = await Shelter.find({
-      invitations: {
-        $elemMatch: {
-          $or: [{ sender: userId }, { receiver: userId }],
-        },
-      },
+      "invitations.user": userId,
     })
-      .populate("invitations.sender", "email fullName avatar")
-      .populate("invitations.receiver", "email fullName avatar");
+      .select("invitations") // chỉ lấy trường invitations để gọn
+      .populate("invitations.shelter", "email name avatar")
+      .populate("invitations.user", "email fullName avatar");
 
     const results = shelters.flatMap((shelter) =>
       shelter.invitations
-        .filter(
-          (inv) =>
-            inv.sender?._id?.toString() === userId.toString() ||
-            inv.receiver?._id?.toString() === userId.toString()
-        )
+        .filter((inv) => String(inv.user?._id) === String(userId))
         .map((inv) => ({
           requestId: inv._id,
           requestType: inv.type, // "invitation" hoặc "request"
-          sender: {
-            id: inv.sender._id,
-            email: inv.sender.email,
-            fullName: inv.sender.fullName,
-            avatar: inv.sender.avatar,
-          },
-          receiver: {
-            id: inv.receiver._id,
-            email: inv.receiver.email,
-            fullName: inv.receiver.fullName,
-            avatar: inv.receiver.avatar,
-          },
-          shelter: {
-            id: shelter._id,
-            name: shelter.name,
-            avatar: shelter.avatar,
-            background: shelter.background,
-          },
+          shelter: inv.shelter
+            ? {
+                id: inv.shelter._id,
+                email: inv.shelter.email,
+                name: inv.shelter.name,
+                avatar: inv.shelter.avatar,
+              }
+            : null,
+          user: inv.user
+            ? {
+                id: inv.user._id,
+                email: inv.user.email,
+                fullName: inv.user.fullName,
+                avatar: inv.user.avatar,
+              }
+            : null,
           roles: inv.roles || [],
           requestStatus: inv.status,
           createdAt: inv.createdAt,
@@ -572,63 +554,6 @@ const getUserInvitationsAndRequests = async (userId) => {
   }
 };
 
-// shelter xu ly yeu cau vao shelter
-// const reviewStaffRequest = async (shelterId, requestId, action) => {
-//   try {
-//     if (!["accepted", "declined"].includes(action)) {
-//       throw new Error("Hành động không hợp lệ (chỉ nhận 'accepted' hoặc 'declined')");
-//     }
-
-//     const shelter = await Shelter.findById(shelterId);
-//     if (!shelter) {
-//       throw new Error("Không tìm thấy shelter");
-//     }
-
-//     const invitation = shelter.invitations.find(
-//       (inv) => inv._id.toString() === requestId.toString()
-//     );
-
-//     if (!invitation) {
-//       throw new Error("Không tìm thấy yêu cầu");
-//     }
-
-//     if (invitation.receiver.toString() !== shelterId.toString()) {
-//       throw new Error("Yêu cầu này không phải do user gửi tới shelter");
-//     }
-
-//     if (invitation.status !== "pending") {
-//       throw new Error("Yêu cầu đã được xử lý trước đó");
-//     }
-
-//     // Cập nhật trạng thái lời mời
-//     invitation.status = action;
-//     invitation.updatedAt = new Date();
-
-//     // Nếu chấp nhận thì thêm user vào members
-//     if (action === "accepted") {
-//       const alreadyMember = shelter.members.some(
-//         (member) => member._id.toString() === invitation.sender.toString()
-//       );
-//       if (!alreadyMember) {
-//         shelter.members.push({
-//           _id: invitation.sender,
-//           roles: ["staff"],
-//         });
-//       }
-//     }
-
-//     await shelter.save();
-
-//     return {
-//       message:
-//         action === "accepted"
-//           ? "Đã chấp nhận yêu cầu tham gia"
-//           : "Đã từ chối yêu cầu tham gia",
-//     };
-//   } catch (error) {
-//     throw error;
-//   }
-// };
 // user xu ly loi moi vao shelter
 const reviewShelterInvitationRequest = async (shelterId, userId, decision) => {
   // const session = await mongoose.startSession();
@@ -641,10 +566,9 @@ const reviewShelterInvitationRequest = async (shelterId, userId, decision) => {
     }
 
     // 2. Tìm invitation của user trong shelter này
-    const currInvitation = shelter.invitations.find((inv) => {
-      console.log(inv.receiver, userId);
-      return (
-        String(inv.receiver) === userId &&
+    const currInvitation = shelter.invitations.find(
+      (inv) => {
+        return String(inv.user) === userId &&
         inv.type === "invitation" &&
         inv.status === "pending" &&
         inv
@@ -675,7 +599,7 @@ const reviewShelterInvitationRequest = async (shelterId, userId, decision) => {
       await Shelter.updateMany(
         {
           _id: { $ne: shelterId },
-          "invitations.receiver": userId,
+          "invitations.user": userId,
           "invitations.status": "pending",
         },
         {
@@ -686,7 +610,7 @@ const reviewShelterInvitationRequest = async (shelterId, userId, decision) => {
         {
           arrayFilters: [
             {
-              "elem.receiver": userId,
+              "elem.user": userId,
               "elem.status": "pending",
             },
           ],
@@ -758,9 +682,9 @@ const kickShelterMember = async (shelterId, userId) => {
     throw error;
   }
 };
-const requestIntoShelter = async (shelterId, senderId) => {
+const requestIntoShelter = async (shelterEmail,senderId) => {
   try {
-    const shelter = await Shelter.findById(shelterId);
+    const shelter = await Shelter.findOne({ email: shelterEmail });
     if (!shelter) {
       throw new Error("Không tìm thấy shelter");
     }
@@ -772,7 +696,7 @@ const requestIntoShelter = async (shelterId, senderId) => {
 
     // Check nếu đã là thành viên
     const isMember = shelter.members.some(
-      (member) => member._id.toString() === user._id.toString()
+      (member) => member._id === user._id
     );
     if (isMember) {
       throw new Error("Bạn đã là thành viên của trạm cứu hộ này");
@@ -781,7 +705,7 @@ const requestIntoShelter = async (shelterId, senderId) => {
     // Check nếu đã gửi yêu cầu đang chờ xử lý
     const existing = shelter.invitations.find(
       (inv) =>
-        inv.receiver.toString() === user._id.toString() &&
+        inv.user === user._id &&
         inv.type === "request" &&
         inv.status === "pending"
     );
@@ -791,8 +715,8 @@ const requestIntoShelter = async (shelterId, senderId) => {
 
     const newRequest = {
       _id: new mongoose.Types.ObjectId(),
-      sender: senderId,
-      receiver: shelter._id,
+      shelter: shelter._id,
+      user: user._id,
       type: "request",
       roles: ["staff"],
       status: "pending",
@@ -802,7 +726,7 @@ const requestIntoShelter = async (shelterId, senderId) => {
     };
 
     await Shelter.findByIdAndUpdate(
-      shelterId,
+      shelter._id,
       { $push: { invitations: newRequest } },
       { new: true }
     );
@@ -816,6 +740,97 @@ const requestIntoShelter = async (shelterId, senderId) => {
     throw error;
   }
 };
+
+const getEligibleShelters = async (userId) => {
+  try {
+    const shelters = await Shelter.find({
+      status: "active",
+      warningCount: { $lt: 3 },
+      $nor: [
+        {
+          invitations: {
+            $elemMatch: {
+              user: userId,
+              type: "invitation",
+              status: "pending",
+            },
+          },
+        },
+        {
+          invitations: {
+            $elemMatch: {
+              user: userId,
+              type: "request",
+              status: "pending",
+            },
+          },
+        },
+      ],
+    });
+
+    return shelters;
+  } catch (error) {
+    console.error(error);
+    throw error;
+  }
+};
+// xu ly yeu cau vao shelter cua manager
+const reviewShelterRequest = async (shelterId, requestId, decision) => {
+  try {
+    // console.log(shelterId, requestId, decision)
+    const shelter = await Shelter.findById(shelterId);
+    if (!shelter) {
+      throw new Error("Không tìm thấy shelter");
+    }
+
+    const request = shelter.invitations.find(
+      (inv) =>
+        inv._id.toString() === requestId &&
+        inv.type === "request" &&
+        inv.status === "pending"
+    );
+
+    if (!request) {
+      throw new Error("Không tìm thấy yêu cầu phù hợp hoặc đã được xử lý");
+    }
+
+    if (decision === "approve") {
+      // Check user đã là thành viên chưa
+      const isAlreadyMember = shelter.members.some(
+        (member) => member._id.toString() === request.user.toString()
+      );
+      if (isAlreadyMember) {
+        throw new Error("Người dùng đã là thành viên của shelter");
+      }
+
+      // Thêm user vào members
+      shelter.members.push({
+        _id: request.user,
+        roles: request.roles,
+      });
+
+      request.status = "accepted";
+    } else if (decision === "reject") {
+      request.status = "declined";
+    } else {
+      throw new Error("Quyết định không hợp lệ (chỉ chấp nhận 'approve' hoặc 'reject')");
+    }
+
+    request.updatedAt = new Date();
+
+    await shelter.save();
+
+    return {
+      message: `Yêu cầu đã được ${decision === "approve" ? "chấp thuận" : "từ chối"}`,
+      status: request.status,
+    };
+  } catch (error) {
+    console.error("Lỗi xử lý yêu cầu shelter:", error);
+    throw error;
+  }
+};
+
+
 const getShelterCaringPetsCount = async (shelterId) => {
   return await Pet.countDocuments({ shelter: shelterId, status: "caring" });
 };
@@ -1118,11 +1133,14 @@ const shelterService = {
   reviewShelterInvitationRequest,
   kickShelterMember,
   requestIntoShelter,
+  getEligibleShelters,
+  reviewShelterRequest,
   getShelterCaringPetsCount,
   getShelterAdoptedPetsCount,
   getShelterPostsCount,
   getShelterMembersCount,
   getShelterPetGrowthByMonth,
+
   // ADMIN
   getAllShelter,
   getAllShelterEstablishmentRequests,

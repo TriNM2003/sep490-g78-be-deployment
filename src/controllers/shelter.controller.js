@@ -161,16 +161,31 @@ async function kickShelterMember(req, res, next) {
   }
 }
 
-async function requestIntoShelter(req, res, next) {
-  try {
-    const response = await shelterService.requestIntoShelter(
-      req.params.shelterId,
-      req.payload.id
-    );
-    res.status(200).json(response);
-  } catch (error) {
-    res.status(400).json({ message: error.message });
-  }
+async function requestIntoShelter(req, res,next) {
+    try {
+        const response = await shelterService.requestIntoShelter(req.params.shelterEmail, req.payload.id);
+        res.status(200).json(response);
+      } catch (error) {
+        res.status(400).json({ message: error.message });
+      }
+}
+async function getEligibleShelters(req, res,next) {
+    try {
+        const response = await shelterService.getEligibleShelters(req.payload.id);
+        res.status(200).json(response);
+      } catch (error) {
+        res.status(400).json({ message: error.message });
+      }
+}
+async function reviewShelterRequest(req, res,next) {
+    try {
+        const {shelterId} = req.params;
+        const {requestId, decision} = req.body;
+        const response = await shelterService.reviewShelterRequest(shelterId, requestId, decision);
+        res.status(200).json(response);
+      } catch (error) {
+        res.status(400).json({ message: error.message });
+      }
 }
 
 // Dashboard statistics
@@ -245,28 +260,29 @@ const reviewShelterEstablishmentRequest = async (req, res, next) => {
 
 // EXPORT
 const shelterController = {
-  // USER
-  sendShelterEstablishmentRequest,
-  getShelterRequestByUserId,
-  getShelterProfile,
-  editShelterProfile,
-  getAll,
-  getShelterDashboardStatistics,
-  getShelterMembers,
-  findEligibleUsersToInvite,
-  inviteShelterMembers,
-  getShelterInvitationsAndRequests,
-  getUserInvitationsAndRequests,
-  cancelShelterEstabilshmentRequest,
-  reviewShelterInvitationRequest,
-  kickShelterMember,
-  requestIntoShelter,
+    //USER
+    sendShelterEstablishmentRequest,
+    getShelterRequestByUserId,
+    getShelterProfile,
+    editShelterProfile,
+    getAll,
+    getShelterMembers,
+    findEligibleUsersToInvite,
+    inviteShelterMembers,
+    getShelterInvitationsAndRequests,
+    getUserInvitationsAndRequests,
+    cancelShelterEstabilshmentRequest,
+    reviewShelterInvitationRequest,
+    kickShelterMember,
+    requestIntoShelter,
+    getEligibleShelters,
+    reviewShelterRequest,
 
-  // ADMIN
-  getAllShelter,
-  getAllShelterEstablishmentRequests,
-  getOverviewStatistic,
-  reviewShelterEstablishmentRequest,
+    //ADMIN
+    getAllShelter,
+    getAllShelterEstablishmentRequests,
+    getOverviewStatistic,
+    reviewShelterEstablishmentRequest,
 };
 
 module.exports = shelterController;
