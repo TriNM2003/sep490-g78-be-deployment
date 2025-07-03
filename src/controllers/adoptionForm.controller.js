@@ -89,11 +89,33 @@ async function deleteForm(req, res, next) {
   }
 }
 
+// get form by petID
+const getFormByPetId = async (req, res, next) => {
+  try {
+    const { petId } = req.params;
+    const selectedPet = await db.Pet.findOne({
+      _id: petId,
+      status: "available",
+    });
+    if (!selectedPet) {
+      return res
+        .status(404)
+        .json({ message: "Thú cưng không tìm thấy hoặc chưa sẵn sàng nhận nuôi" });
+    }
+
+    const forms = await adoptionFormService.getFormsByPetId(petId);
+    res.status(200).json(forms);
+  } catch (error) {
+    res.status(400).json({ message: error.message });
+  }
+};
+
 const adoptionFormController = {
   getFormsByShelter,
     createForm,
     editForm,
-    deleteForm
+    deleteForm,
+    getFormByPetId
 };
 
 module.exports = adoptionFormController;

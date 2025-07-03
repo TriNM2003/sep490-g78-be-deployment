@@ -114,11 +114,32 @@ async function deleteForm(formId) {
     }
 }
 
+// get form by petId
+async function getFormsByPetId(petId) {
+  try {
+    const form = await db.AdoptionForm.findOne({ pet: petId, status: "active" })
+      .populate("pet")
+      .populate("createdBy", "fullName email avatar")
+      .populate("shelter", "name")
+      .populate("questions")
+      .lean();
+  
+      return {
+        ...form,
+        shelter: form?.shelter?.name,
+      
+      };
+  } catch (error) {
+    throw error;
+  }
+}
+
 const adoptionFormService = {
   getFormsByShelter,
   createForm,
   editForm,
-  deleteForm
+  deleteForm,
+  getFormsByPetId
 };
 
 module.exports = adoptionFormService;
