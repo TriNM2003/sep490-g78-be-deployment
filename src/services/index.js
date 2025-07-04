@@ -11,5 +11,7 @@ module.exports = {
     adoptionSubmissionService,
     medicalRecordService,
     shelterService,
+    adoptionTemplateService,
+    adoptionFormService,,
     postService
 }

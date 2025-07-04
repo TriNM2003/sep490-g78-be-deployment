@@ -1,12 +1,13 @@
 const petService = require("../services/pet.service");
 const { cloudinary } = require("../configs/cloudinary");
+const medicalRecordService = require("../services/medicalRecord.service");
 
 const getAllPets = async (req, res) => {
   try {
     const pets = await petService.getAllPets();
     res.status(200).json(pets);
   } catch (error) {
-    res.status(500).json({ message: error.message });
+    res.status(400).json({ message: error.message });
   }
 };
 
@@ -15,16 +16,17 @@ const viewDetailPet = async (req, res) => {
     const pet = await petService.viewPetDetails(req.params.petId);
     res.status(200).json(pet);
   } catch (error) {
-    res.status(500).json({ message: error.message });
+    res.status(400).json({ message: error.message });
   }
 };
 const createPet = async (req, res) => {
   try {
+    console.log("CREATE PET BODY:", req.body);
     const newPet = await petService.createPet(req.body);
     res.status(201).json(newPet);
   } catch (error) {
     console.error("CREATE PET ERROR:", error);
-    res.status(500).json({ message: error.message });
+    res.status(400).json({ message: error.message });
   }
 };
 
@@ -36,7 +38,7 @@ const updatePet = async (req, res) => {
     }
     res.status(200).json(pet);
   } catch (error) {
-    res.status(500).json({ message: error.message });
+    res.status(400).json({ message: error.message });
   }
 };
 
@@ -48,7 +50,7 @@ const deletePet = async (req, res) => {
     }
     res.status(200).json({ message: "Pet deleted successfully" });
   } catch (error) {
-    res.status(500).json({ message: error.message });
+    res.status(400).json({ message: error.message });
   }
 };
 
@@ -57,7 +59,7 @@ const getMedicalRecords = async (req, res) => {
     const records = await petService.getMedicalRecords(req.params.petId);
     res.status(200).json(records);
   } catch (error) {
-    res.status(500).json({ message: error.message });
+    res.status(400).json({ message: error.message });
   }
 };
 
@@ -69,7 +71,7 @@ const uploadImage = async (req, res) => {
     });
     res.status(200).json({ url: result.secure_url });
   } catch (error) {
-    res.status(500).json({ message: error.message });
+    res.status(400).json({ message: error.message });
   }
 };
 
@@ -78,7 +80,7 @@ const getPetList = async (req, res) => {
     const pets = await petService.getPetList();
     return res.status(200).json(pets);
   } catch (error) {
-    return res.status(500).json({ error: error.message });
+    return res.status(400).json({ error: error.message });
   }
 };
 
@@ -88,18 +90,32 @@ const getPetById = async (req, res) => {
     const pet = await petService.getPetById(petId);
     return res.status(200).json(pet);
   } catch (error) {
-    return res.status(500).json({ error: error.message });
+    return res.status(400).json({ error: error.message });
   }
 };
 
 const getAdoptedPetbyUser = async (req, res) => {
-//   const userId = req.payload.id; // Assuming user ID is in the payload
+  //   const userId = req.payload.id; // Assuming user ID is in the payload
   const userId = req.params.userId; // Assuming user ID is passed as a URL parameter
   try {
     const pets = await petService.getAdoptedPetbyUser(userId);
     return res.status(200).json(pets);
   } catch (error) {
-    return res.status(500).json({ error: error.message });
+    return res.status(400).json({ error: error.message });
+  }
+};
+
+const getMedicalRecordsByPet = async (req, res) => {
+  try {
+    const petId = req.params.petId || req.query.petId;
+    const page = parseInt(req.query.page) || 1;
+    const limit = parseInt(req.query.limit) || 3;
+    if (!petId) return res.status(400).json({ message: "petId is required" });
+    const { records, total } =
+      await medicalRecordService.getMedicalRecordsByPet(petId, page, limit);
+    res.status(200).json({ records, total, page, limit });
+  } catch (error) {
+    res.status(400).json({ message: error.message });
   }
 };
 
@@ -114,6 +130,7 @@ const petController = {
   getPetList,
   getPetById,
   getAdoptedPetbyUser,
+  getMedicalRecordsByPet,
 };
 
 module.exports = petController;

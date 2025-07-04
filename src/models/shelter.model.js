@@ -23,8 +23,9 @@ const shelterSchema = new mongoose.Schema(
       match: [/^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$/, "Email không hợp lệ"],
     },
     hotline: {
-      type: Number,
+      type: String,
       required: [true, "Hotline là bắt buộc"],
+      match: [/^((\+84)|0)(3|5|7|8|9)\d{8}$/, "Hotline không đúng định dạng số điện thoại Việt Nam"]
     },
     avatar: {
       type: String,
@@ -76,20 +77,24 @@ const shelterSchema = new mongoose.Schema(
           type: mongoose.Schema.Types.ObjectId,
           default: () => new mongoose.Types.ObjectId(),
         },
-        sender: {
+        shelter: {
+          type: mongoose.Schema.Types.ObjectId,
+          ref: "Shelter",
+          required: [true, "Trạm cứu hộ không thể trống"],
+        },
+        user: {
           type: mongoose.Schema.Types.ObjectId,
           ref: "User",
-          required: [true, "Người gửi lời mời là bắt buộc"],
+          required: [true, "User không thể trống"],
         },
-        receiver: {
-          type: mongoose.Schema.Types.ObjectId,
-          ref: "User",
-          required: [true, "Người nhận lời mời là bắt buộc"],
-        },
-        reason: {
+        type: {
           type: String,
-          required: [true, "Phải có lý do"],
+          enum: ["invitation", "request"]
         },
+        roles: [{
+          type: String,
+          required: [true, "Người nhận lời mời phải được gắn ít nhất 1 vai trò"],
+        }],
         status: {
           type: String,
           enum: {
