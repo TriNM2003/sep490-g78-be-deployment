@@ -25,4 +25,19 @@ const createSpecies = async (req, res) => {
   }
 };
 
-module.exports = { getAllSpecies, createSpecies };
+const getAll = async (req, res) => {
+  try {
+    const species = await Species.find();
+    res.status(200).json(species);
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+};
+
+const speciesController = {
+  getAllSpecies,
+  createSpecies,
+  getAll,
+};
+module.exports = speciesController;
+
