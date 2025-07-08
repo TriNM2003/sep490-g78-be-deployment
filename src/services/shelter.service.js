@@ -13,6 +13,7 @@ const generateCodename = require("../utils/codeNameGenerator");
 const db = require("../models/index");
 
 const mongoose = require("mongoose");
+const { mailer } = require("../configs");
 
 
 //USER
@@ -444,6 +445,8 @@ const inviteShelterMembers = async (shelterId, emailsList = [], roles) => {
       };
 
       invitationsToSend.push(newInvitation);
+
+
     }
 
     // Push tất cả invitation vào shelter
@@ -454,6 +457,25 @@ const inviteShelterMembers = async (shelterId, emailsList = [], roles) => {
         { new: true }
       );
     }
+
+    // Gui email thong bao loi moi
+    const link = `${process.env.FE_URL_USER}/shelter-request`;
+    const subject = `Lời mời tham gia làm tình nguyện viên từ trạm cứu hộ ${shelter.name}`;
+    const body = `
+  <div style="font-family: Arial, sans-serif; padding: 20px;">
+    <h2 style="color: #1890ff;">Bạn nhận được một lời mời tham gia trạm cứu hộ</h2>
+    <p>Trạm cứu hộ <strong>${shelter.name}</strong> đã gửi lời mời bạn tham gia làm tình nguyện viên.</p>
+    <p>Vui lòng nhấn vào nút bên dưới để xem và phản hồi lời mời:</p>
+    <a href="${link}" style="display: inline-block; margin-top: 12px; padding: 10px 20px; background-color: #1890ff; color: white; text-decoration: none; border-radius: 5px;">
+      Xem lời mời
+    </a>
+    <p style="margin-top: 20px; color: #666;">
+      Nếu bạn không nhận được lời mời, vui lòng bỏ qua email này.
+    </p>
+  </div>
+`;
+    await mailer.sendEmail(emailsList, subject, body);
+
 
     return {
       message: "Đã gửi lời mời",
@@ -661,10 +683,9 @@ const kickShelterMember = async (shelterId, userId) => {
     } else {
       const user = await User.findById(userId);
       if (!user) throw new Error("Không tìm thấy người dùng");
-      memberRole = user.roles?.includes("manager") ? "manager" : "staff";
     }
 
-    if (memberRole === "manager") {
+    if (member.roles.includes("manager")) {
       throw new Error("Không thể kick người có vai trò quản lý (manager)");
     }
 
@@ -872,6 +893,54 @@ const getShelterPetGrowthByMonth = async (shelterId) => {
   ]);
   return result;
 };
+const changeShelterMemberRole = async (managerId, shelterId, memberId, roles) => {
+  try {
+    if(managerId == memberId){
+      throw new Error("Quản lý không thể tự thay đổi vai trò của chính mình");
+    }
+
+    // Validate roles
+    const validRoles = ["staff", "manager"];
+    const isValid = roles.every((r) => validRoles.includes(r));
+    if (!isValid) {
+      throw new Error("Vai trò không hợp lệ. Chỉ chấp nhận 'staff' hoặc 'manager'");
+    }
+
+    // check so luong role
+    if(roles.length < 1){
+      throw new Error("Mỗi user thành viên phải có ít nhất 1 vai trò")
+    }
+
+    // Cập nhật roles cho member trong mảng members
+    const updatedShelter = await Shelter.findOneAndUpdate(
+      {
+        _id: shelterId,
+        "members._id": memberId,
+      },
+      {
+        $set: {
+          "members.$.roles": roles,
+        },
+      },
+      { new: true }
+    );
+
+    if (!updatedShelter) {
+      throw new Error("Không tìm thấy shelter hoặc thành viên");
+    }
+
+    return {
+      message: "Đã cập nhật vai trò thành viên",
+      roles,
+    };
+  } catch (error) {
+    console.error("Lỗi khi cập nhật vai trò shelter member:", error);
+    throw error;
+  }
+};
+
+
+
 
 // ADMIN
 const getAllShelter = async () => {
@@ -1142,6 +1211,7 @@ const shelterService = {
   getShelterPostsCount,
   getShelterMembersCount,
   getShelterPetGrowthByMonth,
+  changeShelterMemberRole,
 
   // ADMIN
   getAllShelter,

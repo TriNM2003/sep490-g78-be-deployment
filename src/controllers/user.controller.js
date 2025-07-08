@@ -85,15 +85,61 @@ const getUsersList = async (req, res) => {
     res.status(404).json({ message: error.message });
   }
 };
+const addUser = async (req, res) => {
+  try {
+    const userData = req.body;
+    const newUser = await userService.addUser(userData);
+    res.status(201).json(newUser);
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+}
+
+const changeUserRole = async (req, res) => {
+  const { userId } = req.params;
+  const roles = req.body.roles;
+  try {
+    const updatedUser = await userService.changeUserRole(userId, roles);
+    res.status(200).json(updatedUser);
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+};
+
+const banUser = async (req, res) => {
+  const { userId } = req.params;
+  try {
+    const updatedUser = await userService.banUser(userId);
+    res.status(200).json(updatedUser);
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+};
+
+const unbanUser = async (req, res) => {
+  const { userId } = req.params;
+  try {
+    const updatedUser = await userService.unbanUser(userId);
+    res.status(200).json(updatedUser);
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+};
 
 const userController = {
+  //USER
   getAllUsers,
   getUserById,
   changePassword,
   editProfile,
   getUserByToken,
+
   //ADMIN
   getUsersList,
+  addUser,
+  changeUserRole,
+  banUser,
+  unbanUser,
 };
 
 module.exports = userController;

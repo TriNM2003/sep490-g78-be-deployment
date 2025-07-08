@@ -25,4 +25,9 @@ const createSpecies = async (req, res) => {
   }
 };
 
-module.exports = { getAllSpecies, createSpecies };
+const speciesController = {
+  getAllSpecies, 
+  createSpecies,
+}
+
+module.exports = speciesController;

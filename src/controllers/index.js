@@ -6,6 +6,8 @@ const medicalRecordController = require("./medicalRecord.controller");
 const shelterController = require("./shelter.controller");
 const adoptionTemplateController = require("./adoptionTemplate.controller");
 const adoptionFormController = require("./adoptionForm.controller");
+const speciesController = require("./species.controller");
+const breedController = require("./breed.controller");
 
 
 module.exports = {
@@ -17,6 +19,6 @@ module.exports = {
   shelterController,
   adoptionTemplateController,
   adoptionFormController,
-  
-
+  speciesController,
+  breedController,
 };
