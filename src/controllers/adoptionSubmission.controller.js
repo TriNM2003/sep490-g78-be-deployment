@@ -10,7 +10,7 @@ const getAdtoptionRequestList = async (req, res) => {
         const adoptionRequests = await adoptionSubmissionService.getAdtoptionRequestList(req.payload.id);
         res.status(200).json(adoptionRequests);
     } catch (error) {
-        res.status(500).json({ message: error.message });
+        res.status(400).json({ message: error.message });
     }
 }
 

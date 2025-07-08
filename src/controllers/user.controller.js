@@ -54,7 +54,7 @@ const editProfile = async (req, res) => {
     );
     res.status(200).json(result);
   } catch (error) {
-    console.error("Error in editProfile:", error.message);
+    console.error("Lỗi khi cập nhật thông tin:", error.message);
     res.status(400).json({ message: error.message });
   }
 };

@@ -1,6 +1,5 @@
 const { Shelter } = require("../models");
 
-
 const isShelterManager = async (req, res, next) => {
   try {
     const { id } = req.payload; // id của người dùng
@@ -12,7 +11,8 @@ const isShelterManager = async (req, res, next) => {
     }
 
     const isManager = shelter.members.some(
-      (member) => member._id.toString() === id && member.roles.includes("manager")
+      (member) =>
+        member._id.toString() === id && member.roles.includes("manager")
     );
 
     if (isManager) {
@@ -26,8 +26,7 @@ const isShelterManager = async (req, res, next) => {
 };
 
 const shelterManagerMiddleware = {
-    isShelterManager,
-}
+  isShelterManager,
+};
 
 module.exports = shelterManagerMiddleware;
-

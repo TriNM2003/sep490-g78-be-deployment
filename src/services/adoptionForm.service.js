@@ -5,15 +5,13 @@ const db = require("../models/index");
 async function getFormsByShelter(shelterId) {
   try {
     const forms = await db.AdoptionForm.find({ shelter: shelterId })
-      .populate("pet", "name petCode")
+      .populate("pet", "_id name petCode")
       .populate("createdBy", "fullName email avatar")
       .populate("shelter", "name")
       .lean();
     return forms?.map((form) => {
       return {
         ...form,
-        pet: form?.pet?.name,
-        petCode: form?.pet?.petCode,
         shelter: form?.shelter?.name,
       };
     });
@@ -47,7 +45,7 @@ async function createForm(shelterId, petId, formData, createdBy) {
 
     const savedForm = await newForm.save();
     const populatedForm = await db.AdoptionForm.findById(savedForm._id)
-      .populate("pet", "name petCode")
+      .populate("pet", "_id name petCode")
       .populate("createdBy", "fullName email avatar")
       .populate("shelter", "name")
       .lean();
@@ -56,8 +54,6 @@ async function createForm(shelterId, petId, formData, createdBy) {
     }
     return {
       ...populatedForm,
-      pet: populatedForm?.pet?.name,
-      petCode: populatedForm?.pet?.petCode,
       shelter: populatedForm?.shelter?.name,
     };
   } catch (error) {
@@ -77,7 +73,7 @@ async function editForm(formId, formData) {
 
     const updatedForm = await form.save();
     const populatedForm = await db.AdoptionForm.findById(updatedForm._id)
-      .populate("pet", "name petCode")
+      .populate("pet", "_id name petCode")
       .populate("createdBy", "fullName email avatar")
       .populate("shelter", "name")
       .lean();
@@ -88,8 +84,6 @@ async function editForm(formId, formData) {
     
     return {
       ...populatedForm,
-      pet: populatedForm?.pet?.name,
-      petCode: populatedForm?.pet?.petCode,
       shelter: populatedForm?.shelter?.name,
     };
   } catch (error) {
@@ -113,6 +107,7 @@ async function deleteForm(formId) {
         throw error;
     }
 }
+
 
 // get form by petId
 async function getFormsByPetId(petId) {
@@ -140,6 +135,7 @@ const adoptionFormService = {
   editForm,
   deleteForm,
   getFormsByPetId
+
 };
 
 module.exports = adoptionFormService;

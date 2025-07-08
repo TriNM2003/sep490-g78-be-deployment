@@ -1,11 +1,11 @@
 const express = require("express");
-const medicalRecordRouter = express.Router();
+const medicalRecordRouter = express.Router({ mergeParams: true });
 const { verifyAccessToken } = require("../middlewares/auth.middleware");
 const medicalRecordController = require("../controllers/medicalRecord.controller");
-medicalRecordRouter.get("/get-by-pet",
-  verifyAccessToken,
-  medicalRecordController.getMedicalRecordsByPet
-);
+
+// Route lấy danh sách medical records theo petId (có phân trang)
+medicalRecordRouter.get("/", medicalRecordController.getMedicalRecordsByPet);
+
 medicalRecordRouter.post(
   "/",
   verifyAccessToken,
@@ -22,8 +22,9 @@ medicalRecordRouter.get(
   verifyAccessToken,
   medicalRecordController.getMedicalRecordById
 );
-medicalRecordRouter.get("/get-medical-record/:petId", medicalRecordController.getPetMedicalRecord);
-
+medicalRecordRouter.get(
+  "/get-medical-record/:petId",
+  medicalRecordController.getPetMedicalRecord
+);
 
 module.exports = medicalRecordRouter;
-
