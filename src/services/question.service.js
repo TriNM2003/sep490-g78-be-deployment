@@ -93,12 +93,7 @@ const editListQuestions = async (questionsData) => {
       const questionData = {
         title: item.title,
         priority: item.priority || "none",
-        options: Array.isArray(item.options)
-          ? item.options.map((option) => ({
-              title: option.title,
-              isTrue: option.isTrue || false,
-            }))
-          : [],
+        options: (item.options || []),
         status: item.status || "active",
         type: item.type?.toUpperCase?.() || "TEXT",
       };

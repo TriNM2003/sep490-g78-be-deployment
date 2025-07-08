@@ -95,18 +95,15 @@ const editTemplateQuestions = async (req, res, next) => {
       req.body.questions
     );
 
-    // const updatedTemplate = await adoptionTemplateService.editTemplate(
-    //   templateId,
-    //   {
-    //     questions: savedQuestions.map((question) => question._id),
-    //     ...req.body,
-    //   },
-    //   shelterId
-    // );
-    res.status(200).json({
-        questions: savedQuestions.map((question) => question._id),
+    const updatedTemplate = await adoptionTemplateService.editTemplate(
+      templateId,
+      {
         ...req.body,
-      }); 
+        questions: savedQuestions.map((question) => question._id),
+      },
+      shelterId
+    );
+    res.status(200).json(updatedTemplate);
   } catch (error) {
     res.status(400).json({ message: error.message });
   }
