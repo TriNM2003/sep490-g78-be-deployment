@@ -3,7 +3,16 @@ const db = require("../models/");
 
 const getAdtoptionRequestList = async (id) => {
     try {
-        const adoptionRequest = await db.AdoptionSubmission.find({ performedBy: id }).populate("performedBy").populate("adoptionForm").populate("answers.questionId");
+        const adoptionRequest = await db.AdoptionSubmission.find({ performedBy: id })
+        .populate("performedBy")
+         .populate({
+        path: "adoptionForm",
+        populate: [
+          { path: "pet", model: "Pet" , select:"name petCode tokenMoney photos"},
+          { path: "shelter", model: "Shelter", select: "name" },
+        ]
+      })
+        .populate("answers.questionId");
         if (!adoptionRequest) {
             throw new Error("No adoption requests found for this user");
         }
