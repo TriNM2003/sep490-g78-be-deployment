@@ -1,6 +1,7 @@
 const bcrypt = require("bcrypt");
 const jwt = require("jsonwebtoken");
 const db = require("../models/index");
+const questionService = require("./question.service");
 
 async function getAll(shelterId) {
   try {
@@ -64,7 +65,7 @@ async function editTemplate(templateId, data, shelterId) {
   try {
     const selectedTemplate = await db.AdoptionTemplate.findOne({
       _id: templateId,
-      shelter:shelterId,
+      shelter: shelterId,
       status: "active",
     });
     if (!selectedTemplate) {
@@ -106,11 +107,12 @@ async function editTemplate(templateId, data, shelterId) {
   }
 }
 
-async function deleteTemplate(templateId,shelterId) {
+
+async function deleteTemplate(templateId, shelterId) {
   try {
     const selectedTemplate = await db.AdoptionTemplate.findOne({
       _id: templateId,
-      shelter:shelterId,
+      shelter: shelterId,
       status: "active",
     });
     if (!selectedTemplate) {
