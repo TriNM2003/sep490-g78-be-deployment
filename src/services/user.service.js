@@ -1,7 +1,7 @@
 const db = require("../models/");
 const bcrypt = require("bcrypt");
 const { cloudinary } = require("../configs/cloudinary");
-const fs = require("fs");
+const fs = require("fs/promises");
 
 const getAllUsers = async () => {
   try {
@@ -80,6 +80,8 @@ const editProfile = async (userId, profileData, files) => {
   try {
     const user = await db.User.findById(userId);
     if (!user) throw new Error("Không tìm thấy người dùng");
+
+    //Parse location 
     let parsedLocation = user.location;
     if (profileData.location) {
       try {
@@ -95,100 +97,71 @@ const editProfile = async (userId, profileData, files) => {
         throw new Error("Dữ liệu location gửi lên không hợp lệ!");
       }
     }
+
+
+    // Xử lý ảnh đại diện và ảnh nền
     let newAvatar = user.avatar;
     let newBackground = user.background;
 
+    // Xử lý ảnh tạm thời
     if (files?.avatar?.length > 0) {
-      tempFilePaths.push(files.avatar[0].path);
-    }
-    if (files?.background?.length > 0) {
-      tempFilePaths.push(files.background[0].path);
-    }
-    // Xử lý file avatar
-    if (files?.avatar?.length > 0) {
+      const avatarFile = files.avatar[0];
+      tempFilePaths.push(avatarFile.path);
       try {
-        const avatarFile = files.avatar[0];
         const uploadResult = await cloudinary.uploader.upload(avatarFile.path, {
           folder: "user_profiles",
           resource_type: "image",
         });
         newAvatar = uploadResult.secure_url;
-        fs.unlink(avatarFile.path, (err) => {
-          if (err) console.error("Error deleting local avatar file:", err);
-        });
+        await fs.unlink(avatarFile.path);
       } catch (error) {
         console.error("Cloudinary Upload Error:", error);
-        for (const filePath of tempFilePaths) {
-          fs.unlink(filePath, (err) => {
-            if (err)
-              console.error("Error deleting file in catch:", filePath, err);
-          });
-        }
+        await Promise.allSettled(tempFilePaths.map(path => fs.unlink(path)));
         throw new Error("Lỗi khi tải lên ảnh đại diện. Vui lòng thử lại.");
       }
     }
 
-    // Xử lý file background
+    // Xử lý background
     if (files?.background?.length > 0) {
+      const backgroundFile = files.background[0];
+      tempFilePaths.push(backgroundFile.path);
       try {
-        const backgroundFile = files.background[0];
-        const uploadResult = await cloudinary.uploader.upload(
-          backgroundFile.path,
-          {
-            folder: "user_profiles",
-            resource_type: "image",
-          }
-        );
-        newBackground = uploadResult.secure_url;
-        fs.unlink(backgroundFile.path, (err) => {
-          if (err) console.error("Lỗi khi xóa file:", err);
+        const uploadResult = await cloudinary.uploader.upload(backgroundFile.path, {
+          folder: "user_profiles",
+          resource_type: "image",
         });
+        newBackground = uploadResult.secure_url;
+        await fs.unlink(backgroundFile.path);
       } catch (error) {
         console.error("Cập nhật cloudinary lỗi:", error);
-        for (const filePath of tempFilePaths) {
-          fs.unlink(filePath, (err) => {
-            if (err)
-              console.error("Error deleting file in catch:", filePath, err);
-          });
-        }
+        await Promise.allSettled(tempFilePaths.map(path => fs.unlink(path)));
         throw new Error("Lỗi khi tải lên ảnh nền. Vui lòng thử lại.");
       }
     }
 
+    // Validate dữ liệu đầu vào
     if (
       profileData.fullName &&
       !/^[a-zA-ZÀ-Ỹà-ỹ\s]+$/.test(profileData.fullName)
     ) {
-      throw new Error(
-        "Họ và tên không hợp lệ. Hoặc tên chỉ chứa chữ cái và khoảng trắng"
-      );
+      throw new Error("Họ và tên không hợp lệ. Hoặc tên chỉ chứa chữ cái và khoảng trắng");
     }
+
     if (
-      // số điện thoại bắt đầu bằng số 0 và có 10 chữ số
       profileData.phoneNumber &&
       !/^(0[0-9])+([0-9]{8})$/.test(profileData.phoneNumber)
     ) {
-      throw new Error(
-        "Số điện thoại không hợp lệ. Số điện thoại phải bắt đầu bằng số 0 và có 10 chữ số"
-      );
+      throw new Error("Số điện thoại không hợp lệ. Phải bắt đầu bằng 0 và có 10 số.");
     }
+
     if (profileData.dob) {
-      const dob = new Date(profileData.dob); // Chuyển đổi ngày sinh từ string sang Date object
-      const today = new Date(); // Lấy ngày hiện tại
-
-      // Tính tuổi theo năm
+      const dob = new Date(profileData.dob);
+      const today = new Date();
       const age = today.getFullYear() - dob.getFullYear();
-
-      // Kiểm tra đã qua sinh nhật trong năm chưa
       const hasBirthdayPassed =
         today.getMonth() > dob.getMonth() ||
-        (today.getMonth() === dob.getMonth() &&
-          today.getDate() >= dob.getDate());
-
-      // Nếu chưa qua sinh nhật, giảm 1 tuổi
+        (today.getMonth() === dob.getMonth() && today.getDate() >= dob.getDate());
       const exactAge = hasBirthdayPassed ? age : age - 1;
-
-      // Validate: phải đủ 16 tuổi trở lên
       if (exactAge < 16) {
         throw new Error("Ngày sinh không hợp lệ. Bạn phải đủ 16 tuổi trở lên");
       }
@@ -200,32 +173,21 @@ const editProfile = async (userId, profileData, files) => {
       dob: profileData.dob ? new Date(profileData.dob) : user.dob,
       phoneNumber: profileData.phoneNumber || user.phoneNumber,
       address: profileData.address || user.address,
-      location: parsedLocation, 
+      location: parsedLocation,
       avatar: newAvatar,
       background: newBackground,
     };
+
     const updatedUser = await db.User.findByIdAndUpdate(
       userId,
-      {
-        $set: {
-          fullName: newProfile.fullName,
-          bio: newProfile.bio,
-          dob: newProfile.dob,
-          phoneNumber: newProfile.phoneNumber,
-          address: newProfile.address,
-          location: newProfile.location,
-          avatar: newProfile.avatar,
-          background: newProfile.background,
-        },
-      },
+      { $set: newProfile },
       { new: true }
     );
-    //console.log("Updated user:", updatedUser);
+
     return updatedUser;
   } catch (error) {
-    fs.unlink(tempFilePaths, (err) => {
-      if (err) console.error("Error deleting temp files:", err);
-    });
+    // Cleanup nếu có lỗi
+    await Promise.allSettled(tempFilePaths.map(path => fs.unlink(path)));
     throw error;
   }
 };

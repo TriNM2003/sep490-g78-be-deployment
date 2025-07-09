@@ -2,7 +2,8 @@ const postService = require("../services/post.service");
 
 const getPostsList = async (req, res) => {
   try {
-    const posts = await postService.getPostsList();
+    const userId = req.payload?.id || null; // lấy userId nếu có
+    const posts = await postService.getPostsList(userId);
     return res.status(200).json(posts);
   } catch (error) {
     return res.status(400).json({ message: error.message });
@@ -20,12 +21,12 @@ const getPostDetail = async (req, res) => {
 };
 
 const createPost = async (req, res) => {
-  // console.log("Req body:", req.body);
-  //   console.log("Req files:", req.files);
+  console.log("Req body:", req.body);
+    console.log("Req files:", req.files);
   const userId = req.payload.id;
   const postData = req.body;
-  if (req.files.length > 7) {
-    return res.status(400).json({ message: "Chỉ được tải tối đa 7 ảnh." });
+  if (req.files.length > 5) {
+    return res.status(400).json({ message: "Chỉ được tải tối đa 5 ảnh." });
   }
   try {
     const post = await postService.createPost(userId, postData, req.files);
@@ -41,8 +42,8 @@ const createPost = async (req, res) => {
 const editPost = async (req, res) => {
   console.log("Req body:", req.body);
   console.log("Req files:", req.files);
-  if (req.files.length > 7) {
-    return res.status(400).json({ message: "Chỉ được tải tối đa 7 ảnh." });
+  if (req.files.length > 5) {
+    return res.status(400).json({ message: "Chỉ được tải tối đa 5 ảnh." });
   }
   const postId = req.params.postId;
   const postData = req.body;

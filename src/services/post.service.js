@@ -1,37 +1,70 @@
 const db = require("../models");
 const { cloudinary } = require("../configs/cloudinary");
-const fs = require("fs");
+const fs = require("fs/promises");
 
-const getPostsList = async () => {
+const getPostsList = async (userId) => {
   try {
-    const posts = await db.Post.find({ status: "active" })
-      .populate("createdBy")
-      .populate("likedBy");
-    if (!posts || posts.length === 0) {
-      return [];
+    const filter = {
+      status: "active",
+      $or: [{ privacy: "public" }],
+    };
+
+    // Nếu có userId, cho phép thêm bài private của chính họ
+    if (userId) {
+      filter.$or.push({
+        $and: [{ privacy: "private" }, { createdBy: userId }],
+      });
     }
 
-    return posts.map((post) => {
-      return {
-        id: post._id,
-        title: post.title,
-        createdBy: {
-          id: post.createdBy._id,
-          fullName: post.createdBy.fullName,
-          avatar: post.createdBy.avatar,
-        },
-        photos: post.photos.map((photo) => photo),
-        privacy: post.privacy.map((privacy) => privacy),
-        likedBy: post.likedBy.map((user) => ({
-          id: user._id,
-          fullName: user.fullName,
-          avatar: user.avatar,
-        })),
-        status: post.status,
-        createdAt: post.createdAt,
-        updatedAt: post.updatedAt,
-      };
-    });
+    const posts = await db.Post.find(filter)
+      .populate("createdBy")
+      .populate("likedBy");
+
+    // Dùng Promise.all để lấy latestComment cho từng post
+    const result = await Promise.all(
+      posts.map(async (post) => {
+        const latestComment = await db.Comment.findOne({
+          post: post._id,
+          status: "visible",
+        })
+          .sort({ createdAt: -1 })
+          .populate("commenter", "fullName avatar");
+
+        return {
+          _id: post._id,
+          title: post.title,
+          createdBy: {
+            _id: post.createdBy._id,
+            fullName: post.createdBy.fullName,
+            avatar: post.createdBy.avatar,
+          },
+          photos: post.photos,
+          privacy: post.privacy,
+          likedBy: post.likedBy.map((user) => ({
+            _id: user._id,
+            fullName: user.fullName,
+            avatar: user.avatar,
+          })),
+          latestComment: latestComment
+            ? {
+                _id: latestComment._id,
+                message: latestComment.message,
+                commenter: {
+                  _id: latestComment.commenter._id,
+                  fullName: latestComment.commenter.fullName,
+                  avatar: latestComment.commenter.avatar,
+                },
+                createdAt: latestComment.createdAt,
+              }
+            : null,
+          status: post.status,
+          createdAt: post.createdAt,
+          updatedAt: post.updatedAt,
+        };
+      })
+    );
+
+    return result;
   } catch (error) {
     throw error;
   }
@@ -47,17 +80,17 @@ const getPostDetail = async (postId) => {
     }
 
     return {
-      id: post._id,
+      _id: post._id,
       title: post.title,
       createdBy: {
-        id: post.createdBy._id,
+        _id: post.createdBy._id,
         fullName: post.createdBy.fullName,
         avatar: post.createdBy.avatar,
       },
       photos: post.photos.map((photo) => photo),
-      privacy: post.privacy.map((privacy) => privacy),
+      privacy: post.privacy || "public",
       likedBy: post.likedBy.map((user) => ({
-        id: user._id,
+        _id: user._id,
         fullName: user.fullName,
         avatar: user.avatar,
       })),
@@ -71,11 +104,11 @@ const getPostDetail = async (postId) => {
 };
 
 const createPost = async (userId, postData, files) => {
-  const tempFilePaths = [];
   const uploadedPhotoUrls = [];
+  const tempFilePaths = [];
 
   try {
-    if (Array.isArray(files) && files.length > 0) {
+    if (Array.isArray(files)) {
       for (const file of files) {
         tempFilePaths.push(file.path);
         try {
@@ -84,54 +117,47 @@ const createPost = async (userId, postData, files) => {
             resource_type: "image",
           });
           uploadedPhotoUrls.push(result.secure_url);
-
-          fs.unlink(file.path, (err) => {
-            if (err) console.error("Lỗi khi xoá file:", err);
-          });
+          await fs.unlink(file.path); // xoá file tạm thành công
         } catch (uploadError) {
-          console.error("Upload error:", uploadError.message);
-          for (const path of tempFilePaths) {
-            fs.unlink(path, (err) => {
-              if (err) console.error("Cleanup error:", err.message);
-            });
-          }
+          console.error("Upload error:", uploadError);
+          await Promise.all(
+            tempFilePaths.map((path) => fs.unlink(path).catch(() => {}))
+          );
           throw new Error("Lỗi khi upload ảnh lên Cloudinary");
         }
       }
     }
 
-    // Tạo post mới
     const newPost = await db.Post.create({
       createdBy: userId,
       title: postData.title,
-      privacy: [postData.privacy || "public"],
+      privacy: postData.privacy || "public",
       photos: uploadedPhotoUrls,
       status: "active",
     });
 
     return newPost;
   } catch (error) {
-    fs.unlink(tempFilePaths, (err) => {
-      if (err) console.error("Lỗi khi xoá file tạm:", err);
-    });
+    await Promise.all(
+      tempFilePaths.map((path) => fs.unlink(path).catch(() => {}))
+    );
     throw new Error("Lỗi khi tạo bài viết: " + error.message);
   }
 };
 
 const editPost = async (userId, postId, postData, files) => {
   const tempFilePaths = [];
+  const uploadedPhotos = [];
 
   try {
     const post = await db.Post.findById(postId);
     if (!post) throw new Error("Không tìm thấy bài viết");
 
-     if (post.createdBy.toString() !== userId.toString()) {
+    if (post.createdBy.toString() !== userId.toString()) {
       throw new Error("Bạn không có quyền chỉnh sửa bài viết này.");
     }
 
-    const uploadedPhotos = [];
-
-     if (Array.isArray(files) && files.length > 0) {
+    if (Array.isArray(files)) {
       for (const file of files) {
         tempFilePaths.push(file.path);
         try {
@@ -140,40 +166,38 @@ const editPost = async (userId, postId, postData, files) => {
             resource_type: "image",
           });
           uploadedPhotos.push(result.secure_url);
-
-          fs.unlink(file.path, (err) => {
-            if (err) console.error("Lỗi xoá file tạm:", err);
-          });
+          await fs.unlink(file.path);
         } catch (uploadErr) {
-          console.error("Lỗi upload:", uploadErr.message);
-          for (const path of tempFilePaths) {
-            fs.unlink(path, (err) => {
-              if (err) console.error("Cleanup error:", err);
-            });
-          }
-          throw new Error("Không thể tải ảnh lên Cloudinary. Vui lòng thử lại.");
+          console.error("Upload error:", uploadErr);
+          await Promise.all(
+            tempFilePaths.map((path) => fs.unlink(path).catch(() => {}))
+          );
+          throw new Error("Không thể upload ảnh mới");
         }
       }
     }
 
-
-    const updateData = {
-      title: postData.title || post.title,
-      privacy: postData.privacy || post.privacy,
-    };
-
-    if (uploadedPhotos.length > 0) {
-      updateData.photos = [...post.photos, ...uploadedPhotos];
-    }
+    const keepPhotos = postData.existingPhotos
+      ? JSON.parse(postData.existingPhotos)
+      : post.photos;
 
     const updatedPost = await db.Post.findByIdAndUpdate(
       postId,
-      { $set: updateData },
+      {
+        $set: {
+          title: postData.title || post.title,
+          privacy: postData.privacy || post.privacy,
+          photos: [...keepPhotos, ...uploadedPhotos],
+        },
+      },
       { new: true }
     );
 
     return updatedPost;
   } catch (error) {
+    await Promise.all(
+      tempFilePaths.map((path) => fs.unlink(path).catch(() => {}))
+    );
     throw new Error("Lỗi khi cập nhật bài viết: " + error.message);
   }
 };
@@ -192,10 +216,10 @@ const deletePost = async (postId) => {
       success: true,
       message: "Post deleted successfully",
       data: {
-        id: post._id,
+        _id: post._id,
         title: post.title,
         createdBy: {
-          id: post.createdBy._id,
+          _id: post.createdBy._id,
           fullName: post.createdBy.fullName,
           avatar: post.createdBy.avatar,
         },
@@ -238,7 +262,7 @@ const reportPost = async (userId, postId, reason, files) => {
   const uploadedPhotos = [];
 
   try {
-  if (Array.isArray(files) && files.length > 0) {
+    if (Array.isArray(files) && files.length > 0) {
       for (const file of files) {
         tempFilePaths.push(file.path);
         const result = await cloudinary.uploader.upload(file.path, {
@@ -252,7 +276,7 @@ const reportPost = async (userId, postId, reason, files) => {
       }
     }
 
-     const newReport = await db.Report.create({
+    const newReport = await db.Report.create({
       reportType: "post",
       postReported: postId,
       reportedBy: userId,
@@ -261,7 +285,6 @@ const reportPost = async (userId, postId, reason, files) => {
       status: "pending",
     });
     return newReport;
-
   } catch (error) {
     for (const path of tempFilePaths) {
       fs.unlink(path, (err) => {
@@ -270,7 +293,7 @@ const reportPost = async (userId, postId, reason, files) => {
     }
     throw new Error("Lỗi khi báo cáo bài viết: " + error.message);
   }
-}
+};
 
 const createComment = async ({ postId, userId, message }) => {
   try {
@@ -331,17 +354,16 @@ const getCommentsByPost = async (postId) => {
       .sort({ createdAt: -1 });
 
     return comments.map((comment) => ({
-      id: comment._id,
+      _id: comment._id,
       message: comment.message,
       commenter: {
-        id: comment.commenter._id,
+        _id: comment.commenter._id,
         fullName: comment.commenter.fullName,
         avatar: comment.commenter.avatar,
       },
       createdAt: comment.createdAt,
       updatedAt: comment.updatedAt,
     }));
-    
   } catch (error) {
     throw new Error("Error fetching comments: " + error.message);
   }
@@ -359,7 +381,6 @@ const postService = {
   editComment,
   removeComment,
   getCommentsByPost,
-  
 };
 
 module.exports = postService;
