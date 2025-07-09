@@ -4,6 +4,8 @@ const petService = require("./pet.service");
 const adoptionSubmissionService = require("./adoptionSubmission.service");
 const medicalRecordService = require("./medicalRecord.service");
 const speciesService = require("./spieces.service");
+const questionService = require("./question.service");
+
 module.exports = {
     authService,
     userService,
@@ -14,4 +16,5 @@ module.exports = {
     adoptionTemplateService,
     adoptionFormService,
     speciesService,
+    questionService,
 }

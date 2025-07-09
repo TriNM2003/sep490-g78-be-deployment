@@ -1,6 +1,7 @@
 const bcrypt = require("bcrypt");
 const jwt = require("jsonwebtoken");
 const db = require("../models/index");
+const questionService = require("./question.service");
 
 async function getAll(shelterId) {
   try {
@@ -9,6 +10,7 @@ async function getAll(shelterId) {
       status: "active",
     })
       .populate("species", " _id name")
+      .populate("questions")
       .populate("createdBy", "fullName email avatar")
       .populate("shelter", "name")
       .lean();
@@ -42,6 +44,7 @@ async function create(data, createdBy, shelterId) {
     const newTemplate = await addData.save();
     const result = await db.AdoptionTemplate.findById(newTemplate._id)
       .populate("species", "_id name")
+      .populate("questions")
       .populate("createdBy", "fullName email avatar")
       .lean();
 
@@ -62,7 +65,7 @@ async function editTemplate(templateId, data, shelterId) {
   try {
     const selectedTemplate = await db.AdoptionTemplate.findOne({
       _id: templateId,
-      shelter:shelterId,
+      shelter: shelterId,
       status: "active",
     });
     if (!selectedTemplate) {
@@ -85,6 +88,7 @@ async function editTemplate(templateId, data, shelterId) {
       { new: true }
     )
       .populate("species", "_id name")
+      .populate("questions")
       .populate("createdBy", "fullName email avatar")
       .lean();
     if (!updatedTemplate) {
@@ -103,11 +107,12 @@ async function editTemplate(templateId, data, shelterId) {
   }
 }
 
-async function deleteTemplate(templateId,shelterId) {
+
+async function deleteTemplate(templateId, shelterId) {
   try {
     const selectedTemplate = await db.AdoptionTemplate.findOne({
       _id: templateId,
-      shelter:shelterId,
+      shelter: shelterId,
       status: "active",
     });
     if (!selectedTemplate) {
