@@ -728,12 +728,12 @@ const requestIntoShelter = async (shelterEmail,senderId) => {
     // Check nếu đã gửi yêu cầu đang chờ xử lý
     const existing = shelter.invitations.find(
       (inv) =>
-        inv.user === user._id &&
+        String(inv.user) === String(user._id) &&
         inv.type === "request" &&
         inv.status === "pending"
     );
     if (existing) {
-      throw new Error("Bạn đã gửi yêu cầu và đang chờ xét duyệt");
+      throw new Error("Chỉ được gửi một yêu cầu duy nhất");
     }
 
     const newRequest = {
