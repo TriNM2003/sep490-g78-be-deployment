@@ -48,6 +48,8 @@ async function create(req, res, next) {
   }
 }
 
+
+
 async function editTemplate(req, res, next) {
   const { templateId } = req.params;
   const { id } = req.payload;
@@ -109,6 +111,49 @@ const editTemplateQuestions = async (req, res, next) => {
   }
 };
 
+async function duplicateTemplate(req, res, next) {
+  const { templateId } = req.params;
+  const { id } = req.payload;
+  const { shelterId } = req.params;
+
+  const selectedShelter = await db.Shelter.findOne({
+    _id: shelterId,
+    status: "active",
+  });
+  if (!selectedShelter) {
+    return res
+      .status(404)
+      .json({ message: "Trung tâm không tồn tại hoặc không hoạt động!" });
+  }
+  const oldTemplate = await db.AdoptionTemplate.findById(templateId).populate("questions").lean();
+  if (!oldTemplate) {
+    return res.status(404).json({ message: "Mẫu không tồn tại" });
+  }
+  try {
+    const dataQuestions = oldTemplate.questions.map(({_id,...question}) => {
+      return {
+        ...question
+      };
+    })
+    const savedQuestions = await questionService.editListQuestions(dataQuestions);
+    newData = {
+      title: `${oldTemplate.title}-Copy`,
+      species: oldTemplate.species,
+      description: oldTemplate.description,
+      questions: savedQuestions.map((question) => question._id),
+    }
+    const newTemplate = await adoptionTemplateService.create(
+      newData,
+      id,
+      shelterId
+    );
+
+    res.status(200).json(newTemplate   );
+  } catch (error) {
+    res.status(400).json({ message: error.message });
+  }
+}
+
 async function deleteTemplate(req, res, next) {
   const { templateId } = req.params;
   const { shelterId } = req.params;
@@ -134,6 +179,7 @@ const adoptionTemplateController = {
   getAll,
   create,
   editTemplate,
+  duplicateTemplate,
   editTemplateQuestions,
   deleteTemplate,
 };
