@@ -44,12 +44,10 @@ const createForm = async (req, res, next) => {
       status: "unavailable",
     });
     if (!pet) {
-      return res
-        .status(404)
-        .json({
-          message:
-            "Không tìm thấy thú nuôi hoặc thú nuôi này không thể tạo form!",
-        });
+      return res.status(404).json({
+        message:
+          "Không tìm thấy thú nuôi hoặc thú nuôi này không thể tạo form!",
+      });
     }
     const existingForm = await db.AdoptionForm.findOne({
       pet: petId,
@@ -67,6 +65,60 @@ const createForm = async (req, res, next) => {
       shelterId,
       petId,
       formData,
+      id
+    );
+    res.status(201).json(newForm);
+  } catch (error) {
+    res.status(400).json({ message: error.message });
+  }
+};
+
+const createFormByTemplate = async (req, res, next) => {
+  const { shelterId, petId } = req.params;
+  const { id } = req.payload;
+
+  try {
+    const selectedShelter = await db.Shelter.findOne({
+      _id: shelterId,
+      status: "active",
+    });
+    if (!selectedShelter) {
+      return res
+        .status(404)
+        .json({ message: "Trung tâm không tồn tại hoặc không hoạt động" });
+    }
+    const pet = await db.Pet.findOne({
+      _id: petId,
+      status: "unavailable",
+    });
+    if (!pet) {
+      return res.status(404).json({
+        message:
+          "Không tìm thấy thú nuôi hoặc thú nuôi này không thể tạo form!",
+      });
+    }
+    const existingForm = await db.AdoptionForm.findOne({
+      pet: petId,
+      shelter: shelterId,
+    });
+    if (existingForm) {
+      return res.status(400).json({
+        message:
+          "Đã tồn tại form xin nhận nuôi cho thú nuôi này tại trung tâm!",
+      });
+    }
+    const { questions } = req.body;
+
+    const savedQuestions = await questionService.editListQuestions(questions);
+
+    const formData = req.body;
+    const newForm = await adoptionFormService.createForm(
+      shelterId,
+      petId,
+      {
+        ...formData,
+        questions: savedQuestions.map((question) => question._id),
+      },
       id
     );
     res.status(201).json(newForm);

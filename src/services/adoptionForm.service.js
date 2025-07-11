@@ -41,6 +41,7 @@ async function createForm(shelterId, petId, formData, createdBy) {
       pet: petId,
       title: formData.title,
       description: formData.description,
+      questions: formData.questions || [],
       createdBy,
     });
 
