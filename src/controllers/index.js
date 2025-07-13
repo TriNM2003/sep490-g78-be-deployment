@@ -8,6 +8,7 @@ const adoptionTemplateController = require("./adoptionTemplate.controller");
 const adoptionFormController = require("./adoptionForm.controller");
 const postController = require("./post.controller");
 const donationController = require("./donation.controller");
+const blogController = require("./blog.controller");
 
 
 module.exports = {
@@ -21,5 +22,5 @@ module.exports = {
   adoptionFormController,
   postController,
   donationController,
-
+  blogController,
 };

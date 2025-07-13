@@ -1,6 +1,7 @@
 const db = require("../models");
 const { cloudinary } = require("../configs/cloudinary");
 const fs = require("fs/promises");
+const NotificationService = require("./notification.service");
 
 const getPostsList = async (userId) => {
   try {
@@ -136,6 +137,14 @@ const createPost = async (userId, postData, files) => {
       status: "active",
     });
 
+    await NotificationService.createNotification(
+      userId,
+      [userId],
+      `Bạn đã tạo bài viết mới: ${newPost.title}`,
+      "system",
+      `/posts/${newPost._id}`
+    );
+
     return newPost;
   } catch (error) {
     await Promise.all(
@@ -251,6 +260,14 @@ const reactPost = async (postId, userId) => {
       new: true,
     });
 
+    await NotificationService.createNotification(
+      userId,
+      [updatedPost.createdBy._id],
+      `${hasLiked ? "Bỏ thích" : "Thích"} bài viết: ${updatedPost.title}`,
+      "system",
+      `/posts/${updatedPost._id}`
+    );
+
     return updatedPost;
   } catch (error) {
     throw new Error("Error reacting to post: " + error.message);
@@ -284,6 +301,17 @@ const reportPost = async (userId, postId, reason, files) => {
       photos: uploadedPhotos,
       status: "pending",
     });
+
+    const post = await db.Post.findById(postId).populate("createdBy");
+
+    await NotificationService.createNotification(
+      userId,
+      [post.createdBy._id],
+      `Bạn đã báo cáo bài viết: ${post.title}`,
+      "system",
+      `/posts/${post._id}`
+    );
+
     return newReport;
   } catch (error) {
     for (const path of tempFilePaths) {
@@ -302,6 +330,17 @@ const createComment = async ({ postId, userId, message }) => {
       commenter: userId,
       message,
     });
+
+    const post = await db.Post.findById(postId).populate("createdBy");
+
+    await NotificationService.createNotification(
+      userId,
+      [post.createdBy._id],
+      `Bạn có bình luận mới trên bài viết: ${post.title}`,
+      "system",
+      `/posts/${post._id}`
+    );
+
     return comment;
   } catch (error) {
     throw new Error("Error creating comment: " + error.message);

@@ -22,6 +22,7 @@ const {
   adoptionFormRouter,
   postRouter,
   donationRouter,
+  blogRouter,
 } = require("./routes");
 
 
@@ -73,6 +74,7 @@ app.use("/species", speciesRouter);
 app.use("/breeds", breedRouter);
 app.use("/posts", postRouter);
 app.use("/donations", donationRouter);
+app.use("/blogs", blogRouter);
 // app.use("/posts/:postId/comments", );
 // app.use("/notifications", );
 app.use("/uploads", express.static(path.join(__dirname, "../uploads")));

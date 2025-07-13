@@ -10,6 +10,7 @@ const breedRouter = require("./breed.route");
 const adoptionFormRouter = require("./adoptionForm.route");
 const postRouter = require("./post.route");
 const donationRouter = require("./donation.route");
+const blogRouter = require("./blog.route")
 
 module.exports = {
   petRouter,
@@ -23,5 +24,6 @@ module.exports = {
   speciesRouter,
   breedRouter,
   adoptionFormRouter,
-  donationRouter
+  donationRouter,
+  blogRouter,
 };
