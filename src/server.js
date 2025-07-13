@@ -21,6 +21,8 @@ const {
   speciesRouter,
   breedRouter,
   adoptionFormRouter,
+  reportRouter,
+  blogRouter,
 } = require("./routes");
 
 
@@ -71,6 +73,8 @@ app.use("/shelters/:shelterId/adoptionTemplates", adoptionTemplateRouter);
 // app.use("/shelters/:shelterId/consentForms", );
 app.use("/species", speciesRouter);
 app.use("/breeds", breedRouter);
+app.use("/reports", reportRouter);
+app.use("/blogs", blogRouter);
 
 // app.use("/posts", );
 // app.use("/posts/:postId/comments", );

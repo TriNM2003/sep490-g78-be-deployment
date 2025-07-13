@@ -8,6 +8,8 @@ const adoptionTemplateController = require("./adoptionTemplate.controller");
 const adoptionFormController = require("./adoptionForm.controller");
 const speciesController = require("./species.controller");
 const breedController = require("./breed.controller");
+const blogController = require("./blog.controller");
+const reportController = require("./report.controller");
 
 
 module.exports = {
@@ -21,4 +23,6 @@ module.exports = {
   adoptionFormController,
   speciesController,
   breedController,
+  blogController,
+  reportController,
 };
