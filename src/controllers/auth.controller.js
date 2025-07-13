@@ -209,12 +209,20 @@ const login = async (req, res) => {
 };
 
 
-const loginByGoogle = passport.authenticate('google-user', { scope: ['email', 'profile'] });
+const loginByGoogle = (req, res, next) => {
+  const redirectPath = req.query.redirect || "/home"; 
+  passport.authenticate('google-user', {
+    scope: ['email', 'profile'],
+    state: encodeURIComponent(redirectPath),
+  })(req, res, next);
+};
+
 const loginByGoogleAdmin = passport.authenticate('google-admin', { scope: ['email', 'profile'] });
 
 const loginByGoogleCallbackUser = async (req, res, next) => {
     try {
         const googleUser = req.user._json;
+        const redirectPath = req.user.redirectPath || "/home";
 
     // tao password random cho account dang ki bang Google
     const charset = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789!@#$%^&*()-_=+";
@@ -291,7 +299,7 @@ const loginByGoogleCallbackUser = async (req, res, next) => {
         httpOnly: true,
         sameSite: "lax"
     })
-    res.redirect(`${process.env.FE_URL_USER}/login?isLoginByGoogle=true`);
+     res.redirect(`${process.env.FE_URL_USER}/login?isLoginByGoogle=true&redirect=${encodeURIComponent(redirectPath)}`);
     } catch (error) {
         console.log(error.message)
         res.redirect(`${process.env.FE_URL_USER}/login?isLoginByGoogle=false&message=`+ error.message);
