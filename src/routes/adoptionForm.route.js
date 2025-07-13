@@ -11,6 +11,7 @@ adoptionFormRouter.use(bodyParser.json());
 adoptionFormRouter.get("/get-by-shelter",[verifyAccessToken], adoptionFormController.getFormsByShelter);
 adoptionFormRouter.post("/create/:petId",[verifyAccessToken], adoptionFormController.createForm);
 adoptionFormRouter.put("/:formId/edit",[verifyAccessToken], adoptionFormController.editForm);
+adoptionFormRouter.put("/:formId/update-questions",[verifyAccessToken], adoptionFormController.editFormQuestions);
 adoptionFormRouter.delete("/:formId/delete",[verifyAccessToken], adoptionFormController.deleteForm);
 
 

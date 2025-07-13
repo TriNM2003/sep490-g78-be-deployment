@@ -6,6 +6,7 @@ const medicalRecordController = require("./medicalRecord.controller");
 const shelterController = require("./shelter.controller");
 const adoptionTemplateController = require("./adoptionTemplate.controller");
 const adoptionFormController = require("./adoptionForm.controller");
+const speciesController = require("./species.controller");
 const postController = require("./post.controller");
 const donationController = require("./donation.controller");
 const blogController = require("./blog.controller");
@@ -20,6 +21,7 @@ module.exports = {
   shelterController,
   adoptionTemplateController,
   adoptionFormController,
+  speciesController,
   postController,
   donationController,
   blogController,
