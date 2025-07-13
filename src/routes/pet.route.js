@@ -4,6 +4,7 @@ const bodyParser = require("body-parser");
 const { verifyAccessToken } = require("../middlewares/auth.middleware");
 const petController = require("../controllers/pet.controller");
 const upload = require("../middlewares/upload.middleware");
+const adoptionFormController = require("../controllers/adoptionForm.controller");
 
 petRouter.use(bodyParser.json());
 petRouter.get("/get-pet-list", petController.getPetList);
@@ -13,6 +14,7 @@ petRouter.get("/:petId", petController.viewDetailPet);
 petRouter.post("/createPet", petController.createPet);
 petRouter.put("/updatePet/:id", petController.updatePet);
 petRouter.delete("/deletePet/:id", petController.deletePet);
+petRouter.get("/get-adoptionForms-by-petId/:petId",[verifyAccessToken], adoptionFormController.getFormByPetId);
 petRouter.post("/upload-image", upload.single("file"), (req, res) => {
   if (!req.file) return res.status(400).json({ message: "No file uploaded" });
   // Trả về đường dẫn local
