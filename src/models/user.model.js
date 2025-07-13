@@ -87,6 +87,18 @@ const userSchema = new mongoose.Schema(
       enum: ["verifying", "active", "banned"],
       default: "verifying",
     },
+    notifications: [
+      {
+        _id: {
+          type: mongoose.Schema.Types.ObjectId,
+          ref: "notification",
+        },
+        isSeen: {
+          type: Boolean,
+          default: false,
+        },
+      },
+    ],
     warningCount: {
       type: Number,
       default: 0,

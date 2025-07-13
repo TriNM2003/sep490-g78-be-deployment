@@ -6,10 +6,12 @@ const medicalRecordRouter = require("./medicalRecord.route");
 const shelterRouter = require("./shelter.route");
 const adoptionTemplateRouter = require("./adoptionTemplate.route");
 const adoptionFormRouter = require("./adoptionForm.route");
-
 const speciesRouter = require("./species.route");
 const breedRouter = require("./breed.route");
-
+const blogRouter = require("./blog.route");
+const reportRouter = require("./report.route");
+const postRouter = require("./post.route");
+const donationRouter = require("./donation.route");
 
 module.exports = {
   petRouter,
@@ -19,10 +21,12 @@ module.exports = {
   medicalRecordRouter,
   shelterRouter,
   adoptionTemplateRouter,
+  postRouter,
   speciesRouter,
   breedRouter,
   adoptionFormRouter,
-  
+  donationRouter,
+  blogRouter,
+  reportRouter,
 };
-
 

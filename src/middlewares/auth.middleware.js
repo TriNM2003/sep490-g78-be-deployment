@@ -24,6 +24,19 @@ const verifyAccessToken = (req, res, next) => {
   });
 };
 
+const optionalVerifyAccessToken = (req, res, next) => {
+  const authHeader = req.headers["authorization"];
+  if (authHeader?.startsWith("Bearer ")) {
+    const token = authHeader.split(" ")[1];
+    jwt.verify(token, process.env.JWT_SECRET, (err, decoded) => {
+      if (!err) {
+        req.payload = decoded;
+      }
+    });
+  }
+  next();
+};
+
 const verifyGoogleCallback = passport.authenticate("google-user", {
   failureRedirect: "http://localhost:3000/error",
 });
@@ -33,6 +46,7 @@ const verifyGoogleCallbackAdmin = passport.authenticate("google-admin", {
 
 const authMiddleware = {
   verifyAccessToken,
+  optionalVerifyAccessToken,
   verifyGoogleCallback,
   verifyGoogleCallbackAdmin,
 };

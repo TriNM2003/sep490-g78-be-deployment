@@ -12,6 +12,7 @@ passport.use(
           passReqToCallback: true,
       },
       function (request, accessToken, refreshToken, profile, done) {
+        profile.redirectPath = request.query.state ? decodeURIComponent(request.query.state) : "/home";
         return done(null, profile);
       }
   )

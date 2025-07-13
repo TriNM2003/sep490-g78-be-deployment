@@ -27,6 +27,7 @@ const createSpecies = async (req, res) => {
   }
 };
 
+
 const getAll = async (req, res) => {
   try {
     const species = await Species.find();

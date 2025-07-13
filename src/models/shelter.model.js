@@ -10,6 +10,7 @@ const shelterSchema = new mongoose.Schema(
     shelterCode: {
       type: String,
       required: [true, "Mã trạm cứu hộ là bắt buộc"],
+      min: [3, "Mã trạm phải có ít nhất 3 kí tự"],
       unique: true,
     },
     bio: {
