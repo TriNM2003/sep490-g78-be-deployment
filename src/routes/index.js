@@ -8,6 +8,8 @@ const adoptionTemplateRouter = require("./adoptionTemplate.route");
 const adoptionFormRouter = require("./adoptionForm.route");
 const speciesRouter = require("./species.route");
 const breedRouter = require("./breed.route");
+const blogRouter = require("./blog.route");
+const reportRouter = require("./report.route");
 
 const postRouter = require("./post.route");
 const donationRouter = require("./donation.route");
@@ -27,5 +29,6 @@ module.exports = {
   adoptionFormRouter,
   donationRouter,
   blogRouter,
+  reportRouter,
 };
 

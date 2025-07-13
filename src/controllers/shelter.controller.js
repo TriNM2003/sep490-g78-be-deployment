@@ -214,6 +214,16 @@ const getShelterDashboardStatistics = async (req, res) => {
     res.status(400).json({ message: error.message });
   }
 };
+const changeShelterMemberRole = async (req, res) => {
+  const { shelterId } = req.params;
+  const {userId, roles} = req.body;
+  try {
+    const updatedData = await shelterService.changeShelterMemberRole(req.payload.id, shelterId, userId, roles);
+    res.status(200).json(updatedData);
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+};
 
 // ADMIN
 const getAllShelter = async (req, res, next) => {
@@ -277,6 +287,7 @@ const shelterController = {
     getEligibleShelters,
     reviewShelterRequest,
     getShelterDashboardStatistics,
+    changeShelterMemberRole,
 
     //ADMIN
     getAllShelter,

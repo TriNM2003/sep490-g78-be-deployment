@@ -23,6 +23,7 @@ const {
   adoptionFormRouter,
   postRouter,
   donationRouter,
+  reportRouter,
   blogRouter,
 } = require("./routes");
 
@@ -76,6 +77,7 @@ app.use("/species", speciesRouter);
 app.use("/breeds", breedRouter);
 app.use("/posts", postRouter);
 app.use("/donations", donationRouter);
+app.use("/reports", reportRouter);
 app.use("/blogs", blogRouter);
 // app.use("/posts/:postId/comments", );
 // app.use("/notifications", );
