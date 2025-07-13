@@ -7,7 +7,9 @@ const { isAdmin } = require("../middlewares/admin.middleware");
 const cloudinary = require("../configs/cloudinary");
 const {
   isShelterManager,
-} = require("../middlewares/shelterManager.middleware");
+  isShelterMember, 
+  isShelterStaff
+} = require("../middlewares/shelter.middleware");
 
 shelterRouter.use(bodyParser.json());
 
@@ -30,7 +32,7 @@ shelterRouter.get(
 );
 shelterRouter.get(
   "/get-profile/:shelterId",
-  [verifyAccessToken, isShelterManager],
+  [verifyAccessToken, isShelterMember],
   shelterController.getShelterProfile
 );
 shelterRouter.put(
@@ -49,7 +51,7 @@ shelterRouter.get(
 );
 shelterRouter.get("/get-all", shelterController.getAll);
 shelterRouter.get("/get-members/:shelterId", 
-  [verifyAccessToken, isShelterManager],
+  [verifyAccessToken, isShelterMember],
    shelterController.getShelterMembers);
   shelterRouter.get("/find-eligible-users/:shelterId", 
   [verifyAccessToken, isShelterManager],
@@ -64,6 +66,7 @@ shelterRouter.put("/:shelterId/kick-member", [verifyAccessToken, isShelterManage
 shelterRouter.put("/send-staff-request/:shelterEmail", verifyAccessToken, shelterController.requestIntoShelter);
 shelterRouter.get("/eligible-shelters", verifyAccessToken, shelterController.getEligibleShelters);
 shelterRouter.put("/:shelterId/review-user-request", [verifyAccessToken, isShelterManager], shelterController.reviewShelterRequest);
+shelterRouter.put("/:shelterId/change-member-roles",[verifyAccessToken, isShelterManager], shelterController.changeShelterMemberRole);
 
 // ADMIN
 shelterRouter.get(
