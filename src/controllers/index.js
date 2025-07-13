@@ -7,9 +7,15 @@ const shelterController = require("./shelter.controller");
 const adoptionTemplateController = require("./adoptionTemplate.controller");
 const adoptionFormController = require("./adoptionForm.controller");
 const speciesController = require("./species.controller");
-const breedController = require("./breed.controller");
+
+const postController = require("./post.controller");
+const donationController = require("./donation.controller");
 const blogController = require("./blog.controller");
+
+const breedController = require("./breed.controller");
+
 const reportController = require("./report.controller");
+
 
 
 module.exports = {
@@ -22,7 +28,11 @@ module.exports = {
   adoptionTemplateController,
   adoptionFormController,
   speciesController,
+
+  postController,
+  donationController,
   breedController,
   blogController,
   reportController,
+
 };

@@ -26,6 +26,10 @@ const notificationSchema = new mongoose.Schema(
       required: true,
       trim: true,
     },
+    redirectUrl: {
+      type: String,
+      default: "",
+    },
   },
   { timestamps: true } 
 );

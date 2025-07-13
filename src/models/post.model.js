@@ -12,14 +12,12 @@ const postSchema = new mongoose.Schema(
       required: true,
       trim: true,
     },
-    privacy: [
-      {
-        type: String,
-        enum: ["public", "private"],
-        default: "public",
-        required: true,
-      },
-    ],
+    privacy: {
+      type: String,
+      enum: ["public", "private"],
+      default: "public",
+      required: true,
+    },
     photos: [
       {
         type: String,
@@ -37,7 +35,7 @@ const postSchema = new mongoose.Schema(
       default: "active",
     },
   },
-  { timestamps: true } 
+  { timestamps: true }
 );
 
 const Post = mongoose.model("Post", postSchema);
