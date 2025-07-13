@@ -10,6 +10,7 @@ adoptionTemplateRouter.use(bodyParser.json());
 adoptionTemplateRouter.get("/get-all",[verifyAccessToken], adoptionTemplateController.getAll);
 adoptionTemplateRouter.post("/create",[verifyAccessToken], adoptionTemplateController.create);
 adoptionTemplateRouter.put("/:templateId/edit",[verifyAccessToken], adoptionTemplateController.editTemplate);
+adoptionTemplateRouter.post("/:templateId/duplicateTemplate",[verifyAccessToken], adoptionTemplateController.duplicateTemplate);
 adoptionTemplateRouter.put("/:templateId/update-questions",[verifyAccessToken], adoptionTemplateController.editTemplateQuestions);
 adoptionTemplateRouter.delete("/:templateId/delete",[verifyAccessToken], adoptionTemplateController.deleteTemplate);
 

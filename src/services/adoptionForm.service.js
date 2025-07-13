@@ -6,6 +6,7 @@ async function getFormsByShelter(shelterId) {
   try {
     const forms = await db.AdoptionForm.find({ shelter: shelterId })
       .populate("pet", "_id name petCode")
+      .populate("questions")
       .populate("createdBy", "fullName email avatar")
       .populate("shelter", "name")
       .lean();
@@ -40,12 +41,14 @@ async function createForm(shelterId, petId, formData, createdBy) {
       pet: petId,
       title: formData.title,
       description: formData.description,
+      questions: formData.questions || [],
       createdBy,
     });
 
     const savedForm = await newForm.save();
     const populatedForm = await db.AdoptionForm.findById(savedForm._id)
       .populate("pet", "_id name petCode")
+      .populate("questions")
       .populate("createdBy", "fullName email avatar")
       .populate("shelter", "name")
       .lean();
@@ -68,23 +71,23 @@ async function editForm(formId, formData) {
       throw new Error("Không tìm thấy form");
     }
 
-    form.title = formData.title || form.title;
-    form.description = formData.description || form.description;
-
-    const updatedForm = await form.save();
-    const populatedForm = await db.AdoptionForm.findById(updatedForm._id)
+    const updateForm = await db.AdoptionForm.findOneAndUpdate(
+      { _id: formId },
+      formData,
+      { new: true }
+    )
       .populate("pet", "_id name petCode")
+      .populate("questions")
       .populate("createdBy", "fullName email avatar")
-      .populate("shelter", "name")
       .lean();
     
-    if (!populatedForm) {
+    if (!updateForm) {
       throw new Error("Lỗi không tìm thấy form đã cập nhật");
     }
     
     return {
-      ...populatedForm,
-      shelter: populatedForm?.shelter?.name,
+      ...updateForm,
+      shelter: updateForm?.shelter?.name,
     };
   } catch (error) {
     throw error;
