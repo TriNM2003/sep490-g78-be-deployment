@@ -3,6 +3,8 @@ const Species = require("../models/species.model");
 const getAllSpecies = async (req, res) => {
   try {
     const species = await Species.find();
+    console.log("📦 Species returned:", species); // << thêm dòng này
+
     res.status(200).json(species);
   } catch (error) {
     res.status(500).json({ message: error.message });

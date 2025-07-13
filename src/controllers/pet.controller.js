@@ -1,11 +1,21 @@
 const petService = require("../services/pet.service");
 const { cloudinary } = require("../configs/cloudinary");
 const medicalRecordService = require("../services/medicalRecord.service");
+const { analyzePetWithGPT } = require("../services/gptVision.service");
 
 const getAllPets = async (req, res) => {
   try {
-    const pets = await petService.getAllPets();
-    res.status(200).json(pets);
+    const { shelterId, page = 1, limit = 8 } = req.query;
+    if (!shelterId) {
+      return res.status(400).json({ message: "Missing shelterId" });
+    }
+
+    const result = await petService.getAllPetsByShelter(
+      shelterId,
+      Number(page),
+      Number(limit)
+    );
+    res.status(200).json(result);
   } catch (error) {
     res.status(400).json({ message: error.message });
   }
@@ -119,6 +129,23 @@ const getMedicalRecordsByPet = async (req, res) => {
   }
 };
 
+const analyzePetImage = async (req, res) => {
+  try {
+    const { imageBase64 } = req.body;
+    if (!imageBase64)
+      return res.status(400).json({ message: "Missing image data" });
+
+    const result = await analyzePetWithGPT(imageBase64);
+    res.status(200).json(result);
+    console.log("GPT ANALYZE RESULT:", result);
+  } catch (err) {
+    console.error("GPT ANALYZE ERROR:", err);
+    res
+      .status(500)
+      .json({ message: "AI phân tích thất bại", error: err.message });
+  }
+};
+
 const petController = {
   getAllPets,
   createPet,
@@ -127,6 +154,7 @@ const petController = {
   getMedicalRecords,
   viewDetailPet,
   uploadImage,
+  analyzePetImage,
   getPetList,
   getPetById,
   getAdoptedPetbyUser,
