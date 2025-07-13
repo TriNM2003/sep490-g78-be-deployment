@@ -36,7 +36,7 @@ async function create(data, createdBy, shelterId) {
       title: title,
       species: species,
       description: description,
-      questions: [],
+      questions: data.questions ? data.questions : [],
       createdBy: createdBy,
       shelter: shelterId,
     });
@@ -118,14 +118,18 @@ async function deleteTemplate(templateId, shelterId) {
     if (!selectedTemplate) {
       throw new Error("Không tìm thấy mẫu đơn nhận nuôi");
     }
-    const deletedTemplate = await db.AdoptionTemplate.findOneAndUpdate(
-      { _id: templateId },
-      { status: "inactive" },
-      { new: true }
-    );
-    if (!deletedTemplate) {
-      throw new Error("Không thể xóa mẫu đơn nhận nuôi");
-    }
+    // const deletedTemplate = await db.AdoptionTemplate.findOneAndUpdate(
+    //   { _id: templateId },
+    //   { status: "inactive" },
+    //   { new: true }
+    // );
+    // if (!deletedTemplate) {
+    //   throw new Error("Không thể xóa mẫu đơn nhận nuôi");
+    // }
+    const deletedTemplate = await db.AdoptionTemplate.deleteOne({
+      _id: templateId,
+      shelter: shelterId,
+    });
     return deletedTemplate;
   } catch (error) {
     throw error;
