@@ -17,7 +17,7 @@ const register = async (req) => {
     }
     const hashedPassword = await bcryptUtils.encryptPassword(password, 10);
     const newUser = new User({
-        email,
+          email,
         password: hashedPassword,
         fullName: fullName,
         phoneNumber: null,

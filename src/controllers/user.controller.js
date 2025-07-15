@@ -11,21 +11,17 @@ const getAllUsers = async (req, res) => {
 
 const getUserById = async (req, res) => {
   try {
+    const user = await userService.getUserById(req.params.id);
+    res.status(200).json(user);
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+};
+
+const getUserByToken = async (req, res) => {
+  try {
     const user = await userService.getUserById(req.payload.id);
-    if (!user) return res.status(404).json({ message: "User not found" });
-    const result = {
-      _id: user._id || null,
-      username: user.username || null,
-      fullName: user.fullName || null,
-      email: user.email || null,
-      avatar: user.avatar || null,
-      bio: user.bio || null,
-      dob: user.dob || null,
-      phoneNumber: user.phoneNumber || null,
-      address: user.address || null,
-      background: user.background || null,
-    }
-    res.status(200).json(result);
+    res.status(200).json(user);
   } catch (error) {
     res.status(500).json({ message: error.message });
   }
@@ -58,7 +54,7 @@ const editProfile = async (req, res) => {
     );
     res.status(200).json(result);
   } catch (error) {
-    console.error("Error in editProfile:", error.message);
+    console.error("Lỗi khi cập nhật thông tin:", error.message);
     res.status(400).json({ message: error.message });
   }
 };
@@ -70,12 +66,16 @@ const getUsersList = async (req, res) => {
     const users = await userService.getAllUsers();
     const formattedOutput = users.map(user => {
       return {
+        _id: user._id,
       avatar: user.avatar,
       fullName: user.fullName || null,
       email: user.email,
       roles: user.roles,
       status: user.status,
-      createdAt: user.createdAt
+      phoneNumber: user.phoneNumber,
+      warningCount: user.warningCount,
+      createdAt: user.createdAt,
+      updatedAt: user.updatedAt
     }})
     res.status(200).json({
       status: 200,
@@ -85,15 +85,61 @@ const getUsersList = async (req, res) => {
     res.status(404).json({ message: error.message });
   }
 };
+const addUser = async (req, res) => {
+  try {
+    const userData = req.body;
+    const newUser = await userService.addUser(userData);
+    res.status(201).json(newUser);
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+}
+
+const changeUserRole = async (req, res) => {
+  const { userId } = req.params;
+  const roles = req.body.roles;
+  try {
+    const updatedUser = await userService.changeUserRole(userId, roles);
+    res.status(200).json(updatedUser);
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+};
+
+const banUser = async (req, res) => {
+  const { userId } = req.params;
+  try {
+    const updatedUser = await userService.banUser(userId);
+    res.status(200).json(updatedUser);
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+};
+
+const unbanUser = async (req, res) => {
+  const { userId } = req.params;
+  try {
+    const updatedUser = await userService.unbanUser(userId);
+    res.status(200).json(updatedUser);
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+};
 
 const userController = {
+  //USER
   getAllUsers,
   getUserById,
   changePassword,
   editProfile,
+  getUserByToken,
 
   //ADMIN
   getUsersList,
+  addUser,
+  changeUserRole,
+  banUser,
+  unbanUser,
 };
 
 module.exports = userController;

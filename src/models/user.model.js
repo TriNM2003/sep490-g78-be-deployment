@@ -59,6 +59,16 @@ const userSchema = new mongoose.Schema(
     address: {
       type: String,
     },
+    location: {
+      lat: {
+        type: Number,
+        default: 0,
+      },
+      lng: {
+        type: Number,
+        default: 0,
+      },
+    },
     roles: [
       {
         type: String,
@@ -66,11 +76,29 @@ const userSchema = new mongoose.Schema(
         default: "user",
       },
     ],
+    wishList: [
+      {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: "Pet",
+      },
+    ],
     status: {
       type: String,
       enum: ["verifying", "active", "banned"],
       default: "verifying",
     },
+    notifications: [
+      {
+        _id: {
+          type: mongoose.Schema.Types.ObjectId,
+          ref: "notification",
+        },
+        isSeen: {
+          type: Boolean,
+          default: false,
+        },
+      },
+    ],
     warningCount: {
       type: Number,
       default: 0,

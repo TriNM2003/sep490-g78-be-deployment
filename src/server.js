@@ -4,12 +4,30 @@ const bodyParser = require("body-parser");
 const httpsErrors = require("http-errors");
 const cors = require("cors");
 require("dotenv").config();
-const {authRouter} = require("./routes");
 const cookieParser = require("cookie-parser");
 
 const passport = require("./configs/passport.config");
 
-const {userRouter} = require("./routes");
+
+
+const {
+  userRouter,
+  petRouter,
+  authRouter,
+  medicalRecordRouter,
+  adoptionSubmissionRouter,
+  shelterRouter,
+  adoptionTemplateRouter,
+  speciesRouter,
+  breedRouter,
+  adoptionFormRouter,
+  postRouter,
+  donationRouter,
+  reportRouter,
+  blogRouter,
+} = require("./routes");
+
+
 const path = require("path");
 const http = require("http");
 const db = require("./models");
@@ -24,7 +42,7 @@ app.use(
     credentials: true,
   })
 );
-
+app.use(express.json());
 app.use(morgan("dev"));
 app.use(bodyParser.json());
 app.use(cookieParser());
@@ -34,7 +52,7 @@ app.use(
     secret: "pawShelterGoogleLogin",
     resave: false,
     saveUninitialized: false,
-    cookie: { secure: false }
+    cookie: { secure: false },
   })
 );
 app.use(passport.initialize());
@@ -45,9 +63,25 @@ app.get("/", async (req, res, next) => {
 });
 
 // Định tuyến theo các chức năng thực tế
-
+app.use("/pets", petRouter);
 app.use("/auth", authRouter);
 app.use("/users", userRouter);
+app.use("/shelters", shelterRouter);
+app.use("/adoption-submissions", adoptionSubmissionRouter);
+app.use("/pets/:petId/medical-records", medicalRecordRouter);
+app.use("/pets/:petId/adoption-submissions", adoptionSubmissionRouter);
+app.use("/shelters/:shelterId/adoptionForms", adoptionFormRouter );
+app.use("/shelters/:shelterId/adoptionTemplates", adoptionTemplateRouter);
+// app.use("/shelters/:shelterId/consentForms", );
+app.use("/species", speciesRouter);
+app.use("/breeds", breedRouter);
+app.use("/posts", postRouter);
+app.use("/donations", donationRouter);
+app.use("/reports", reportRouter);
+app.use("/blogs", blogRouter);
+// app.use("/posts/:postId/comments", );
+// app.use("/notifications", );
+app.use("/uploads", express.static(path.join(__dirname, "../uploads")));
 
 app.use(async (req, res, next) => {
   next(httpsErrors(404, "Bad Request"));

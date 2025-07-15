@@ -9,7 +9,8 @@ const { isAdmin } = require("../middlewares/admin.middleware");
 userRouter.use(bodyParser.json());
 
 userRouter.get("/", userController.getAllUsers);
-userRouter.get("/user-profile",verifyAccessToken, userController.getUserById);
+userRouter.get("/get-user",verifyAccessToken, userController.getUserByToken);
+userRouter.get("/user-profile/:id", userController.getUserById);
 userRouter.put("/change-password", verifyAccessToken, userController.changePassword);
 userRouter.put("/edit-profile",
   cloudinary.upload.fields([
@@ -22,5 +23,25 @@ userRouter.put("/edit-profile",
 
 //ADMIN
 userRouter.get("/admin/get-users-list",[verifyAccessToken, isAdmin], userController.getUsersList);
+userRouter.post(
+  "/admin/add-user",
+  [verifyAccessToken, isAdmin],
+  userController.addUser
+);
+userRouter.put(
+  "/admin/change-roles/:userId",
+  [verifyAccessToken, isAdmin],
+  userController.changeUserRole
+);
+userRouter.put(
+  "/admin/ban-user/:userId",
+  [verifyAccessToken, isAdmin],
+  userController.banUser
+);
+userRouter.put(
+  "/admin/unban-user/:userId",
+  [verifyAccessToken, isAdmin],
+  userController.unbanUser
+);
 
 module.exports = userRouter;

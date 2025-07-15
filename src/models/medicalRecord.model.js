@@ -31,13 +31,14 @@ const medicalRecordSchema = new mongoose.Schema(
       required: true,
     },
     performedBy: {
-      type: mongoose.Schema.Types.ObjectId,
-      ref: "User", 
+      type: String,
+      required: true,
+      trim: true,
     },
     photos: [
       {
         type: String,
-        required: true
+        required: true,
       },
     ],
     status: {

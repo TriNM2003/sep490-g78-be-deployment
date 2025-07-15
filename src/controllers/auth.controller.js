@@ -38,7 +38,7 @@ async function forgotPassword(req, res) {
         res.json({ status: "Email sent, check your inbox!", token });
     } catch (error) {
         console.error(error);
-        res.status(500).json({ status: "Something went wrong!" });
+        res.status(400).json({ status: "Something went wrong!" });
     }
 }
 
@@ -82,7 +82,7 @@ async function resetPassword(req, res) {
         if (error.name === "TokenExpiredError") {
             return res.status(400).json({ status: "Reset link expired!" });
         }
-        res.status(500).json({ status: "Something went wrong!" });
+        res.status(400).json({ status: "Something went wrong!" });
     }
 }
 
@@ -132,7 +132,7 @@ const sendActivationEmail = async (req, res) => {
 
     } catch (error) {
         console.error(error);
-        res.status(500).json({ message: "Có gì đó sai sai!" });
+        res.status(400).json({ message: "Có gì đó sai sai!" });
     }
 };
 
@@ -180,7 +180,7 @@ const verifyAccount = async (req, res) => {
         if (error.name === "TokenExpiredError") {
             return res.status(400).json({ message: "Activation link expired!" });
         }
-        res.status(500).json({ message: "Something went wrong!" });
+        res.status(400).json({ message: "Something went wrong!" });
     }
 };
 
@@ -209,12 +209,20 @@ const login = async (req, res) => {
 };
 
 
-const loginByGoogle = passport.authenticate('google-user', { scope: ['email', 'profile'] });
+const loginByGoogle = (req, res, next) => {
+  const redirectPath = req.query.redirect || "/home"; 
+  passport.authenticate('google-user', {
+    scope: ['email', 'profile'],
+    state: encodeURIComponent(redirectPath),
+  })(req, res, next);
+};
+
 const loginByGoogleAdmin = passport.authenticate('google-admin', { scope: ['email', 'profile'] });
 
 const loginByGoogleCallbackUser = async (req, res, next) => {
     try {
         const googleUser = req.user._json;
+        const redirectPath = req.user.redirectPath || "/home";
 
     // tao password random cho account dang ki bang Google
     const charset = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789!@#$%^&*()-_=+";
@@ -291,7 +299,7 @@ const loginByGoogleCallbackUser = async (req, res, next) => {
         httpOnly: true,
         sameSite: "lax"
     })
-    res.redirect(`${process.env.FE_URL_USER}/login?isLoginByGoogle=true`);
+     res.redirect(`${process.env.FE_URL_USER}/login?isLoginByGoogle=true&redirect=${encodeURIComponent(redirectPath)}`);
     } catch (error) {
         console.log(error.message)
         res.redirect(`${process.env.FE_URL_USER}/login?isLoginByGoogle=false&message=`+ error.message);
