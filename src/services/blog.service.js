@@ -6,7 +6,7 @@ const fs = require("fs/promises");
 //USER
 async function getBlogByShelter(shelterId) { // for shelter staff
   try {
-    return await Blog.find({shelter: shelterId})
+    return await Blog.find({shelter: shelterId, status: {$ne: "deleted"}})
   } catch (error) {
     throw error;
   }
@@ -14,7 +14,7 @@ async function getBlogByShelter(shelterId) { // for shelter staff
 const getListBlogs = async () => {
   try {
     const blogs = await db.Blog.find({ status: "published" })
-      .populate("shelter")
+      // .populate("shelter")
       .sort({ createdAt: -1 });
 
     if (!blogs || blogs.length === 0) {
@@ -23,12 +23,7 @@ const getListBlogs = async () => {
 
     const result = blogs.map((blog) => ({
       _id: blog._id,
-      shelter: {
-        _id: blog.shelter._id,
-        name: blog.shelter.name,
-        shelterCode: blog.shelter.shelterCode,
-        avatar: blog.shelter.avatar,
-      },
+      shelter: blog.shelter,
       thumbnailUrl: blog.thumbnail_url,
       title: blog.title,
       description: blog.description,
@@ -45,12 +40,15 @@ const getListBlogs = async () => {
   }
 };
 
-const getBlogById = async (blogId) => {
-  try {
-    const blog = await db.Blog.findById(blogId, {
+const getPublishedBlogById = async (blogId) => {
+    const blog = await db.Blog.findOne({
+      _id: blogId,
       status: "published",
-    })
-    .populate("shelter");
+    }).populate("shelter");
+
+    if (!blog) {
+      throw new Error("Không tìm thấy blog");
+    }
     return {
       _id: blog._id,
       shelter: {
@@ -59,7 +57,7 @@ const getBlogById = async (blogId) => {
         shelterCode: blog.shelter.shelterCode,
         avatar: blog.shelter.avatar,
       },
-      thumbnailUrl: blog.thumbnail_url,
+      thumbnail_url: blog.thumbnail_url,
       title: blog.title,
       description: blog.description,
       content: blog.content,
@@ -67,10 +65,28 @@ const getBlogById = async (blogId) => {
       createdAt: blog.createdAt,
       updatedAt: blog.updatedAt,
     };
-  } catch (error) {
-    console.error("Lỗi khi lấy bài viết:", error);
-    throw new Error("Bài viết không tồn tại");
-  }
+};
+const getBlogById = async (blogId) => {
+    const blog = await db.Blog.findById(blogId).populate("shelter");
+    if (!blog) {
+      throw new Error("Không tìm thấy blog");
+    }
+    return {
+      _id: blog._id,
+      shelter: {
+        _id: blog.shelter._id,
+        name: blog.shelter.name,
+        shelterCode: blog.shelter.shelterCode,
+        avatar: blog.shelter.avatar,
+      },
+      thumbnail_url: blog.thumbnail_url,
+      title: blog.title,
+      description: blog.description,
+      content: blog.content,
+      status: blog.status,
+      createdAt: blog.createdAt,
+      updatedAt: blog.updatedAt,
+    };
 };
 
 const getListBlogsByShelter = async (shelterId) => {
@@ -166,16 +182,30 @@ const updateBlog = async (blogId, blogData, file) => {
       await fs.unlink(file.path);
     }
 
-    const updatedBlog = await db.Blog.findByIdAndUpdate(
-      blogId,
-      {
-        thumbnail_url: thumbnailUrl,
-        title,
-        description,
-        content,
-      },
-      { new: true }
-    );
+    let updatedBlog;
+    if (file) {
+      updatedBlog = await db.Blog.findByIdAndUpdate(
+        blogId,
+        {
+          thumbnail_url: thumbnailUrl,
+          title,
+          description,
+          content,
+        },
+        { new: true }
+      );
+    } else {
+      updatedBlog = await db.Blog.findByIdAndUpdate(
+        blogId,
+        {
+          title,
+          description,
+          content,
+        },
+        { new: true }
+      );
+    }
+    
 
     return updatedBlog;
   } catch (error) {
@@ -205,6 +235,31 @@ const deleteBlog = async (blogId) => {
     throw new Error("Không thể xóa bài viết");
   }
 };
+async function getRecommendedBlogs(blogId, shelterId) {
+  try {
+    const blogs = await Blog.aggregate([
+      {
+        $match: {
+          _id: { $ne: blogId },
+          shelter: shelterId,
+          status: "published"
+        },
+      },
+      { $sample: { size: 3 } },
+    ]);
+    if(blogs.length < 3){
+      return await Blog.find({
+        _id: { $ne: blogId },
+        shelter: shelterId,
+        status: "published",
+      });
+    }else{
+      return blogs
+    }
+  } catch (error) {
+    throw error;
+  }
+}
 
 
 
@@ -217,7 +272,7 @@ async function getAllBlogs() {
     throw error;
   }
 }
-async function approveBlog(blogId) {
+async function moderateBlog(blogId, decision = "reject") {
   try {
     const blog = await Blog.findById(blogId);
     blog.status = "published"
@@ -233,17 +288,18 @@ async function approveBlog(blogId) {
 const blogService = {
   //USER
   getListBlogs,
+  getPublishedBlogById,
   getBlogById,
   getAllBlogs,
   getListBlogsByShelter,
   getBlogByShelter,
   createBlog,
   updateBlog,
-  // editBlog,
   deleteBlog,
+  getRecommendedBlogs,
 
   //ADMIN
-  approveBlog,
+  moderateBlog,
 };
 
 module.exports = blogService;

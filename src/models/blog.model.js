@@ -26,7 +26,7 @@ const blogSchema = new mongoose.Schema(
     },
     status: {
       type: String,
-      enum: ["moderating", "published", "deleted"],
+      enum: ["moderating", "published","rejected", "deleted"],
       default: "moderating",
     },
   },

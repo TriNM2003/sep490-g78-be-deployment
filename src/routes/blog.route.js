@@ -11,16 +11,18 @@ blogRouter.use(bodyParser.json());
 
 //USER
 blogRouter.get("/get-blogs-list", optionalVerifyAccessToken, blogController.getListBlogs);
-blogRouter.get("/:blogId", optionalVerifyAccessToken, blogController.getBlogById);
+blogRouter.get("/:blogId", optionalVerifyAccessToken, blogController.getPublishedBlogById);
 blogRouter.get("/:shelterId/get-by-shelter", optionalVerifyAccessToken, blogController.getListBlogsByShelter);
 blogRouter.get("/:shelterId/get-by-shelter/staff",[verifyAccessToken, isShelterStaff], blogController.getBlogsByShelter)
+blogRouter.get("/:blogId/staff", [verifyAccessToken, isShelterStaff], blogController.getBlogById);
 blogRouter.post("/create/:shelterId", [verifyAccessToken, isShelterStaff], cloudinary.upload.single("thumbnail_url"), blogController.createBlog);
-blogRouter.put("/:blogId/update", [verifyAccessToken, isShelterStaff], cloudinary.upload.single("thumbnail_url"), blogController.updateBlog);
-blogRouter.delete("/:blogId/delete", [verifyAccessToken, isShelterStaff], blogController.deleteBlog);
+blogRouter.put("/:blogId/update/:shelterId", [verifyAccessToken, isShelterStaff], cloudinary.upload.single("thumbnail_url"), blogController.updateBlog);
+blogRouter.delete("/:blogId/delete/:shelterId", [verifyAccessToken, isShelterStaff], blogController.deleteBlog);
+blogRouter.get("/:blogId/recommend/:shelterId", blogController.getRecommendedBlogs);
 
 //ADMIN
 blogRouter.get("/get-all", blogController.getAllBlogs)
-blogRouter.put("/approve-blog/:blogId", [verifyAccessToken, isAdmin], blogController.approveBlog)
+blogRouter.put("/:blogId/moderate-blog/:decision", [verifyAccessToken, isAdmin], blogController.moderateBlog)
 
 
 module.exports = blogRouter;
