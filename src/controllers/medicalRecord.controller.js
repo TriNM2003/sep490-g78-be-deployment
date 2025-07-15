@@ -1,9 +1,14 @@
 const medicalRecordService = require("../services/medicalRecord.service");
+const { isStaffOfPetShelter } = require("../utils/permission.helper");
 
 const createMedicalRecord = async (req, res) => {
   try {
     const userId = req.payload?._id || req.payload?.id;
-    console.log("userId in createMedicalRecord:", userId);
+    const { petId } = req.body;
+    if (!petId) return res.status(400).json({ message: "Missing petId" });
+
+    await isStaffOfPetShelter(userId, petId);
+
     const record = await medicalRecordService.createMedicalRecord({
       ...req.body,
     });
@@ -12,6 +17,7 @@ const createMedicalRecord = async (req, res) => {
     res.status(400).json({ message: error.message });
   }
 };
+
 const getMedicalRecordsByPet = async (req, res) => {
   try {
     const petId = req.params.petId || req.query.petId;
@@ -27,10 +33,17 @@ const getMedicalRecordsByPet = async (req, res) => {
 };
 const updateMedicalRecord = async (req, res) => {
   try {
+    const userId = req.payload?._id || req.payload?.id;
+    const { petId } = req.body;
+    if (!petId) return res.status(400).json({ message: "Missing petId" });
+
+    await isStaffOfPetShelter(userId, petId);
+
     const record = await medicalRecordService.updateMedicalRecord(
-      req.params.id,
+      req.body.id, // hoặc req.body._id nếu FE gửi như vậy
       req.body
     );
+
     if (!record)
       return res.status(404).json({ message: "Medical record not found" });
     res.status(200).json(record);
@@ -41,9 +54,15 @@ const updateMedicalRecord = async (req, res) => {
 
 const deleteMedicalRecord = async (req, res) => {
   try {
-    const record = await medicalRecordService.deleteMedicalRecord(
-      req.params.id
-    );
+    const userId = req.payload?._id || req.payload?.id;
+    const { id, petId } = req.body;
+    if (!petId || !id)
+      return res.status(400).json({ message: "Missing petId or record id" });
+
+    await isStaffOfPetShelter(userId, petId);
+
+    const record = await medicalRecordService.deleteMedicalRecord(id);
+
     if (!record)
       return res.status(404).json({ message: "Medical record not found" });
     res.status(200).json({ message: "Medical record deleted successfully" });
@@ -51,6 +70,7 @@ const deleteMedicalRecord = async (req, res) => {
     res.status(400).json({ message: error.message });
   }
 };
+
 const getPetMedicalRecord = async (req, res) => {
   try {
     const { petId } = req.params; // Assuming the pet ID is in the request parameters

@@ -25,12 +25,10 @@ const isShelterManager = async (req, res, next) => {
   }
 };
 
-
 const isShelterMember = async (req, res, next) => {
   try {
     const { id } = req.payload; // id của người dùng
     const { shelterId } = req.params;
-
     const shelter = await Shelter.findById(shelterId);
     if (!shelter) {
       return res.status(404).json({ message: "Không tìm thấy trạm cứu hộ!" });
@@ -61,8 +59,7 @@ const isShelterStaff = async (req, res, next) => {
     }
 
     const isManager = shelter.members.some(
-      (member) =>
-        member._id.toString() === id && member.roles.includes("staff")
+      (member) => member._id.toString() === id && member.roles.includes("staff")
     );
 
     if (isManager) {
@@ -74,7 +71,6 @@ const isShelterStaff = async (req, res, next) => {
     next(error);
   }
 };
-
 
 const shelterMiddleware = {
   isShelterMember,

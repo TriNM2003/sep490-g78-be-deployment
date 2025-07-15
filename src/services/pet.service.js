@@ -96,6 +96,19 @@ const createPet = async (petData) => {
 
 const updatePet = async (petId, updateData) => {
   try {
+    // Lấy pet cần update
+    const pet = await Pet.findById(petId);
+    if (!pet) throw new Error("Không tìm thấy thú cưng");
+
+    // Kiểm tra nếu có trường shelter trong updateData thì phải khớp
+    if (
+      updateData.shelter &&
+      pet.shelter.toString() !== updateData.shelter.toString()
+    ) {
+      throw new Error("Thú cưng không thuộc trạm cứu hộ này!");
+    }
+
+    // Cập nhật dữ liệu
     return await Pet.findByIdAndUpdate(petId, updateData, { new: true });
   } catch (error) {
     throw error;
