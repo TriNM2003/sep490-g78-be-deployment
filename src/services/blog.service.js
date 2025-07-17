@@ -3,28 +3,45 @@ const { Blog } = require("../models");
 const db = require("../models");
 const fs = require("fs/promises");
 
-//USER
-async function getBlogByShelter(shelterId) { // for shelter staff
-  try {
-    return await Blog.find({shelter: shelterId, status: {$ne: "deleted"}})
-  } catch (error) {
-    throw error;
-  }
-}
-const getListBlogs = async () => {
-  try {
-    const blogs = await db.Blog.find({ status: "published" })
-      // .populate("shelter")
-      .sort({ createdAt: -1 });
+const sortBlogsByStatusAndDate = (blogs) => {
+  const statusPriority = {
+    moderating: 0,
+    approved: 1,
+    rejected: 2,
+  };
 
-    if (!blogs || blogs.length === 0) {
-      throw new Error("Không có bài viết nào");
+  return blogs.sort((a, b) => {
+    const priorityA = statusPriority[a.status] ?? 99;
+    const priorityB = statusPriority[b.status] ?? 99;
+
+    if (priorityA !== priorityB) {
+      return priorityA - priorityB; // Ưu tiên status trước
     }
 
-    const result = blogs.map((blog) => ({
+    // Nếu status bằng nhau thì sort theo ngày tạo giảm dần (mới nhất trước)
+    return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();
+  });
+};
+
+//USER
+async function getBlogByShelter(shelterId) {
+  // for shelter staff
+  try {
+    const blogs = await db.Blog.find({
+      shelter: shelterId,
+      status: { $ne: "deleted" },
+    })
+      .populate("shelter")
+      .sort({ createdAt: -1 });
+    return blogs.map((blog) => ({
       _id: blog._id,
-      shelter: blog.shelter,
-      thumbnailUrl: blog.thumbnail_url,
+      shelter: {
+        _id: blog.shelter._id,
+        name: blog.shelter.name,
+        avatar: blog.shelter.avatar,
+        location: blog.shelter.location,
+      },
+      thumbnail_url: blog.thumbnail_url,
       title: blog.title,
       description: blog.description,
       content: blog.content,
@@ -32,6 +49,40 @@ const getListBlogs = async () => {
       createdAt: blog.createdAt,
       updatedAt: blog.updatedAt,
     }));
+  } catch (error) {
+    throw error;
+  }
+}
+const getListBlogs = async () => {
+  try {
+    const blogs = await db.Blog.find({ status: "published" })
+      .populate("shelter")
+      .sort({ createdAt: -1 });
+
+    if (!blogs || blogs.length === 0) {
+      throw new Error("Không có bài viết nào");
+    }
+
+    const result = blogs.filter((blog) => {
+      if (blog.shelter.status === "active") {
+        return {
+          _id: blog._id,
+          shelter: {
+            _id: blog.shelter._id,
+            name: blog.shelter.name,
+            avatar: blog.shelter.avatar,
+            location: blog.shelter.location,
+          },
+          thumbnail_url: blog.thumbnail_url,
+          title: blog.title,
+          description: blog.description,
+          content: blog.content,
+          status: blog.status,
+          createdAt: blog.createdAt,
+          updatedAt: blog.updatedAt,
+        };
+      }
+    });
 
     return result;
   } catch (error) {
@@ -54,8 +105,8 @@ const getPublishedBlogById = async (blogId) => {
       shelter: {
         _id: blog.shelter._id,
         name: blog.shelter.name,
-        shelterCode: blog.shelter.shelterCode,
         avatar: blog.shelter.avatar,
+        location: blog.shelter.location,
       },
       thumbnail_url: blog.thumbnail_url,
       title: blog.title,
@@ -76,8 +127,8 @@ const getBlogById = async (blogId) => {
       shelter: {
         _id: blog.shelter._id,
         name: blog.shelter.name,
-        shelterCode: blog.shelter.shelterCode,
         avatar: blog.shelter.avatar,
+        location: blog.shelter.location,
       },
       thumbnail_url: blog.thumbnail_url,
       title: blog.title,
@@ -95,7 +146,7 @@ const getListBlogsByShelter = async (shelterId) => {
       shelter: shelterId,
       status: "published",
     })
-      // .populate("shelter")
+      .populate("shelter")
       .sort({ createdAt: -1 });
     if (!blogs || blogs.length === 0) {
       throw new Error("Không có bài viết nào của trạm cứu hộ này");
@@ -103,7 +154,12 @@ const getListBlogsByShelter = async (shelterId) => {
 
     const result = blogs.map((blog) => ({
       _id: blog._id,
-      shelter: blog.shelter,
+      shelter: {
+        _id: blog.shelter._id,
+        name: blog.shelter.name,
+        avatar: blog.shelter.avatar,
+        location: blog.shelter.location,
+      },
       thumbnail_url: blog.thumbnail_url,
       title: blog.title,
       description: blog.description,
@@ -248,13 +304,52 @@ async function getRecommendedBlogs(blogId, shelterId) {
       { $sample: { size: 3 } },
     ]);
     if(blogs.length < 3){
-      return await Blog.find({
+        const fewBlogs =  await Blog.find({
         _id: { $ne: blogId },
         shelter: shelterId,
         status: "published",
-      });
+      }).populate("shelter");
+      return fewBlogs.filter((blog) => {
+      if (blog.shelter.status === "active") {
+        return {
+          _id: blog._id,
+          shelter: {
+            _id: blog.shelter._id,
+            name: blog.shelter.name,
+            avatar: blog.shelter.avatar,
+            location: blog.shelter.location,
+          },
+          thumbnailUrl: blog.thumbnail_url,
+          title: blog.title,
+          description: blog.description,
+          content: blog.content,
+          status: blog.status,
+          createdAt: blog.createdAt,
+          updatedAt: blog.updatedAt,
+        };
+      }
+    });
     }else{
-      return blogs
+      return blogs.filter((blog) => {
+      if (blog.shelter.status === "active") {
+        return {
+          _id: blog._id,
+          shelter: {
+            _id: blog.shelter._id,
+            name: blog.shelter.name,
+            avatar: blog.shelter.avatar,
+            location: blog.shelter.location,
+          },
+          thumbnailUrl: blog.thumbnail_url,
+          title: blog.title,
+          description: blog.description,
+          content: blog.content,
+          status: blog.status,
+          createdAt: blog.createdAt,
+          updatedAt: blog.updatedAt,
+        };
+      }
+    });
     }
   } catch (error) {
     throw error;
@@ -267,7 +362,26 @@ async function getRecommendedBlogs(blogId, shelterId) {
 // ADMIN
 async function getAllBlogs() {
   try {
-    return await Blog.find({})
+    const rawBlogs =  await Blog.find({status: {$ne: "deleted"}}).populate("shelter");
+    const blogs = sortBlogsByStatusAndDate(rawBlogs);
+    const result = blogs.map((blog) => ({
+      _id: blog._id,
+      shelter: {
+        _id: blog.shelter._id,
+        name: blog.shelter.name,
+        avatar: blog.shelter.avatar,
+        location: blog.shelter.location,
+      },
+      thumbnail_url: blog.thumbnail_url,
+      title: blog.title,
+      description: blog.description,
+      content: blog.content,
+      status: blog.status,
+      createdAt: blog.createdAt,
+      updatedAt: blog.updatedAt,
+    }));
+
+    return result;
   } catch (error) {
     throw error;
   }
@@ -275,7 +389,23 @@ async function getAllBlogs() {
 async function moderateBlog(blogId, decision = "reject") {
   try {
     const blog = await Blog.findById(blogId);
-    blog.status = "published"
+    if(!blog){
+      throw new Error("Không tìm thấy blog!")
+    }
+    if(blog.status !== "moderating"){
+      throw new Error("Blog không ở trạng thái chờ duyệt!")
+    }
+
+    if(!["approve", "reject"].includes(decision)){
+      throw new Error("Không cung cấp quyết định phù hợp!")
+    }
+    if(decision === "approve"){
+      blog.status = "published"
+    }else{
+      blog.status = "rejected"
+    }
+    await blog.save();
+    
     return {
       status: 200,
       message: "Chấp thuận blog thành công"

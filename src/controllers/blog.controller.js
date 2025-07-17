@@ -19,11 +19,7 @@ const getListBlogs = async (req, res) => {
         message: error.message || "Không có bài viết nào",
       });
     }
-    res.status(200).json({
-      success: true,
-      message: "Danh sách bài viết",
-      data: blogs,
-    });
+    res.status(200).json(blogs);
   } catch (error) {
     res.status(400).json({
       success: false,
@@ -201,7 +197,7 @@ const getAllBlogs = async (req, res) => {
 };
 const moderateBlog = async (req, res) => {
   try {
-    const response = await blogService.approveBlog(req.params.blogId, req.params.decision);
+    const response = await blogService.moderateBlog(req.params.blogId, req.params.decision);
     res.status(200).json(response);
   } catch (error) {
     res.status(400).json({ message: error.message });

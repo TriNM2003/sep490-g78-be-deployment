@@ -21,8 +21,9 @@ blogRouter.delete("/:blogId/delete/:shelterId", [verifyAccessToken, isShelterSta
 blogRouter.get("/:blogId/recommend/:shelterId", blogController.getRecommendedBlogs);
 
 //ADMIN
-blogRouter.get("/get-all", blogController.getAllBlogs)
-blogRouter.put("/:blogId/moderate-blog/:decision", [verifyAccessToken, isAdmin], blogController.moderateBlog)
+blogRouter.get("/admin/get-all",[verifyAccessToken, isAdmin], blogController.getAllBlogs)
+blogRouter.put("/admin/:blogId/moderate-blog/:decision", [verifyAccessToken, isAdmin], blogController.moderateBlog)
+blogRouter.delete("/admin/:blogId/delete", [verifyAccessToken, isAdmin], blogController.deleteBlog)
 
 
 module.exports = blogRouter;
