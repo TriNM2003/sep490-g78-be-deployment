@@ -61,10 +61,46 @@ const getAdoptionSubmissionById = async (id) => {
   }
 };
 
+// get submission by petId
+const getSubmissionsByPetIds = async (petIds) => {
+  try {
+    // Tìm tất cả AdoptionForm có status là active và thuộc các petId
+    const adoptionForms = await db.AdoptionForm.find({
+      pet: { $in: petIds },
+      status: "active",
+    }).select("_id");
+
+    const formIds = adoptionForms.map((f) => f._id);
+
+    if (!formIds.length) return [];
+
+    const submissions = await db.AdoptionSubmission.find({
+      adoptionForm: { $in: formIds },
+    })
+      .populate("performedBy", "name email")
+      .populate({
+        path: "adoptionForm",
+        populate: [
+          { path: "pet", model: "Pet", select: "name petCode photos" },
+          { path: "shelter", model: "Shelter", select: "name" },
+        ],
+      })
+      .populate("answers.questionId")
+      .sort({ createdAt: -1 });
+
+    return submissions;
+  } catch (error) {
+    throw error;
+  }
+};
+
+
+
 const adoptionSubmissionService = {
     getAdtoptionRequestList,
     createAdoptionSubmission,
     checkUserSubmittedForm,
-    getAdoptionSubmissionById
+    getAdoptionSubmissionById,
+    getSubmissionsByPetIds
 };
 module.exports = adoptionSubmissionService;

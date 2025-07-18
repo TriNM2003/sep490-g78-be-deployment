@@ -15,16 +15,24 @@ const getAllPets = async () => {
     throw error;
   }
 };
-const getAllPetsByShelter = async (shelterId, page = 1, limit = 8) => {
+const getAllPetsByShelter = async (shelterId, page = 1, limit = 8, status) => {
   const skip = (page - 1) * limit;
 
+  const filter = {
+    shelter: shelterId,
+  };
+
+  if (status) {
+    filter.status = status; 
+  }
+
   const [pets, total] = await Promise.all([
-    Pet.find({ shelter: shelterId })
-      .sort({ createdAt: -1 })
+    Pet.find(filter)
+       .sort({ createdAt: -1, _id: -1 })
       .skip(skip)
       .limit(limit)
       .populate("breeds species"),
-    Pet.countDocuments({ shelter: shelterId }),
+    Pet.countDocuments(filter),
   ]);
 
   return {

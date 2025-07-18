@@ -8,7 +8,7 @@ const db = require("../models");
 const getAllPets = async (req, res) => {
   try {
     const { shelterId } = req.params;
-
+    const { status } = req.query;
     const page = parseInt(req.query.page, 10) || 1;
     const limit = parseInt(req.query.limit, 10) || 8;
 
@@ -16,7 +16,7 @@ const getAllPets = async (req, res) => {
       return res.status(400).json({ message: "Missing shelterId" });
     }
 
-    const result = await petService.getAllPetsByShelter(shelterId, page, limit);
+    const result = await petService.getAllPetsByShelter(shelterId, page, limit, status);
     return res.status(200).json(result);
   } catch (err) {
     next(err);

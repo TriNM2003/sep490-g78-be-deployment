@@ -135,11 +135,31 @@ const getAdoptionSubmissionById = async (req, res) => {
   }
 };
 
+// get submission by petID
+const getSubmissionsByPetIds = async (req, res) => {
+  try {
+    const { petIds } = req.body;
+
+    if (!Array.isArray(petIds) || petIds.length === 0) {
+      return res.status(400).json({ message: "Thiếu danh sách petIds" });
+    }
+
+    const result = await adoptionSubmissionService.getSubmissionsByPetIds(petIds);
+    res.status(200).json(result);
+  } catch (error) {
+    console.error("Lỗi khi lấy submissions:", error);
+    res.status(500).json({ message: "Lỗi server", error: error.message });
+  }
+};
+
+
+
 const adoptionSubmissionController = {
     getAdtoptionRequestList,
     createAdoptionSubmission,
     checkUserSubmitted,
-    getAdoptionSubmissionById
+    getAdoptionSubmissionById,
+    getSubmissionsByPetIds
 };
 
 module.exports = adoptionSubmissionController;
