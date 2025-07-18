@@ -211,6 +211,7 @@ const adoptionFormController = {
   getFormsByShelter,
   createForm,
   editForm,
+  createFormByTemplate,
   editFormQuestions,
   deleteForm,
   getFormByPetId,
