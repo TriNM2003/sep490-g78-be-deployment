@@ -22,6 +22,7 @@ blogRouter.get("/:blogId/recommend/:shelterId", blogController.getRecommendedBlo
 
 //ADMIN
 blogRouter.get("/admin/get-all",[verifyAccessToken, isAdmin], blogController.getAllBlogs)
+blogRouter.get("/admin/get-moderating-blogs",[verifyAccessToken, isAdmin], blogController.getModeratingBlogs)
 blogRouter.put("/admin/:blogId/moderate-blog/:decision", [verifyAccessToken, isAdmin], blogController.moderateBlog)
 blogRouter.delete("/admin/:blogId/delete", [verifyAccessToken, isAdmin], blogController.deleteBlog)
 

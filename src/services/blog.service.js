@@ -3,26 +3,6 @@ const { Blog } = require("../models");
 const db = require("../models");
 const fs = require("fs/promises");
 
-const sortBlogsByStatusAndDate = (blogs) => {
-  const statusPriority = {
-    moderating: 0,
-    approved: 1,
-    rejected: 2,
-  };
-
-  return blogs.sort((a, b) => {
-    const priorityA = statusPriority[a.status] ?? 99;
-    const priorityB = statusPriority[b.status] ?? 99;
-
-    if (priorityA !== priorityB) {
-      return priorityA - priorityB; // Ưu tiên status trước
-    }
-
-    // Nếu status bằng nhau thì sort theo ngày tạo giảm dần (mới nhất trước)
-    return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();
-  });
-};
-
 //USER
 async function getBlogByShelter(shelterId) {
   // for shelter staff
@@ -362,8 +342,7 @@ async function getRecommendedBlogs(blogId, shelterId) {
 // ADMIN
 async function getAllBlogs() {
   try {
-    const rawBlogs =  await Blog.find({status: {$ne: "deleted"}}).populate("shelter");
-    const blogs = sortBlogsByStatusAndDate(rawBlogs);
+    const blogs =  await Blog.find({status: {$nin: ["deleted", "moderating"]}}).populate("shelter").sort({createdAt: -1});
     const result = blogs.map((blog) => ({
       _id: blog._id,
       shelter: {
@@ -414,21 +393,48 @@ async function moderateBlog(blogId, decision = "reject") {
     throw error;
   }
 }
+async function getModeratingBlogs() {
+  try {
+    const blogs =  await Blog.find({status: "moderating"}).populate("shelter").sort({createdAt: -1});
+    const result = blogs.map((blog) => ({
+      _id: blog._id,
+      shelter: {
+        _id: blog.shelter._id,
+        name: blog.shelter.name,
+        avatar: blog.shelter.avatar,
+        location: blog.shelter.location,
+      },
+      thumbnail_url: blog.thumbnail_url,
+      title: blog.title,
+      description: blog.description,
+      content: blog.content,
+      status: blog.status,
+      createdAt: blog.createdAt,
+      updatedAt: blog.updatedAt,
+    }));
+
+    return result;
+  } catch (error) {
+    throw error;
+  }
+}
 
 const blogService = {
   //USER
   getListBlogs,
   getPublishedBlogById,
   getBlogById,
-  getAllBlogs,
   getListBlogsByShelter,
   getBlogByShelter,
   createBlog,
   updateBlog,
   deleteBlog,
   getRecommendedBlogs,
+  
 
   //ADMIN
+  getAllBlogs,
+  getModeratingBlogs,
   moderateBlog,
 };
 

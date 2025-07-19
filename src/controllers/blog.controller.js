@@ -203,6 +203,14 @@ const moderateBlog = async (req, res) => {
     res.status(400).json({ message: error.message });
   }
 };
+const getModeratingBlogs = async (req, res) => {
+  try {
+    const blogs = await blogService.getModeratingBlogs();
+    res.status(200).json(blogs);
+  } catch (error) {
+    res.status(400).json({ message: error.message });
+  }
+};
 
 
 const blogController = {
@@ -211,7 +219,6 @@ const blogController = {
     getPublishedBlogById,
     getBlogById,
     getListBlogsByShelter,
-    getAllBlogs,
     getBlogsByShelter,
     createBlog,
     updateBlog,
@@ -220,6 +227,8 @@ const blogController = {
 
     //ADMIN
     moderateBlog,
+    getModeratingBlogs,
+    getAllBlogs,
 };
 
 module.exports = blogController;
