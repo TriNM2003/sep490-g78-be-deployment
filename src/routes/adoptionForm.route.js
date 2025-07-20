@@ -12,6 +12,7 @@ adoptionFormRouter.get("/get-by-shelter",[verifyAccessToken], adoptionFormContro
 adoptionFormRouter.post("/create/:petId",[verifyAccessToken], adoptionFormController.createForm);
 adoptionFormRouter.post("/create-by-template/:petId",[verifyAccessToken], adoptionFormController.createFormByTemplate);
 adoptionFormRouter.put("/:formId/edit",[verifyAccessToken], adoptionFormController.editForm);
+adoptionFormRouter.put("/:formId/change-status",[verifyAccessToken], adoptionFormController.changeFormStatus);
 adoptionFormRouter.put("/:formId/update-questions",[verifyAccessToken], adoptionFormController.editFormQuestions);
 adoptionFormRouter.delete("/:formId/delete",[verifyAccessToken], adoptionFormController.deleteForm);
 
