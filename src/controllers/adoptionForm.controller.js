@@ -140,6 +140,18 @@ async function editForm(req, res, next) {
   }
 }
 
+async function changeFormStatus(req, res, next) {
+  const { formId } = req.params;
+  const formData = req.body;
+
+  try {
+    const updatedForm = await adoptionFormService.changeFormStatus(formId, formData);
+    res.status(200).json(updatedForm);
+  } catch (error) {
+    res.status(400).json({ message: error.message });
+  }
+}
+
 async function editFormQuestions(req, res, next) {
   const { formId } = req.params;
   const { id } = req.payload;
@@ -211,6 +223,8 @@ const adoptionFormController = {
   getFormsByShelter,
   createForm,
   editForm,
+  changeFormStatus,
+  createFormByTemplate,
   editFormQuestions,
   deleteForm,
   getFormByPetId,

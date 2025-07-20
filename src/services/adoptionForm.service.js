@@ -70,7 +70,6 @@ async function editForm(formId, formData) {
     if (!form) {
       throw new Error("Không tìm thấy form");
     }
-
     const updateForm = await db.AdoptionForm.findOneAndUpdate(
       { _id: formId },
       formData,
@@ -80,11 +79,11 @@ async function editForm(formId, formData) {
       .populate("questions")
       .populate("createdBy", "fullName email avatar")
       .lean();
-    
+
     if (!updateForm) {
       throw new Error("Lỗi không tìm thấy form đã cập nhật");
     }
-    
+
     return {
       ...updateForm,
       shelter: updateForm?.shelter?.name,
@@ -92,25 +91,84 @@ async function editForm(formId, formData) {
   } catch (error) {
     throw error;
   }
+}
 
+async function changeFormStatus(formId, formData) {
+  try {
+    const form = await db.AdoptionForm.findById(formId)
+      .populate("pet", "_id name petCode")
+      .populate("questions")
+      .populate("createdBy", "fullName email avatar")
+      .lean();
+    if (!form) {
+      throw new Error("Không tìm thấy form");
+    }
+
+    const updateForm = await db.AdoptionForm.findOneAndUpdate(
+      { _id: formId },
+      { status: formData.status },
+      { new: true }
+    )
+      .populate("pet", "_id name petCode")
+      .populate("questions")
+      .populate("createdBy", "fullName email avatar")
+      .lean();
+
+    if (!updateForm) {
+      throw new Error("Lỗi không tìm thấy form đã cập nhật");
+    }
+    if (formData.status == "draft" && form.status == "active") {
+      const pet = await db.Pet.findById(form.pet._id);
+      if (!pet) {
+        throw new Error("Không tìm thấy thú cưng liên kết với form này");
+      }
+      const updatePet = await db.Pet.findByIdAndUpdate(
+        form.pet._id,
+        { status: "unavailable" },
+        { new: true }
+      );
+      if (!updatePet) {
+        throw new Error("Lỗi cập nhật trạng thái thú cưng");
+      }
+    } else if (formData.status == "active" && form.status == "draft") {
+      const pet = await db.Pet.findById(form.pet);
+      if (!pet) {
+        throw new Error("Không tìm thấy thú cưng liên kết với form này");
+      }
+      const updatePet = await db.Pet.findByIdAndUpdate(
+        form.pet._id,
+        { status: "available" },
+        { new: true }
+      );
+      if (!updatePet) {
+        throw new Error("Lỗi cập nhật trạng thái thú cưng");
+      }
+    }
+    return {
+      ...updateForm,
+      shelter: updateForm?.shelter?.name,
+    };
+  } catch (error) {
+    throw error;
+  }
 }
 
 async function deleteForm(formId) {
-    try {
-        const formExists = await db.AdoptionForm.findById(formId);
-        if (!formExists) {
-            throw new Error("Không tìm thấy form!");
-        }
-        if (formExists.status == "active") {
-            throw new Error("Không thể xóa form!");
-        }
-        const form = await db.AdoptionForm.findByIdAndDelete(formId);
-        return form;
-    } catch (error) {
-        throw error;
+  try {
+    const formExists = await db.AdoptionForm.findById(formId);
+    if (!formExists) {
+      throw new Error("Không tìm thấy form!");
     }
+    if (formExists.status == "draft") {
+      await db.AdoptionForm.findByIdAndDelete(formId);
+    } else {
+      throw new Error("Không thể xóa form!");
+    }
+    return "Xóa form thành công!";
+  } catch (error) {
+    throw error;
+  }
 }
-
 
 // get form by petId
 async function getFormsByPetId(petId) {
@@ -121,12 +179,11 @@ async function getFormsByPetId(petId) {
       .populate("shelter", "name")
       .populate("questions")
       .lean();
-  
-      return {
-        ...form,
-        shelter: form?.shelter?.name,
-      
-      };
+
+    return {
+      ...form,
+      shelter: form?.shelter?.name,
+    };
   } catch (error) {
     throw error;
   }
@@ -136,9 +193,9 @@ const adoptionFormService = {
   getFormsByShelter,
   createForm,
   editForm,
+  changeFormStatus,
   deleteForm,
-  getFormsByPetId
-
+  getFormsByPetId,
 };
 
 module.exports = adoptionFormService;
