@@ -5,10 +5,11 @@ const { analyzePetWithGPT } = require("../services/gptVision.service");
 const mongoose = require("mongoose");
 const db = require("../models");
 
+
 const getAllPets = async (req, res) => {
   try {
     const { shelterId } = req.params;
-    const { status } = req.query;
+
     const page = parseInt(req.query.page, 10) || 1;
     const limit = parseInt(req.query.limit, 10) || 8;
 
@@ -16,7 +17,26 @@ const getAllPets = async (req, res) => {
       return res.status(400).json({ message: "Missing shelterId" });
     }
 
-    const result = await petService.getAllPetsByShelter(shelterId, page, limit, status);
+    const result = await petService.getAllPetsByShelter(shelterId, page, limit);
+    return res.status(200).json(result);
+  } catch (err) {
+    next(err);
+  }
+};
+const getAllPetsForSubmission = async (req, res, next) => {
+  try {
+    const { shelterId } = req.params;
+    const { status } = req.query;
+    const page = parseInt(req.query.page, 10) || 1;
+    const limit = parseInt(req.query.limit, 10) || 8;
+
+
+
+    if (!shelterId) {
+      return res.status(400).json({ message: "Missing shelterId" });
+    }
+
+    const result = await petService.getAllPetsByShelterForSubmission(shelterId, page, limit, status);
     return res.status(200).json(result);
   } catch (err) {
     next(err);
@@ -193,6 +213,7 @@ const petController = {
   getPetById,
   getAdoptedPetbyUser,
   getMedicalRecordsByPet,
+  getAllPetsForSubmission
 };
 
 module.exports = petController;
