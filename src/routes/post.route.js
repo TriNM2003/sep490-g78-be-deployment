@@ -1,5 +1,5 @@
 const express = require ("express");
-const postRouter = express.Router();
+const postRouter = express.Router({ mergeParams: true });
 const bodyParser = require("body-parser");
 const {verifyAccessToken, optionalVerifyAccessToken} = require("../middlewares/auth.middleware");
 const cloudinary = require("../configs/cloudinary");

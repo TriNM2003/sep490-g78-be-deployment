@@ -3,23 +3,27 @@ const { cloudinary } = require("../configs/cloudinary");
 const fs = require("fs/promises");
 const NotificationService = require("./notification.service");
 
-const getPostsList = async (userId) => {
+const getPostsList = async (userId, shelterId) => {
   try {
     const filter = {
       status: "active",
       $or: [{ privacy: "public" }],
     };
 
-    // Nếu có userId, cho phép thêm bài private của chính họ
     if (userId) {
       filter.$or.push({
         $and: [{ privacy: "private" }, { createdBy: userId }],
       });
     }
 
+    if (shelterId) {
+      filter.shelter = shelterId;
+    }
+
     const posts = await db.Post.find(filter)
       .populate("createdBy")
-      .populate("likedBy");
+      .populate("likedBy")
+      .populate("shelter");
 
     // Dùng Promise.all để lấy latestComment cho từng post
     const result = await Promise.all(
@@ -39,8 +43,11 @@ const getPostsList = async (userId) => {
             fullName: post.createdBy.fullName,
             avatar: post.createdBy.avatar,
           },
+          shelter: post.shelter || null,
           photos: post.photos,
           privacy: post.privacy,
+          address: post.address,
+          location: post.location,
           likedBy: post.likedBy.map((user) => ({
             _id: user._id,
             fullName: user.fullName,
@@ -75,7 +82,8 @@ const getPostDetail = async (postId) => {
   try {
     const post = await db.Post.findById(postId)
       .populate("createdBy")
-      .populate("likedBy");
+      .populate("likedBy")
+      .populate("shelter");
     if (!post) {
       throw new Error("Post not found");
     }
@@ -88,8 +96,11 @@ const getPostDetail = async (postId) => {
         fullName: post.createdBy.fullName,
         avatar: post.createdBy.avatar,
       },
+      shelter: post.shelter || null,
       photos: post.photos.map((photo) => photo),
       privacy: post.privacy || "public",
+      address: post.address,
+      location: post.location,
       likedBy: post.likedBy.map((user) => ({
         _id: user._id,
         fullName: user.fullName,
@@ -104,11 +115,26 @@ const getPostDetail = async (postId) => {
   }
 };
 
-const createPost = async (userId, postData, files) => {
+const createPost = async (userId, postData, files, shelterId) => {
   const uploadedPhotoUrls = [];
   const tempFilePaths = [];
 
   try {
+    if (shelterId) {
+      const shelter = await db.Shelter.findById(shelterId);
+      if (!shelter) throw new Error("Không tìm thấy trạm cứu hộ");
+
+      const member = shelter.members.find(
+        (m) => m._id.toString() === userId.toString()
+      );
+      if (!member) throw new Error("Bạn không phải thành viên của shelter này");
+      if (
+        !member.roles.includes("staff") &&
+        !member.roles.includes("manager")
+      ) {
+        throw new Error("Bạn không có quyền đăng bài trong shelter này");
+      }
+    }
     if (Array.isArray(files)) {
       for (const file of files) {
         tempFilePaths.push(file.path);
@@ -128,11 +154,14 @@ const createPost = async (userId, postData, files) => {
         }
       }
     }
-
+    const parsedLocation = postData.location ? JSON.parse(postData.location) : { lat: 0, lng: 0 };
     const newPost = await db.Post.create({
       createdBy: userId,
+      shelter: shelterId || null,
       title: postData.title,
       privacy: postData.privacy || "public",
+      address: postData.address || "",
+      location: parsedLocation,
       photos: uploadedPhotoUrls,
       status: "active",
     });
@@ -142,7 +171,7 @@ const createPost = async (userId, postData, files) => {
       [userId],
       `Bạn đã tạo bài viết mới: ${newPost.title}`,
       "system",
-      `/posts/${newPost._id}`
+      `/newfeed?postId=${newPost._id}`
     );
 
     return newPost;
@@ -162,8 +191,24 @@ const editPost = async (userId, postId, postData, files) => {
     const post = await db.Post.findById(postId);
     if (!post) throw new Error("Không tìm thấy bài viết");
 
-    if (post.createdBy.toString() !== userId.toString()) {
-      throw new Error("Bạn không có quyền chỉnh sửa bài viết này.");
+    // Nếu post thuộc shelter
+    if (post.shelter) {
+      const shelter = await db.Shelter.findById(post.shelter);
+      const member = shelter?.members.find(
+        (m) => m._id.toString() === userId.toString()
+      );
+      if (!member) throw new Error("Bạn không phải thành viên shelter này");
+
+      const isManager = member.roles.includes("manager");
+      const isOwner = post.createdBy.toString() === userId.toString();
+
+      if (!isManager && !isOwner) {
+        throw new Error("Bạn không có quyền sửa bài viết này");
+      }
+    } else {
+      if (post.createdBy.toString() !== userId.toString()) {
+        throw new Error("Bạn không có quyền sửa bài viết này");
+      }
     }
 
     if (Array.isArray(files)) {
@@ -197,6 +242,8 @@ const editPost = async (userId, postId, postData, files) => {
           title: postData.title || post.title,
           privacy: postData.privacy || post.privacy,
           photos: [...keepPhotos, ...uploadedPhotos],
+          address: postData.address || post.address,
+          location: postData.location || post.location,
         },
       },
       { new: true }
@@ -211,11 +258,28 @@ const editPost = async (userId, postId, postData, files) => {
   }
 };
 
-const deletePost = async (postId) => {
+const deletePost = async (postId, userId) => {
   try {
     const post = await db.Post.findById(postId);
     if (!post) {
       throw new Error("Post not found");
+    }
+
+    if (post.shelter) {
+      const shelter = await db.Shelter.findById(post.shelter);
+      const member = shelter?.members.find(
+        (m) => m._id.toString() === userId.toString()
+      );
+      const isManager = member?.roles.includes("manager");
+      const isOwner = post.createdBy.toString() === userId.toString();
+
+      if (!isManager && !isOwner) {
+        throw new Error("Bạn không có quyền xoá bài viết này");
+      }
+    } else {
+      if (post.createdBy.toString() !== userId.toString()) {
+        throw new Error("Bạn không có quyền xoá bài viết này");
+      }
     }
 
     post.status = "deleted";
@@ -263,9 +327,10 @@ const reactPost = async (postId, userId) => {
     await NotificationService.createNotification(
       userId,
       [updatedPost.createdBy._id],
+      // tên tài khoản khác đã thích hoặc bỏ thích bài viết
       `${hasLiked ? "Bỏ thích" : "Thích"} bài viết: ${updatedPost.title}`,
       "system",
-      `/posts/${updatedPost._id}`
+      `/newfeed?postId=${updatedPost._id}`
     );
 
     return updatedPost;
@@ -309,7 +374,7 @@ const reportPost = async (userId, postId, reason, files) => {
       [post.createdBy._id],
       `Bạn đã báo cáo bài viết: ${post.title}`,
       "system",
-      `/posts/${post._id}`
+      `/newfeed?postId=${post._id}`
     );
 
     return newReport;
@@ -338,7 +403,7 @@ const createComment = async ({ postId, userId, message }) => {
       [post.createdBy._id],
       `Bạn có bình luận mới trên bài viết: ${post.title}`,
       "system",
-      `/posts/${post._id}`
+      `/newfeed?postId=${post._id}`
     );
 
     return comment;
