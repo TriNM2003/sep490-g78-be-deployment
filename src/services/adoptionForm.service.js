@@ -101,7 +101,7 @@ async function changeFormStatus(formId, formData) {
       { status: formData.status },
       { new: true }
     );
-    if (!updateForm) throw new Error("Không tìm thấy form");
+    if (!updateForm) throw new Error("Lỗi khi cập nhập trạng thái form hoặc form không tồn tại!");
 
 
     const petUpdate = await db.Pet.findByIdAndUpdate(
@@ -112,7 +112,7 @@ async function changeFormStatus(formId, formData) {
     if (!petUpdate) {
   
       await db.AdoptionForm.findByIdAndUpdate(formId, { status: form.status });
-      throw new Error("Lỗi khi cập nhập trạng thái thú nuôi");
+      throw new Error("Lỗi khi cập nhập trạng thái thú nuôi!");
     }
 
     return updateForm;
