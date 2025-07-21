@@ -2,6 +2,26 @@ const {Report, User, Post} = require("../models/index")
 const {cloudinary} = require("../configs/cloudinary")
 const fs = require("fs")
 
+const safeUser = (user) => ({
+  _id: user?._id ?? null,
+  fullName: user?.fullName ?? "",
+  email: user?.email ?? "",
+  avatar: user?.avatar ?? "",
+  phoneNumber: user?.phoneNumber ?? "",
+  dob: user?.dob ?? null,
+  bio: user?.bio ?? "",
+  address: user?.address ?? "",
+  background: user?.background ?? "",
+  location: {
+    lat: user?.location?.lat ?? 0,
+    lng: user?.location?.lng ?? 0,
+  },
+  warningCount: user?.warningCount ?? 0,
+  createdAt: user?.createdAt ?? null,
+  updatedAt: user?.updatedAt ?? null,
+});
+
+
 //USER
 async function reportUser(reporterId, { userId, reportType, reason }, files) {
   try {
@@ -150,9 +170,75 @@ async function reportPost(reporterId, { postId, reportType, reason }, files) {
 
 
 //ADMIN
-async function getAllReports(shelterId) {
+async function getUserReports() {
   try {
-    return await Report.find({});
+    const reports = await Report.find({
+      reportType: "user",
+      status: { $ne: "pending" },
+    })
+      .populate("user reportedBy reviewedBy")
+      .sort({ createdAt: -1 });
+
+    return reports.map((report) => ({
+      _id: report._id,
+      reportType: report.reportType,
+      user: safeUser(report.user),
+      reportedBy: safeUser(report.reportedBy),
+      reviewedBy: safeUser(report.reviewedBy),
+      reason: report.reason ?? "",
+      photos: report.photos ?? [],
+      status: report.status ?? "pending",
+      createdAt: report.createdAt,
+      updatedAt: report.updatedAt,
+    }));
+
+  } catch (error) {
+    throw error;
+  }
+}
+async function getPendingUserReports() {
+  try {
+    const reports = await Report.find({
+      reportType: "user",
+      status: "pending",
+    })
+      .populate("user reportedBy reviewedBy")
+      .sort({ createdAt: -1 });
+
+    return reports.map((report) => ({
+      _id: report._id,
+      reportType: report.reportType,
+      user: safeUser(report.user),
+      reportedBy: safeUser(report.reportedBy),
+      reviewedBy: safeUser(report.reviewedBy),
+      reason: report.reason ?? "",
+      photos: report.photos ?? [],
+      status: report.status ?? "pending",
+      createdAt: report.createdAt,
+      updatedAt: report.updatedAt,
+    }));
+
+  } catch (error) {
+    throw error;
+  }
+}
+async function reviewUserReport(reportId, decision = "reject") {
+  try {
+    const report = await Report.findById(reportId).populate("user reportedBy reviewedBy");
+    if(!report){
+      throw new Error("Id báo cáo không hợp lệ")
+    }
+    const reportedUser = await User.findById(report.user);
+    if(!reportedUser){
+      throw new Error("Id tài khoản bị báo cáo không hợp lệ")
+    }
+    report.status = "approved";
+    reportedUser.warningCount++;
+
+    await report.save();
+    await reportedUser.save();
+
+
   } catch (error) {
     throw error;
   }
@@ -166,7 +252,8 @@ const reportService = {
 
 
   //ADMIN
-  getAllReports,
+  getUserReports,
+  getPendingUserReports,
 };
 
 module.exports = reportService;

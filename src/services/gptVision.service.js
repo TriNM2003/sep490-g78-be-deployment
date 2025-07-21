@@ -3,21 +3,19 @@ const openai = new OpenAI({ apiKey: process.env.OPEN_AI_NANO_APIKEY });
 
 const analyzePetWithGPT = async (imageBase64) => {
   const prompt = `
-Bạn là chuyên gia nhận diện thú cưng. Hãy phân tích ảnh và trả kết quả **chỉ ở dạng JSON**, với các trường sau:
+Phân tích ảnh thú cưng sau và trả về kết quả ở dạng **JSON hợp lệ** duy nhất:
 
 {
-  "age": "Số tháng tuổi ước lượng (ví dụ: '6')",
-  "weight": "Cân nặng ước lượng theo kg (ví dụ: '5')",
-  "color": "Các màu lông chính, cách nhau bởi dấu phẩy (ví dụ: 'Trắng, Nâu')",
-  "species": "Loài (ví dụ: 'Chó' hoặc 'Mèo',...)",
-  "breed": "Tên giống loài nếu nhận ra (ví dụ: 'Husky', 'Tabby',...)",
-  "identificationFeature": "Đặc điểm nhận dạng nổi bật (ví dụ: 'Tai cụp, mắt to')"
+  "age": "Số tháng tuổi (ví dụ: '6')",
+  "weight": "Cân nặng ước lượng (ví dụ: '5')",
+  "color": "Màu lông (ví dụ: 'Vàng nâu')",
+  "species": "Loài bằng tiếng Việt (ví dụ: 'Chó', 'Mèo')",
+  "breed": "Giống (ví dụ: 'Chó ta', 'Phú Quốc')",
+  "identificationFeature": "Đặc điểm nổi bật (ví dụ: 'Tai cụp, đuôi cong')"
 }
 
-Chỉ trả JSON hợp lệ, không thêm lời giải thích, không markdown, không văn bản khác.
-Hãy xác định thông tin về con thú duy nhất trong ảnh. Nếu ảnh chứa nhiều hơn một con thú, chỉ cần trả về: { error: "too_many_animals" }.
-
-Gợi ý: Nếu không chắc chắn, bạn có thể ghi giá trị gần đúng hoặc null.
+Chỉ trả JSON. Nếu ảnh có nhiều con thú, trả về:
+{ "error": "too_many_animals" }
 `;
 
   const response = await openai.chat.completions.create({

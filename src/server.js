@@ -8,8 +8,6 @@ const cookieParser = require("cookie-parser");
 
 const passport = require("./configs/passport.config");
 
-
-
 const {
   userRouter,
   petRouter,
@@ -28,7 +26,6 @@ const {
   notificationRouter,
 } = require("./routes");
 
-
 const path = require("path");
 const http = require("http");
 const db = require("./models");
@@ -43,9 +40,9 @@ app.use(
     credentials: true,
   })
 );
-app.use(express.json());
+app.use(express.json({ limit: "5mb" }));
 app.use(morgan("dev"));
-app.use(bodyParser.json());
+app.use(bodyParser.json({ limit: "5mb" }));
 app.use(cookieParser());
 // passport oauth
 app.use(
@@ -71,7 +68,7 @@ app.use("/shelters", shelterRouter);
 app.use("/adoption-submissions", adoptionSubmissionRouter);
 app.use("/pets/:petId/medical-records", medicalRecordRouter);
 app.use("/pets/:petId/adoption-submissions", adoptionSubmissionRouter);
-app.use("/shelters/:shelterId/adoptionForms", adoptionFormRouter );
+app.use("/shelters/:shelterId/adoptionForms", adoptionFormRouter);
 app.use("/shelters/:shelterId/adoptionTemplates", adoptionTemplateRouter);
 // app.use("/shelters/:shelterId/consentForms", );
 app.use("/species", speciesRouter);
