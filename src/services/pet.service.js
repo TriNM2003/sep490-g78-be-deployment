@@ -19,7 +19,7 @@ const getAllPetsByShelter = async (shelterId, page = 1, limit = 8) => {
   const skip = (page - 1) * limit;
 
   const [pets, total] = await Promise.all([
-    Pet.find({ shelter: shelterId })
+    Pet.find({ shelter: shelterId, status: { $ne: "disabled" } })
       .sort({ createdAt: -1 })
       .skip(skip)
       .limit(limit)
@@ -156,11 +156,26 @@ const updatePet = async (petId, updateData) => {
   }
 };
 
-const deletePet = async (petId) => {
+const deletePet = async (req, res) => {
   try {
-    return await Pet.findByIdAndDelete(petId);
+    const { petId, shelterId } = req.params;
+
+    const pet = await db.Pet.findOne({ _id: petId, shelter: shelterId });
+    if (!pet) {
+      return res
+        .status(404)
+        .json({ message: "Không tìm thấy thú cưng để xoá" });
+    }
+
+    // Gọi soft delete từ service
+    const deletedPet = await petService.deletePet(petId);
+
+    res.status(200).json({
+      message: "Đã vô hiệu hoá thú cưng (soft delete)",
+      pet: deletedPet,
+    });
   } catch (error) {
-    throw error;
+    res.status(500).json({ message: "Lỗi máy chủ", error: error.message });
   }
 };
 

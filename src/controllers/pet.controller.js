@@ -70,21 +70,29 @@ const updatePet = async (req, res) => {
   }
 };
 
-const deletePet = async (req, res) => {
+const disablePet = async (req, res) => {
   try {
     const { petId, shelterId } = req.params;
-    const pet = await db.Pet.findOne({ _id: petId, shelter: shelterId });
 
+    const pet = await db.Pet.findOne({ _id: petId, shelter: shelterId });
     if (!pet) {
-      return res
-        .status(404)
-        .json({ message: "Không tìm thấy thú cưng để xóa" });
+      return res.status(404).json({ message: "Không tìm thấy thú cưng" });
     }
 
-    await db.Pet.findByIdAndDelete(petId);
-    res.status(200).json({ message: "Xóa thú cưng thành công" });
-  } catch (error) {
-    res.status(500).json({ message: "Lỗi máy chủ", error: error.message });
+    const updatedPet = await db.Pet.findByIdAndUpdate(
+      petId,
+      { status: "disabled" },
+      { new: true }
+    );
+
+    res
+      .status(200)
+      .json({ message: "Thú nuôi đã bị vô hiệu hóa", pet: updatedPet });
+  } catch (err) {
+    res.status(500).json({
+      message: "Lỗi máy chủ",
+      error: err.message,
+    });
   }
 };
 
@@ -181,7 +189,7 @@ const petController = {
   getAllPets,
   createPet,
   updatePet,
-  deletePet,
+  disablePet,
   getMedicalRecords,
   viewDetailPet,
   uploadImage,
