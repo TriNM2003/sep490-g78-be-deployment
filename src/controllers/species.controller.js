@@ -1,4 +1,5 @@
 const Species = require("../models/species.model");
+const speciesService = require("../services/species.service");
 
 const getAllSpecies = async (req, res) => {
   try {
@@ -36,10 +37,54 @@ const getAll = async (req, res) => {
   }
 };
 
+
+//ADMIN
+const adminGetAll = async (req, res) => {
+  try {
+    const species = await speciesService.getAll();
+    res.status(200).json(species);
+  } catch (error) {
+    res.status(400).json({ message: error.message });
+  }
+};
+const adminCreateSpecies = async (req, res) => {
+  try {
+    const {name, description} = req.body;
+    const response = await speciesService.createSpecies(req.payload.id, name, description);
+    res.status(200).json(response);
+  } catch (error) {
+    res.status(400).json({ message: error.message });
+  }
+};
+const adminEditSpecies = async (req, res) => {
+  try {
+    const {speciesId, name, description} = req.body;
+    const response = await speciesService.editSpecies(req.payload.id, speciesId, name, description);
+    res.status(200).json(response);
+  } catch (error) {
+    res.status(400).json({ message: error.message });
+  }
+};
+const adminDeleteSpecies = async (req, res) => {
+  try {
+    const {speciesId, differentSpeciesId} = req.params;
+    const response = await speciesService.deleteSpecies(req.payload.id, speciesId, differentSpeciesId);
+    res.status(200).json(response);
+  } catch (error) {
+    res.status(400).json({ message: error.message });
+  }
+};
+
 const speciesController = {
   getAllSpecies,
   createSpecies,
   getAll,
+
+  //ADMIN
+  adminGetAll,
+  adminCreateSpecies,
+  adminEditSpecies,
+  adminDeleteSpecies,
 };
 module.exports = speciesController;
 
