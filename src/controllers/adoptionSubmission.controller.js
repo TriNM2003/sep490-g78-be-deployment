@@ -41,28 +41,32 @@ const createAdoptionSubmission = async (req, res) => {
       questionMap.set(q._id.toString(), q);
     }
 
+    // Tính điểm
+    const weightMap = { none: 0, low: 1, medium: 2, high: 3 };
     let totalScore = 0;
+    let maxScore = 0;
+
     for (const answer of answers) {
       const question = questionMap.get(answer.questionId.toString());
       if (!question) continue;
 
-      const correctOptions = question.options.filter((opt) => opt.isTrue);
+      const correctOptions = question.options.filter(opt => opt.isTrue);
       const totalCorrect = correctOptions.length;
       if (totalCorrect === 0) continue;
 
-      const userCorrect = (answer.selections || []).filter((sel) =>
-        correctOptions.some((opt) => opt.title === sel)
+      const userCorrect = (answer.selections || []).filter(sel =>
+        correctOptions.some(opt => opt.title === sel)
       ).length;
 
-      const multiplier = {
-        none: 0,
-        low: 1,
-        medium: 2,
-        high: 3,
-      }[question.priority] || 0;
+      const weight = weightMap[question.priority] || 0;
+      maxScore += weight;
 
-      totalScore += (userCorrect / totalCorrect) * multiplier;
+      const ratio = userCorrect / totalCorrect;
+      totalScore += ratio * weight;
     }
+
+    // Tính phần trăm phù hợp
+    const matchPercentage = maxScore > 0 ? Math.round((totalScore / maxScore) * 100) : 0;
 
     // Kiểm tra đã nộp đơn chưa
     const existing = await db.AdoptionSubmission.findOne({
@@ -80,13 +84,12 @@ const createAdoptionSubmission = async (req, res) => {
       adoptionForm: adoptionFormId,
       answers,
       adoptionsLastMonth,
-      total: totalScore,
+      total: matchPercentage, // Lưu % vào total
     });
 
     const saved = await submission.save();
 
-    // Lấy thông tin người dùng
-      // Gửi email xác nhận
+    // Gửi email xác nhận
     const user = await db.User.findById(userId);
     const form = await db.AdoptionForm.findById(adoptionFormId).populate({
       path: "pet",
@@ -119,6 +122,7 @@ const createAdoptionSubmission = async (req, res) => {
     res.status(500).json({ message: "Lỗi server", error: err.message });
   }
 };
+
 
 // check user submitted form
 const checkUserSubmitted = async (req, res) => {
