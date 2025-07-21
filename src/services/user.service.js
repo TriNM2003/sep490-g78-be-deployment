@@ -46,6 +46,10 @@ const changePassword = async (
   try {
     const user = await db.User.findById(userId);
     if (!user) throw new Error("Không tìm thấy người dùng");
+    const isMatch = await bcrypt.compare(oldPassword, user.password);
+    if (!isMatch) throw new Error("Mật khẩu cũ không chính xác");
+    if (newPassword == "" || confirmPassword == "")
+      throw new Error("Mật khẩu mới và xác nhận mật khẩu không được để trống");
     if (newPassword !== confirmPassword)
       throw new Error("Mật khẩu mới và xác nhận mật khẩu không khớp");
     if (newPassword.length < 8)
@@ -62,8 +66,6 @@ const changePassword = async (
       throw new Error(
         "Mật khẩu mới phải chứa ít nhất một chữ hoa và một chữ số"
       );
-    const isMatch = await bcrypt.compare(oldPassword, user.password);
-    if (!isMatch) throw new Error("Mật khẩu cũ không chính xác");
 
     const hashedPassword = await bcrypt.hash(newPassword, 10);
     await db.User.findByIdAndUpdate(userId, {
@@ -81,7 +83,7 @@ const editProfile = async (userId, profileData, files) => {
     const user = await db.User.findById(userId);
     if (!user) throw new Error("Không tìm thấy người dùng");
 
-    //Parse location 
+    //Parse location
     let parsedLocation = user.location;
     if (profileData.location) {
       try {
@@ -97,7 +99,6 @@ const editProfile = async (userId, profileData, files) => {
         throw new Error("Dữ liệu location gửi lên không hợp lệ!");
       }
     }
-
 
     // Xử lý ảnh đại diện và ảnh nền
     let newAvatar = user.avatar;
@@ -116,7 +117,7 @@ const editProfile = async (userId, profileData, files) => {
         await fs.unlink(avatarFile.path);
       } catch (error) {
         console.error("Cloudinary Upload Error:", error);
-        await Promise.allSettled(tempFilePaths.map(path => fs.unlink(path)));
+        await Promise.allSettled(tempFilePaths.map((path) => fs.unlink(path)));
         throw new Error("Lỗi khi tải lên ảnh đại diện. Vui lòng thử lại.");
       }
     }
@@ -126,32 +127,50 @@ const editProfile = async (userId, profileData, files) => {
       const backgroundFile = files.background[0];
       tempFilePaths.push(backgroundFile.path);
       try {
-        const uploadResult = await cloudinary.uploader.upload(backgroundFile.path, {
-          folder: "user_profiles",
-          resource_type: "image",
-        });
+        const uploadResult = await cloudinary.uploader.upload(
+          backgroundFile.path,
+          {
+            folder: "user_profiles",
+            resource_type: "image",
+          }
+        );
         newBackground = uploadResult.secure_url;
         await fs.unlink(backgroundFile.path);
       } catch (error) {
         console.error("Cập nhật cloudinary lỗi:", error);
-        await Promise.allSettled(tempFilePaths.map(path => fs.unlink(path)));
+        await Promise.allSettled(tempFilePaths.map((path) => fs.unlink(path)));
         throw new Error("Lỗi khi tải lên ảnh nền. Vui lòng thử lại.");
       }
     }
 
     // Validate dữ liệu đầu vào
+
+    if (
+      !profileData.fullName &&
+      !profileData.bio &&
+      !profileData.dob &&
+      !profileData.phoneNumber &&
+      !profileData.address &&
+      !parsedLocation
+    ) {
+      throw new Error("Hãy điền thông tin để cập nhật hồ sơ của bạn");
+    }
     if (
       profileData.fullName &&
       !/^[a-zA-ZÀ-Ỹà-ỹ\s]+$/.test(profileData.fullName)
     ) {
-      throw new Error("Họ và tên không hợp lệ. Hoặc tên chỉ chứa chữ cái và khoảng trắng");
+      throw new Error(
+        "Họ và tên không hợp lệ. Hoặc tên chỉ chứa chữ cái và khoảng trắng"
+      );
     }
 
     if (
       profileData.phoneNumber &&
       !/^(0[0-9])+([0-9]{8})$/.test(profileData.phoneNumber)
     ) {
-      throw new Error("Số điện thoại không hợp lệ. Phải bắt đầu bằng 0 và có 10 số.");
+      throw new Error(
+        "Số điện thoại không hợp lệ. Phải bắt đầu bằng 0 và có 10 số."
+      );
     }
 
     if (profileData.dob) {
@@ -160,7 +179,8 @@ const editProfile = async (userId, profileData, files) => {
       const age = today.getFullYear() - dob.getFullYear();
       const hasBirthdayPassed =
         today.getMonth() > dob.getMonth() ||
-        (today.getMonth() === dob.getMonth() && today.getDate() >= dob.getDate());
+        (today.getMonth() === dob.getMonth() &&
+          today.getDate() >= dob.getDate());
       const exactAge = hasBirthdayPassed ? age : age - 1;
       if (exactAge < 16) {
         throw new Error("Ngày sinh không hợp lệ. Bạn phải đủ 16 tuổi trở lên");
@@ -187,11 +207,10 @@ const editProfile = async (userId, profileData, files) => {
     return updatedUser;
   } catch (error) {
     // Cleanup nếu có lỗi
-    await Promise.allSettled(tempFilePaths.map(path => fs.unlink(path)));
+    await Promise.allSettled(tempFilePaths.map((path) => fs.unlink(path)));
     throw error;
   }
 };
-
 
 //ADMIN
 const addUser = async (data) => {
@@ -202,23 +221,22 @@ const addUser = async (data) => {
       password: await bcrypt.hash(data.password, 10),
       roles: data.roles || ["user"],
       status: "active",
-      googleId: null
+      googleId: null,
     };
     const newUser = await db.User.create(userData);
     return {
-        message: "User added successfully",
-        user: {
-            id: newUser._id,
-            fullName: newUser.fullName,
-            email: newUser.email,
-            avatar: newUser.avatar,
-            roles: newUser.roles,
-            status: newUser.status,
-            createdAt: newUser.createdAt,
-            updatedAt: newUser.updatedAt,   
-        }
+      message: "User added successfully",
+      user: {
+        id: newUser._id,
+        fullName: newUser.fullName,
+        email: newUser.email,
+        avatar: newUser.avatar,
+        roles: newUser.roles,
+        status: newUser.status,
+        createdAt: newUser.createdAt,
+        updatedAt: newUser.updatedAt,
+      },
     };
-
   } catch (error) {
     throw new Error("Error adding user: " + error.message);
   }
@@ -230,7 +248,7 @@ const changeUserRole = async (userId, roles) => {
     if (!user) {
       throw new Error("Không tìm thấy tài khoản!");
     }
-    if(roles.length < 1){
+    if (roles.length < 1) {
       throw new Error("Mỗi tài khoản phải có ít nhất 1 vai trò");
     }
     const updatedUser = await db.User.findByIdAndUpdate(
@@ -239,17 +257,17 @@ const changeUserRole = async (userId, roles) => {
       { new: true }
     );
     return {
-        message: "Thay đổi vai trò tài khoản thành công",
-        user: {
-            id: updatedUser._id,
-            fullName: updatedUser.fullName,
-            email: updatedUser.email,
-            avatar: updatedUser.avatar,
-            roles: updatedUser.roles,
-            status: updatedUser.status,
-            createdAt: updatedUser.createdAt,
-            updatedAt: updatedUser.updatedAt,   
-        }
+      message: "Thay đổi vai trò tài khoản thành công",
+      user: {
+        id: updatedUser._id,
+        fullName: updatedUser.fullName,
+        email: updatedUser.email,
+        avatar: updatedUser.avatar,
+        roles: updatedUser.roles,
+        status: updatedUser.status,
+        createdAt: updatedUser.createdAt,
+        updatedAt: updatedUser.updatedAt,
+      },
     };
   } catch (error) {
     throw new Error("Error changing user role: " + error.message);
@@ -268,17 +286,17 @@ const banUser = async (userId) => {
       { new: true }
     );
     return {
-        message: "User banned successfully",
-        user: {
-            id: updatedUser._id,
-            fullName: updatedUser.fullName,
-            email: updatedUser.email,
-            avatar: updatedUser.avatar,
-            roles: updatedUser.roles,
-            status: updatedUser.status,
-            createdAt: updatedUser.createdAt,
-            updatedAt: updatedUser.updatedAt,   
-        }
+      message: "User banned successfully",
+      user: {
+        id: updatedUser._id,
+        fullName: updatedUser.fullName,
+        email: updatedUser.email,
+        avatar: updatedUser.avatar,
+        roles: updatedUser.roles,
+        status: updatedUser.status,
+        createdAt: updatedUser.createdAt,
+        updatedAt: updatedUser.updatedAt,
+      },
     };
   } catch (error) {
     throw new Error("Error banning user: " + error.message);
@@ -297,17 +315,17 @@ const unbanUser = async (userId) => {
       { new: true }
     );
     return {
-        message: "User unbanned successfully",
-        user: {
-            id: updatedUser._id,
-            fullName: updatedUser.fullName,
-            email: updatedUser.email,
-            avatar: updatedUser.avatar,
-            roles: updatedUser.roles,
-            status: updatedUser.status,
-            createdAt: updatedUser.createdAt,
-            updatedAt: updatedUser.updatedAt,   
-        }
+      message: "User unbanned successfully",
+      user: {
+        id: updatedUser._id,
+        fullName: updatedUser.fullName,
+        email: updatedUser.email,
+        avatar: updatedUser.avatar,
+        roles: updatedUser.roles,
+        status: updatedUser.status,
+        createdAt: updatedUser.createdAt,
+        updatedAt: updatedUser.updatedAt,
+      },
     };
   } catch (error) {
     throw new Error("Error unbanning user: " + error.message);
