@@ -12,6 +12,7 @@ const reportService = require("./report.service");
 const authService = require("./auth.service")
 const adoptionTemplateService = require("./adoptionTemplate.service");
 const adoptionFormService = require("./adoptionForm.service")
+const notificationService = require("./notification.service");
 
 module.exports = {
     authService,
@@ -28,4 +29,5 @@ module.exports = {
     donationService,
     blogService,
     reportService,
+    notificationService
 }
