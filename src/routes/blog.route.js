@@ -2,7 +2,7 @@ const express = require("express");
 const blogRouter = express.Router();
 const bodyParser = require("body-parser");
 const { verifyAccessToken, optionalVerifyAccessToken } = require("../middlewares/auth.middleware");
-const {isShelterStaff} = require("../middlewares/shelter.middleware");
+const {isShelterStaff, isShelterManager} = require("../middlewares/shelter.middleware");
 const { isAdmin } = require("../middlewares/admin.middleware");
 const { cloudinary } = require("../configs");
 const blogController = require("../controllers/blog.controller");
@@ -19,11 +19,11 @@ blogRouter.post("/create/:shelterId", [verifyAccessToken, isShelterStaff], cloud
 blogRouter.put("/:blogId/update/:shelterId", [verifyAccessToken, isShelterStaff], cloudinary.upload.single("thumbnail_url"), blogController.updateBlog);
 blogRouter.delete("/:blogId/delete/:shelterId", [verifyAccessToken, isShelterStaff], blogController.deleteBlog);
 blogRouter.get("/:blogId/recommend/:shelterId", blogController.getRecommendedBlogs);
+blogRouter.get("/get-moderating-blogs/:shelterId",[verifyAccessToken, isShelterManager], blogController.getModeratingBlogs)
+blogRouter.put("/:blogId/moderate-blog/:decision", [verifyAccessToken, isShelterManager], blogController.moderateBlog)
 
 //ADMIN
 blogRouter.get("/admin/get-all",[verifyAccessToken, isAdmin], blogController.getAllBlogs)
-blogRouter.get("/admin/get-moderating-blogs",[verifyAccessToken, isAdmin], blogController.getModeratingBlogs)
-blogRouter.put("/admin/:blogId/moderate-blog/:decision", [verifyAccessToken, isAdmin], blogController.moderateBlog)
 blogRouter.delete("/admin/:blogId/delete", [verifyAccessToken, isAdmin], blogController.deleteBlog)
 
 

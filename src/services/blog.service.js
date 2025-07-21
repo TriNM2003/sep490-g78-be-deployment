@@ -11,7 +11,7 @@ async function getBlogByShelter(shelterId) {
       shelter: shelterId,
       status: { $ne: "deleted" },
     })
-      .populate("shelter")
+      .populate("shelter createdBy")
       .sort({ createdAt: -1 });
     return blogs.map((blog) => ({
       _id: blog._id,
@@ -20,6 +20,11 @@ async function getBlogByShelter(shelterId) {
         name: blog.shelter.name,
         avatar: blog.shelter.avatar,
         location: blog.shelter.location,
+      },
+      createdBy: {
+        _id: blog.createdBy._id,
+        fullName: blog.createdBy.fullName,
+        avatar: blog.createdBy.avatar,
       },
       thumbnail_url: blog.thumbnail_url,
       title: blog.title,
@@ -36,7 +41,7 @@ async function getBlogByShelter(shelterId) {
 const getListBlogs = async () => {
   try {
     const blogs = await db.Blog.find({ status: "published" })
-      .populate("shelter")
+      .populate("shelter createdBy")
       .sort({ createdAt: -1 });
 
     if (!blogs || blogs.length === 0) {
@@ -52,6 +57,11 @@ const getListBlogs = async () => {
             name: blog.shelter.name,
             avatar: blog.shelter.avatar,
             location: blog.shelter.location,
+          },
+          createdBy: {
+            _id: blog.createdBy._id,
+            fullName: blog.createdBy.fullName,
+            avatar: blog.createdBy.avatar,
           },
           thumbnail_url: blog.thumbnail_url,
           title: blog.title,
@@ -75,7 +85,7 @@ const getPublishedBlogById = async (blogId) => {
     const blog = await db.Blog.findOne({
       _id: blogId,
       status: "published",
-    }).populate("shelter");
+    }).populate("shelter createdBy");
 
     if (!blog) {
       throw new Error("Không tìm thấy blog");
@@ -88,6 +98,11 @@ const getPublishedBlogById = async (blogId) => {
         avatar: blog.shelter.avatar,
         location: blog.shelter.location,
       },
+      createdBy: {
+        _id: blog.createdBy._id,
+        fullName: blog.createdBy.fullName,
+        avatar: blog.createdBy.avatar,
+      },
       thumbnail_url: blog.thumbnail_url,
       title: blog.title,
       description: blog.description,
@@ -98,7 +113,7 @@ const getPublishedBlogById = async (blogId) => {
     };
 };
 const getBlogById = async (blogId) => {
-    const blog = await db.Blog.findById(blogId).populate("shelter");
+    const blog = await db.Blog.findById(blogId).populate("shelter createdBy");
     if (!blog) {
       throw new Error("Không tìm thấy blog");
     }
@@ -109,6 +124,11 @@ const getBlogById = async (blogId) => {
         name: blog.shelter.name,
         avatar: blog.shelter.avatar,
         location: blog.shelter.location,
+      },
+      createdBy: {
+        _id: blog.createdBy._id,
+        fullName: blog.createdBy.fullName,
+        avatar: blog.createdBy.avatar,
       },
       thumbnail_url: blog.thumbnail_url,
       title: blog.title,
@@ -126,7 +146,7 @@ const getListBlogsByShelter = async (shelterId) => {
       shelter: shelterId,
       status: "published",
     })
-      .populate("shelter")
+      .populate("shelter createdBy")
       .sort({ createdAt: -1 });
     if (!blogs || blogs.length === 0) {
       throw new Error("Không có bài viết nào của trạm cứu hộ này");
@@ -139,6 +159,11 @@ const getListBlogsByShelter = async (shelterId) => {
         name: blog.shelter.name,
         avatar: blog.shelter.avatar,
         location: blog.shelter.location,
+      },
+      createdBy: {
+        _id: blog.createdBy._id,
+        fullName: blog.createdBy.fullName,
+        avatar: blog.createdBy.avatar,
       },
       thumbnail_url: blog.thumbnail_url,
       title: blog.title,
@@ -156,7 +181,7 @@ const getListBlogsByShelter = async (shelterId) => {
   }
 };
 
-const createBlog = async (blogData, shelterId, file) => {
+const createBlog = async (userId, blogData, shelterId, file) => {
   try {
     const { title, description, content } = blogData;
 
@@ -176,15 +201,18 @@ const createBlog = async (blogData, shelterId, file) => {
       });
       thumbnailUrl = uploadResult.secure_url;
       await fs.unlink(file.path);
+    }else{
+      thumbnailUrl = "https://drmango.vn/img/noimage-600x403-1.jpg";
     }
 
     const newBlog = await db.Blog.create({
       shelter: shelterId,
+      createdBy: userId,
       thumbnail_url: thumbnailUrl,
       title,
       description,
       content,
-      status: "moderating",
+      status: "published",
     });
     return newBlog;
   } catch (error) {
@@ -288,7 +316,7 @@ async function getRecommendedBlogs(blogId, shelterId) {
         _id: { $ne: blogId },
         shelter: shelterId,
         status: "published",
-      }).populate("shelter");
+      }).populate("shelter createdBy");
       return fewBlogs.filter((blog) => {
       if (blog.shelter.status === "active") {
         return {
@@ -298,6 +326,11 @@ async function getRecommendedBlogs(blogId, shelterId) {
             name: blog.shelter.name,
             avatar: blog.shelter.avatar,
             location: blog.shelter.location,
+          },
+          createdBy: {
+            _id: blog.createdBy._id,
+            fullName: blog.createdBy.fullName,
+            avatar: blog.createdBy.avatar,
           },
           thumbnailUrl: blog.thumbnail_url,
           title: blog.title,
@@ -319,6 +352,11 @@ async function getRecommendedBlogs(blogId, shelterId) {
             name: blog.shelter.name,
             avatar: blog.shelter.avatar,
             location: blog.shelter.location,
+          },
+          createdBy: {
+            _id: blog.createdBy._id,
+            fullName: blog.createdBy.fullName,
+            avatar: blog.createdBy.avatar,
           },
           thumbnailUrl: blog.thumbnail_url,
           title: blog.title,

@@ -24,8 +24,17 @@ const getAll = async (req, res) => {
 const createBreed = async (req, res) => {
   try {
     const {speciesId, name, description} = req.body;
-    const newBreed = await breedService.createBreed(speciesId, name, description);
+    const newBreed = await breedService.createBreed(req.payload.id, speciesId, name, description);
     res.status(200).json(newBreed);
+  } catch (error) {
+    res.status(400).json({ message: error.message });
+  }
+};
+const editBreed = async (req, res) => {
+  try {
+    const {breedId, speciesId, name, description} = req.body;
+    const response = await breedService.editBreed(req.payload.id, breedId, speciesId, name, description);
+    res.status(200).json(response);
   } catch (error) {
     res.status(400).json({ message: error.message });
   }
@@ -33,7 +42,7 @@ const createBreed = async (req, res) => {
 const deleteBreed = async (req, res) => {
   try {
     const {breedId} = req.params;
-    const response = await breedService.deleteBreed(breedId);
+    const response = await breedService.deleteBreed(req.payload.id, breedId);
     res.status(200).json(response);
   } catch (error) {
     res.status(400).json({ message: error.message });
@@ -49,6 +58,7 @@ const breedController = {
   //ADMIN
   getAll,
   createBreed,
+  editBreed,
   deleteBreed,
 }
 

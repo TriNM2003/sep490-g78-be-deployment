@@ -7,9 +7,14 @@ const blogSchema = new mongoose.Schema(
       ref: "Shelter",
       required: true,
     },
+    createdBy: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "User",
+      required: true,
+    },
     thumbnail_url: {
       type: String,
-      default: "",
+      default: "https://drmango.vn/img/noimage-600x403-1.jpg",
     },
     title: { 
       type: String,

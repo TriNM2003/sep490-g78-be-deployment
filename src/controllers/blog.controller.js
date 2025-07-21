@@ -93,6 +93,7 @@ const createBlog = async (req, res) => {
 
   try {
     const newBlog = await blogService.createBlog(
+      req.payload.id,
       { title, description, content },
       shelterId,
       file

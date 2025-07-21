@@ -9,6 +9,7 @@ breedRouter.get("/getAll", getAllBreeds);
 //ADMIN
 breedRouter.get("/admin/get-all", [authMiddleware.verifyAccessToken, adminMiddleware.isAdmin], breedController.getAll);
 breedRouter.post("/admin/create", [authMiddleware.verifyAccessToken, adminMiddleware.isAdmin], breedController.createBreed);
+breedRouter.put("/admin/edit", [authMiddleware.verifyAccessToken, adminMiddleware.isAdmin], breedController.editBreed);
 breedRouter.delete("/admin/delete/:breedId", [authMiddleware.verifyAccessToken, adminMiddleware.isAdmin], breedController.deleteBreed);
 
 module.exports = breedRouter;
