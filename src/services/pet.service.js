@@ -93,14 +93,12 @@ const createPet = async (petData) => {
     throw error;
   }
 };
-
 const updatePet = async (petId, updateData) => {
   try {
-    // Lấy pet cần update
     const pet = await Pet.findById(petId);
     if (!pet) throw new Error("Không tìm thấy thú cưng");
 
-    // Kiểm tra nếu có trường shelter trong updateData thì phải khớp
+    //Kiểm tra shelter có hợp lệ không
     if (
       updateData.shelter &&
       pet.shelter.toString() !== updateData.shelter.toString()
@@ -108,8 +106,51 @@ const updatePet = async (petId, updateData) => {
       throw new Error("Thú cưng không thuộc trạm cứu hộ này!");
     }
 
-    // Cập nhật dữ liệu
-    return await Pet.findByIdAndUpdate(petId, updateData, { new: true });
+    //  Nếu đang muốn đổi sang "available"
+    if (updateData.status === "available") {
+      const form = await db.AdoptionForm.findOne({ pet: petId });
+      if (!form) {
+        throw new Error(
+          "Không thể đặt 'sẵn sàng nhận nuôi': Chưa có adoption form."
+        );
+      }
+
+      // Nếu form đang là draft, thì cập nhật luôn sang active
+      if (form.status === "draft") {
+        form.status = "active";
+        await form.save();
+      }
+
+      // Cho phép đổi sang "available"
+    }
+
+    //  Nếu đang muốn đổi sang "unavailable", kiểm tra ngược lại
+    if (updateData.status === "unavailable") {
+      const form = await db.AdoptionForm.findOne({ pet: petId });
+      if (!form) {
+        throw new Error(
+          "Không thể đặt 'chưa sẵn sàng nhận nuôi': Chưa có adoption form."
+        );
+      }
+
+      // Nếu form đang là active, bạn có thể cho chuyển ngược hoặc chặn lại tuỳ chính sách
+      if (form.status === "active") {
+        form.status = "draft";
+        await form.save();
+      }
+    }
+
+    //  Chỉ cho phép update nếu status là 1 trong 2 trạng thái cho phép
+    if (!["available", "unavailable"].includes(updateData.status)) {
+      delete updateData.status; // không cho chỉnh trạng thái khác
+    }
+
+    //  Thực hiện cập nhật
+    const updatedPet = await Pet.findByIdAndUpdate(petId, updateData, {
+      new: true,
+    });
+
+    return updatedPet;
   } catch (error) {
     throw error;
   }
