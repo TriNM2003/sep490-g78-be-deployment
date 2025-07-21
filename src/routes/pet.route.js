@@ -30,10 +30,10 @@ petRouter.put(
   petController.updatePet
 );
 
-petRouter.delete(
+petRouter.patch(
   "/delete/:petId/:shelterId",
   [verifyAccessToken, isShelterStaff],
-  petController.deletePet
+  petController.disablePet
 );
 petRouter.get(
   "/get-adoptionForms-by-petId/:petId",

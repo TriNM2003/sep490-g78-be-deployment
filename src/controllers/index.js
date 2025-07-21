@@ -15,6 +15,7 @@ const blogController = require("./blog.controller");
 const breedController = require("./breed.controller");
 
 const reportController = require("./report.controller");
+const notificationController = require("./notification.controller");
 
 
 
@@ -34,5 +35,6 @@ module.exports = {
   breedController,
   blogController,
   reportController,
+  notificationController
 
 };

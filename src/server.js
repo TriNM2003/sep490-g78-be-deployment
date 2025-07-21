@@ -8,8 +8,6 @@ const cookieParser = require("cookie-parser");
 
 const passport = require("./configs/passport.config");
 
-
-
 const {
   userRouter,
   petRouter,
@@ -25,8 +23,8 @@ const {
   donationRouter,
   reportRouter,
   blogRouter,
+  notificationRouter,
 } = require("./routes");
-
 
 const path = require("path");
 const http = require("http");
@@ -42,9 +40,9 @@ app.use(
     credentials: true,
   })
 );
-app.use(express.json());
+app.use(express.json({ limit: "5mb" }));
 app.use(morgan("dev"));
-app.use(bodyParser.json());
+app.use(bodyParser.json({ limit: "5mb" }));
 app.use(cookieParser());
 // passport oauth
 app.use(
@@ -70,7 +68,7 @@ app.use("/shelters", shelterRouter);
 app.use("/adoption-submissions", adoptionSubmissionRouter);
 app.use("/pets/:petId/medical-records", medicalRecordRouter);
 app.use("/pets/:petId/adoption-submissions", adoptionSubmissionRouter);
-app.use("/shelters/:shelterId/adoptionForms", adoptionFormRouter );
+app.use("/shelters/:shelterId/adoptionForms", adoptionFormRouter);
 app.use("/shelters/:shelterId/adoptionTemplates", adoptionTemplateRouter);
 // app.use("/shelters/:shelterId/consentForms", );
 app.use("/species", speciesRouter);
@@ -79,6 +77,7 @@ app.use("/posts", postRouter);
 app.use("/donations", donationRouter);
 app.use("/reports", reportRouter);
 app.use("/blogs", blogRouter);
+app.use("/notifications", notificationRouter);
 // app.use("/posts/:postId/comments", );
 // app.use("/notifications", );
 app.use("/uploads", express.static(path.join(__dirname, "../uploads")));
