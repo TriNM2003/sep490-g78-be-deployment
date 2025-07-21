@@ -18,7 +18,7 @@ const isShelterManager = async (req, res, next) => {
     if (isManager) {
       return next();
     } else {
-      throw new Error("Tài khoản không phải là quản lý của trạm cứu hộ");
+      return res.status(401).json({ message: "Tài khoản không phải là quản lý của trạm cứu hộ" });
     }
   } catch (error) {
     next(error);
@@ -41,7 +41,7 @@ const isShelterMember = async (req, res, next) => {
     if (isMember) {
       return next();
     } else {
-      throw new Error("Tài khoản không phải là quản lý của trạm cứu hộ");
+      return res.status(401).json({ message: "Tài khoản không phải là thành viên của trạm cứu hộ" });
     }
   } catch (error) {
     next(error);
@@ -58,14 +58,14 @@ const isShelterStaff = async (req, res, next) => {
       return res.status(404).json({ message: "Không tìm thấy trạm cứu hộ!" });
     }
 
-    const isManager = shelter.members.some(
+    const isStaff = shelter.members.some(
       (member) => member._id.toString() === id && member.roles.includes("staff")
     );
 
-    if (isManager) {
+    if (isStaff) {
       return next();
     } else {
-      throw new Error("Tài khoản không phải là staff của trạm cứu hộ");
+      return res.status(401).json({ message: "Tài khoản không phải là staff của trạm cứu hộ" });
     }
   } catch (error) {
     next(error);

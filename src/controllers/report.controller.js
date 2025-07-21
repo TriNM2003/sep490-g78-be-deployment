@@ -22,9 +22,17 @@ const reportPostById = async (req, res) => {
 
 
 //ADMIN
-const getAllReports = async (req, res) => {
+const getUserReports = async (req, res) => {
   try {
-    const reports = await reportService.getAllReports();
+    const reports = await reportService.getUserReports();
+    res.status(200).json(reports);
+  } catch (error) {
+    res.status(400).json({ message: error.message });
+  }
+};
+const getPendingUserReports = async (req, res) => {
+  try {
+    const reports = await reportService.getPendingUserReports();
     res.status(200).json(reports);
   } catch (error) {
     res.status(400).json({ message: error.message });
@@ -38,7 +46,8 @@ const reportController = {
   reportPostById,
 
   //ADMIN
-  getAllReports,
+  getUserReports,
+  getPendingUserReports,
     
 };
 

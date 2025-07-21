@@ -21,7 +21,8 @@ reportRouter.post("/report-post",
   ]), reportController.reportPostById)
 
 //ADMIN
-reportRouter.get("/get-all", [verifyAccessToken, isAdmin], reportController.getAllReports);
+reportRouter.get("/admin/get-user-reports", [verifyAccessToken, isAdmin], reportController.getUserReports);
+reportRouter.get("/admin/get-pending-user-reports", [verifyAccessToken, isAdmin], reportController.getPendingUserReports);
 
 
 module.exports = reportRouter;
