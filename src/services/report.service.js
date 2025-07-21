@@ -25,67 +25,56 @@ const safeUser = (user) => ({
 //USER
 async function reportUser(reporterId, { userId, reportType, reason }, files) {
   try {
-    const report = await Report.find({reportedBy: reporterId, user: userId})
-    if(report){
-      throw new Error("Vui lòng chờ duyệt báo cáo trước đó")
+    const report = await Report.findOne({ reportedBy: reporterId, user: userId });
+    if (report) {
+      throw new Error("Vui lòng chờ duyệt báo cáo trước đó");
     }
 
     const reportedUser = await User.findById(userId);
     if (!reportedUser) {
       throw new Error("Không tìm thấy user");
     }
+
+    const hasPhotos = Array.isArray(files?.photos) && files.photos.length > 0;
     let tempFilePaths = [];
     let uploadImages = [];
 
-    if (files?.photos?.length > 0) {
-      for (photo of files.photos) {
-        tempFilePaths.push(photo.path);
-      }
-    }
-
-    if (files.photos.length > 0) {
+    if (hasPhotos) {
       try {
-        const photosImages = files.photos;
-        for (photo of photosImages) {
+        for (const photo of files.photos) {
+          tempFilePaths.push(photo.path);
           const uploadResult = await cloudinary.uploader.upload(photo.path, {
             folder: "report_photos",
             resource_type: "image",
           });
           uploadImages.push(uploadResult.secure_url);
+
+          // Xóa file local sau khi upload
           fs.unlink(photo.path, (err) => {
-            if (err) console.error("Error deleting local photos file:", err);
+            if (err) console.error("Error deleting local photo file:", err);
           });
         }
       } catch (error) {
         console.error("Cloudinary Upload Error:", error);
+
         for (const filePath of tempFilePaths) {
           fs.unlink(filePath, (err) => {
-            if (err)
-              console.error("Error deleting file in catch:", filePath, err);
+            if (err) console.error("Error deleting file in catch:", filePath, err);
           });
         }
+
         throw new Error("Lỗi khi tải lên ảnh report. Vui lòng thử lại.");
       }
     }
 
-    if (files?.photos?.length > 0) {
-      await Report.create({
-        reportedBy: reporterId,
-        user: userId,
-        reportType,
-        reason,
-        status: "pending",
-        photos: uploadImages,
-      });
-    } else {
-      await Report.create({
-        reportedBy: reporterId,
-        user: userId,
-        reportType,
-        reason,
-        status: "pending",
-      });
-    }
+    await Report.create({
+      reportedBy: reporterId,
+      user: userId,
+      reportType,
+      reason,
+      status: "pending",
+      ...(hasPhotos ? { photos: uploadImages } : {}),
+    });
 
     return {
       status: 200,
@@ -97,67 +86,56 @@ async function reportUser(reporterId, { userId, reportType, reason }, files) {
 }
 async function reportPost(reporterId, { postId, reportType, reason }, files) {
   try {
-    const report = await Report.find({reportedBy: reporterId, post: postId})
-    if(report){
-      throw new Error("Vui lòng chờ duyệt báo cáo trước đó")
+    const report = await Report.findOne({ reportedBy: reporterId, post: postId });
+    if (report) {
+      throw new Error("Vui lòng chờ duyệt báo cáo trước đó");
     }
 
     const reportedPost = await Post.findById(postId);
     if (!reportedPost) {
       throw new Error("Không tìm thấy post");
     }
+
     let tempFilePaths = [];
     let uploadImages = [];
 
-    if (files?.photos?.length > 0) {
-      for (photo of files.photos) {
+    const hasPhotos = Array.isArray(files?.photos) && files.photos.length > 0;
+
+    if (hasPhotos) {
+      for (const photo of files.photos) {
         tempFilePaths.push(photo.path);
       }
-    }
 
-    if (files.photos.length > 0) {
       try {
-        const photosImages = files.photos;
-        for (photo of photosImages) {
+        for (const photo of files.photos) {
           const uploadResult = await cloudinary.uploader.upload(photo.path, {
             folder: "report_photos",
             resource_type: "image",
           });
           uploadImages.push(uploadResult.secure_url);
           fs.unlink(photo.path, (err) => {
-            if (err) console.error("Error deleting local photos file:", err);
+            if (err) console.error("Error deleting local photo file:", err);
           });
         }
       } catch (error) {
         console.error("Cloudinary Upload Error:", error);
         for (const filePath of tempFilePaths) {
           fs.unlink(filePath, (err) => {
-            if (err)
-              console.error("Error deleting file in catch:", filePath, err);
+            if (err) console.error("Error deleting file in catch:", filePath, err);
           });
         }
         throw new Error("Lỗi khi tải lên ảnh report. Vui lòng thử lại.");
       }
     }
 
-    if (files?.photos?.length > 0) {
-      await Report.create({
-        reportedBy: reporterId,
-        post: postId,
-        reportType,
-        reason,
-        status: "pending",
-        photos: uploadImages,
-      });
-    } else {
-      await Report.create({
-        reportedBy: reporterId,
-        post: postId,
-        reportType,
-        reason,
-        status: "pending",
-      });
-    }
+    await Report.create({
+      reportedBy: reporterId,
+      post: postId,
+      reportType,
+      reason,
+      status: "pending",
+      ...(hasPhotos ? { photos: uploadImages } : {}),
+    });
 
     return {
       status: 200,
@@ -167,6 +145,7 @@ async function reportPost(reporterId, { postId, reportType, reason }, files) {
     throw error;
   }
 }
+
 
 
 //ADMIN

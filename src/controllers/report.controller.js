@@ -1,4 +1,5 @@
 const reportService = require("../services/report.service");
+const fs = require("fs")
 
 //USER
 const reportUserById = async (req, res) => {
@@ -7,6 +8,14 @@ const reportUserById = async (req, res) => {
     const response = await reportService.reportUser(id, req.body, req.files)
     res.status(200).json(response);
   } catch (error) {
+    const filesToDelete = req.files?.photos || [];
+    for (const file of filesToDelete) {
+      fs.unlink(file.path, (err) => {
+        if (err) {
+          console.error("Error deleting file:", file.path, err);
+        }
+      });
+    }
     res.status(400).json({ message: error.message });
   }
 };
@@ -16,6 +25,14 @@ const reportPostById = async (req, res) => {
     const response = await reportService.reportPost(id, req.body, req.files)
     res.status(200).json(response);
   } catch (error) {
+    const filesToDelete = req.files?.photos || [];
+    for (const file of filesToDelete) {
+      fs.unlink(file.path, (err) => {
+        if (err) {
+          console.error("Error deleting file:", file.path, err);
+        }
+      });
+    }
     res.status(400).json({ message: error.message });
   }
 };
