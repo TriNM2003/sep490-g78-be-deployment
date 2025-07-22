@@ -212,6 +212,37 @@ const editProfile = async (userId, profileData, files) => {
   }
 };
 
+const wishListPet = async (userId, petId) => {
+  try {
+    const user = await db.User.findById(userId);
+    const pet = await db.Pet.findById(petId);
+
+    if (!user) throw new Error("Không tìm thấy người dùng");
+    if (!pet) throw new Error("Không tìm thấy thú cưng");
+
+    const isWished = user.wishList.includes(petId);
+
+    let message = "";
+    if (isWished) {
+      user.wishList.pull(petId);
+      message = "Đã xoá khỏi danh sách yêu thích";
+    } else {
+      user.wishList.push(petId);
+      message = "Đã thêm vào danh sách yêu thích";
+    }
+
+    await user.save();
+
+    return {
+      message,
+      isWished: !isWished,
+      wishList: user.wishList,
+    };
+  } catch (error) {
+    throw new Error("Lỗi khi cập nhật wishlist: " + error.message);
+  }
+};
+
 //ADMIN
 const addUser = async (data) => {
   try {
@@ -338,6 +369,7 @@ const userService = {
   getUserById,
   changePassword,
   editProfile,
+  wishListPet,
 
   //ADMIN
   addUser,
