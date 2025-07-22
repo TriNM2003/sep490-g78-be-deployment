@@ -70,6 +70,9 @@ async function editForm(formId, formData) {
     if (!form) {
       throw new Error("Không tìm thấy form");
     }
+    if (form.status != "draft") {
+      throw new Error("Chỉ có thể chỉnh sửa form ở trạng thái nháp");
+    }
     const updateForm = await db.AdoptionForm.findOneAndUpdate(
       { _id: formId },
       formData,
@@ -95,22 +98,22 @@ async function editForm(formId, formData) {
 
 async function changeFormStatus(formId, formData) {
   try {
-
     const updateForm = await db.AdoptionForm.findByIdAndUpdate(
       formId,
       { status: formData.status },
       { new: true }
     );
-    if (!updateForm) throw new Error("Lỗi khi cập nhập trạng thái form hoặc form không tồn tại!");
+    if (!updateForm)
+      throw new Error(
+        "Lỗi khi cập nhập trạng thái form hoặc form không tồn tại!"
+      );
 
-
-    const petUpdate = await db.Pet.findByIdAndUpdate(
-      updateForm.pet._id,
+    const petUpdate = await db.Pet.findOneAndUpdate(
+      { _id: updateForm.pet._id, status: { $ne: "adopted" } },
       { status: formData.status == "active" ? "available" : "unavailable" },
       { new: true }
     );
     if (!petUpdate) {
-  
       await db.AdoptionForm.findByIdAndUpdate(formId, { status: form.status });
       throw new Error("Lỗi khi cập nhập trạng thái thú nuôi!");
     }
@@ -120,7 +123,6 @@ async function changeFormStatus(formId, formData) {
     throw err;
   }
 }
-
 
 async function deleteForm(formId) {
   try {
