@@ -77,7 +77,7 @@ const getSubmissionsByPetIds = async (petIds) => {
     const submissions = await db.AdoptionSubmission.find({
       adoptionForm: { $in: formIds },
     })
-      .populate("performedBy", "fullName email")
+      .populate("performedBy", "fullName email address dob phoneNumber warningCount")
       .populate({
         path: "adoptionForm",
         populate: [
