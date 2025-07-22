@@ -36,6 +36,23 @@ const reportPostById = async (req, res) => {
     res.status(400).json({ message: error.message });
   }
 };
+const reportBlogById = async (req, res) => {
+  try {
+    const {id} = req.payload;
+    const response = await reportService.reportBlog(id, req.body, req.files)
+    res.status(200).json(response);
+  } catch (error) {
+    const filesToDelete = req.files?.photos || [];
+    for (const file of filesToDelete) {
+      fs.unlink(file.path, (err) => {
+        if (err) {
+          console.error("Error deleting file:", file.path, err);
+        }
+      });
+    }
+    res.status(400).json({ message: error.message });
+  }
+};
 
 
 //ADMIN
@@ -55,17 +72,37 @@ const getPendingUserReports = async (req, res) => {
     res.status(400).json({ message: error.message });
   }
 };
+const reviewUserReport = async (req, res) => {
+  try {
+    const reports = await reportService.reviewUserReport(req.payload.id, req.params.reportId, req.params.decision);
+    res.status(200).json(reports);
+  } catch (error) {
+    res.status(400).json({ message: error.message });
+  }
+};
+
+const getPendingPostReports = async (req, res) => {
+  try {
+    const reports = await reportService.getPendingPostReports();
+    res.status(200).json(reports);
+  } catch (error) {
+    res.status(400).json({ message: error.message });
+  }
+};
 
 
 const reportController = {
   //USER
   reportUserById,
   reportPostById,
+  reportBlogById,
 
   //ADMIN
   getUserReports,
   getPendingUserReports,
-    
+  reviewUserReport,
+
+  getPendingPostReports,
 };
 
 module.exports = reportController;
