@@ -83,17 +83,18 @@ const searchPetWithGPT = async (
 
       ## Mục tiêu:
       Phân tích ảnh và trả về kết quả dưới định dạng JSON với các trường sau:
-      - species: string (loài) (trả về 1)
-      - breeds: [string] (danh sách giống loài) (trả về 1 - 2 breed)
+      - species: string (loài) (trả về 1 loài duy nhất)
+      - breeds: [string] (danh sách giống loài) (trả về ít nhất 1 và không quá 2 breed)
       - age: number (ước tính tuổi theo tháng)
       - weight: number (ước tính cân nặng tính bằng kg)
-      - color: [string] (danh sách màu lông, chỉ chọn từ danh sách được cung cấp) (trả về 1-2 màu chủ đạo)
+      - color: [string] (danh sách màu lông chủ đạo, chỉ chọn từ danh sách được cung cấp) (trả về ít nhất 1 và không quá 2 màu)
       - identificationFeature: string (đặc điểm nhận dạng nổi bật, nếu có)
 
       ## Yêu cầu đặc biệt:
       - Nếu ảnh không đạt tiêu chuẩn, **trả về lỗi** với lý do cụ thể, ví dụ:
         - Ảnh không phải ảnh thật, do AI tạo, ảnh hoạt hình.
         - Ảnh bị chỉnh sửa quá nhiều, không còn nhận diện được con vật.
+        - Ảnh máu me, bạo lực, hoặc có nội dung không phù hợp.
         - Ảnh có nhiều hơn 1 con vật.
         - Ảnh quá mờ, bị cắt mất phần thân quan trọng.
         - Ảnh không đủ chi tiết để phân tích rõ loài vật, giống (ví dụ: chỉ thấy phần đầu, chỉ có chân, chỉ có thân,...).
@@ -133,7 +134,7 @@ const searchPetWithGPT = async (
         "breeds": ["Chó ta", "Phú Quốc"],
         "age": 12,
         "weight": 5.5,
-        "color": ["vàng đậm", "đen"],
+        "colors": ["vàng đậm", "đen"],
         "identificationFeature": "Có một đốm trắng ở chân trước"
       }
 
