@@ -9,6 +9,7 @@ const {
   isShelterStaff,
   isShelterMember,
 } = require("../middlewares/shelter.middleware");
+const  cloudinary  = require("../configs/cloudinary");
 
 petRouter.use(bodyParser.json());
 petRouter.get("/get-pet-list", petController.getPetList);
@@ -55,5 +56,10 @@ petRouter.get(
   petController.getAdoptedPetbyUser
 );
 petRouter.post("/ai-analyze", petController.analyzePetImage);
+petRouter.post(
+  "/search-by-ai",
+  cloudinary.upload.single("imageRaw"),
+  petController.searchPetByImage
+);
 
 module.exports = petRouter;

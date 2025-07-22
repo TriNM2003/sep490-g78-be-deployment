@@ -95,63 +95,32 @@ async function editForm(formId, formData) {
 
 async function changeFormStatus(formId, formData) {
   try {
-    const form = await db.AdoptionForm.findById(formId)
-      .populate("pet", "_id name petCode")
-      .populate("questions")
-      .populate("createdBy", "fullName email avatar")
-      .lean();
-    if (!form) {
-      throw new Error("Không tìm thấy form");
-    }
 
-    const updateForm = await db.AdoptionForm.findOneAndUpdate(
-      { _id: formId },
+    const updateForm = await db.AdoptionForm.findByIdAndUpdate(
+      formId,
       { status: formData.status },
       { new: true }
-    )
-      .populate("pet", "_id name petCode")
-      .populate("questions")
-      .populate("createdBy", "fullName email avatar")
-      .lean();
+    );
+    if (!updateForm) throw new Error("Lỗi khi cập nhập trạng thái form hoặc form không tồn tại!");
 
-    if (!updateForm) {
-      throw new Error("Lỗi không tìm thấy form đã cập nhật");
+
+    const petUpdate = await db.Pet.findByIdAndUpdate(
+      updateForm.pet._id,
+      { status: formData.status == "active" ? "available" : "unavailable" },
+      { new: true }
+    );
+    if (!petUpdate) {
+  
+      await db.AdoptionForm.findByIdAndUpdate(formId, { status: form.status });
+      throw new Error("Lỗi khi cập nhập trạng thái thú nuôi!");
     }
-    if (formData.status == "draft" && form.status == "active") {
-      const pet = await db.Pet.findById(form.pet._id);
-      if (!pet) {
-        throw new Error("Không tìm thấy thú cưng liên kết với form này");
-      }
-      const updatePet = await db.Pet.findByIdAndUpdate(
-        form.pet._id,
-        { status: "unavailable" },
-        { new: true }
-      );
-      if (!updatePet) {
-        throw new Error("Lỗi cập nhật trạng thái thú cưng");
-      }
-    } else if (formData.status == "active" && form.status == "draft") {
-      const pet = await db.Pet.findById(form.pet);
-      if (!pet) {
-        throw new Error("Không tìm thấy thú cưng liên kết với form này");
-      }
-      const updatePet = await db.Pet.findByIdAndUpdate(
-        form.pet._id,
-        { status: "available" },
-        { new: true }
-      );
-      if (!updatePet) {
-        throw new Error("Lỗi cập nhật trạng thái thú cưng");
-      }
-    }
-    return {
-      ...updateForm,
-      shelter: updateForm?.shelter?.name,
-    };
-  } catch (error) {
-    throw error;
+
+    return updateForm;
+  } catch (err) {
+    throw err;
   }
 }
+
 
 async function deleteForm(formId) {
   try {
