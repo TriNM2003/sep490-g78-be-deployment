@@ -115,10 +115,10 @@ const getPostDetail = async (postId) => {
   }
 };
 
-const createPost = async (userId, postData, files, shelterId) => {
+const createPost = async (userId, postData, files) => {
   const uploadedPhotoUrls = [];
   const tempFilePaths = [];
-
+  const shelterId = postData.shelter;
   try {
     if (shelterId) {
       const shelter = await db.Shelter.findById(shelterId);

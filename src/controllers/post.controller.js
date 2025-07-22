@@ -26,13 +26,13 @@ const createPost = async (req, res) => {
   //   console.log("Req files:", req.files);
   const userId = req.payload.id;
   const postData = req.body;
-  const shelterId = req.params.shelterId || null;
+
 
   if (req.files.length > 5) {
     return res.status(400).json({ message: "Chỉ được tải tối đa 5 ảnh." });
   }
   try {
-    const post = await postService.createPost(userId, postData, req.files, shelterId);
+    const post = await postService.createPost(userId, postData, req.files);
     return res.status(201).json({
       message: "Bài viết đã được tạo thành công",
       data: post,
