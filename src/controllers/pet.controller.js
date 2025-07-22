@@ -1,7 +1,7 @@
 const petService = require("../services/pet.service");
 const { cloudinary } = require("../configs/cloudinary");
 const medicalRecordService = require("../services/medicalRecord.service");
-const { analyzePetWithGPT } = require("../services/gptVision.service");
+const { analyzePetWithGPT, searchPetWithGPT } = require("../services/gptVision.service");
 const mongoose = require("mongoose");
 const db = require("../models");
 
@@ -185,6 +185,26 @@ const analyzePetImage = async (req, res) => {
   }
 };
 
+const searchPetByImage = async (req, res) => {
+  try {
+    const { image, speciesList, breedsList, colorsList } = req.body;
+    if (!image) {
+      res.status(400).json({ message: "Thiếu dữ liệu ảnh" });
+    }
+
+    const result = await searchPetWithGPT(
+      image,
+      speciesList,
+      breedsList,
+      colorsList
+    );
+    res.status(200).json(result);
+  } catch (err) {
+    res.status(400).json({ message: err.message || "Lỗi khi phân tích hình ảnh!" });
+
+  }
+};
+
 const petController = {
   getAllPets,
   createPet,
@@ -198,6 +218,7 @@ const petController = {
   getPetById,
   getAdoptedPetbyUser,
   getMedicalRecordsByPet,
+  searchPetByImage
 };
 
 module.exports = petController;

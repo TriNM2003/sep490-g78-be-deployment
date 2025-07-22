@@ -50,5 +50,6 @@ petRouter.get(
   petController.getAdoptedPetbyUser
 );
 petRouter.post("/ai-analyze", petController.analyzePetImage);
+petRouter.get("/search-by-ai", petController.searchPetByImage);
 
 module.exports = petRouter;
