@@ -290,6 +290,17 @@ const getAdoptedPetsByWeek = async (req, res) => {
   }
 };
 
+const getAdoptionFormsByWeek = async (req, res) => {
+  try {
+    const shelterId = req.params.shelterId;
+    const result = await shelterService.getAdoptionFormsByWeek(shelterId);
+    res.json(result);
+  } catch (error) {
+    console.error("getAdoptionFormsByWeek error:", error);
+    res.status(500).json({ message: error.message });
+  }
+};
+
 // EXPORT
 const shelterController = {
   //USER
@@ -314,6 +325,8 @@ const shelterController = {
 
   //MANAGER
   getAdoptedPetsByWeek,
+  getAdoptionFormsByWeek,
+
   //ADMIN
   getAllShelter,
   getAllShelterEstablishmentRequests,

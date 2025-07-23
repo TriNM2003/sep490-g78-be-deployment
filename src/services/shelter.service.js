@@ -14,6 +14,7 @@ const db = require("../models/index");
 
 const mongoose = require("mongoose");
 const { mailer } = require("../configs");
+const AdoptionForm = require("../models/adoptionForm.model");
 
 //USER
 async function getAll() {
@@ -1253,6 +1254,67 @@ const getAdoptedPetsByWeek = async (shelterId) => {
 
   return formatted;
 };
+function getISOWeekNumber(date) {
+  const tmp = new Date(date.getTime());
+  tmp.setUTCDate(tmp.getUTCDate() + 4 - (tmp.getUTCDay() || 7));
+  const yearStart = new Date(Date.UTC(tmp.getUTCFullYear(), 0, 1));
+  const weekNo = Math.ceil(((tmp - yearStart) / 86400000 + 1) / 7);
+  return weekNo;
+}
+
+const getAdoptionFormsByWeek = async (shelterId) => {
+  const now = new Date();
+  const fourWeeksAgo = new Date();
+  fourWeeksAgo.setDate(now.getDate() - 28);
+
+  const forms = await db.AdoptionForm.aggregate([
+    {
+      $match: {
+        shelter: new mongoose.Types.ObjectId(shelterId),
+        createdAt: { $gte: fourWeeksAgo, $lte: now },
+      },
+    },
+    {
+      $addFields: {
+        weekNumber: { $isoWeek: "$createdAt" },
+        year: { $isoWeekYear: "$createdAt" },
+      },
+    },
+    {
+      $group: {
+        _id: {
+          week: "$weekNumber",
+          year: "$year",
+        },
+        count: { $sum: 1 },
+      },
+    },
+    {
+      $sort: {
+        "_id.year": 1,
+        "_id.week": 1,
+      },
+    },
+  ]);
+
+  const result = [];
+  for (let i = 3; i >= 0; i--) {
+    const tmpDate = new Date();
+    tmpDate.setDate(now.getDate() - i * 7);
+    const week = getISOWeekNumber(tmpDate);
+    const year = tmpDate.getUTCFullYear();
+
+    const found = forms.find((f) => f._id.week === week && f._id.year === year);
+
+    result.push({
+      week: `Tuần ${4 - i}`,
+      count: found ? found.count : 0,
+    });
+  }
+
+  return result;
+};
+
 const shelterService = {
   // USER
   getAll,
@@ -1280,6 +1342,8 @@ const shelterService = {
 
   //MANAGER
   getAdoptedPetsByWeek,
+  getAdoptionFormsByWeek,
+
   // ADMIN
   getAllShelter,
   getAllShelterEstablishmentRequests,

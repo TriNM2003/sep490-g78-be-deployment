@@ -55,6 +55,12 @@ shelterRouter.get(
 
   shelterController.getAdoptedPetsByWeek
 );
+shelterRouter.get(
+  "/:shelterId/statistics/adoption-forms-by-week",
+  [verifyAccessToken, isShelterManager],
+
+  shelterController.getAdoptionFormsByWeek
+);
 shelterRouter.get("/get-all", shelterController.getAll);
 shelterRouter.get(
   "/get-members/:shelterId",
