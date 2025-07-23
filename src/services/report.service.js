@@ -1,4 +1,4 @@
-const {Report, User, Post, Blog} = require("../models/index")
+const {Report, User, Post, Blog, Shelter} = require("../models/index")
 const {cloudinary} = require("../configs/cloudinary")
 const fs = require("fs")
 const {createNotification} = require("./notification.service")
@@ -22,6 +22,34 @@ const safeUser = (user) => ({
   createdAt: user?.createdAt ?? null,
   updatedAt: user?.updatedAt ?? null,
 });
+
+const safeShelter = (shelter) => {
+  if (!shelter) return null;
+  return {
+    _id: shelter._id || null,
+    name: shelter.name || "",
+    avatar: shelter.avatar || "",
+    address: shelter.address || "",
+  };
+};
+
+const safeBlog = (blog) => {
+  if (!blog) return null;
+  return {
+    _id: blog._id || null,
+    title: blog.title || "",
+    description: blog.description || "",
+    content: blog.content || "",
+    thumbnail_url: blog.thumbnail_url || "https://drmango.vn/img/noimage-600x403-1.jpg",
+    status: ["moderating", "published", "rejected", "deleted"].includes(blog.status)
+      ? blog.status
+      : "moderating",
+    createdAt: blog.createdAt || null,
+    updatedAt: blog.updatedAt || null,
+    shelter: safeShelter(blog.shelter),
+    createdBy: safeUser(blog.createdBy),
+  };
+};
 
 
 //USER
@@ -328,9 +356,9 @@ async function reviewUserReport(adminId, reportId, decision = "reject") {
       await createNotification(
       adminId,
       [report.user._id],
-      `Tài khoản của bạn đã bị xác nhận vi phạm sau khi bị người dùng khác báo cáo.\nLý do: ${report.reason} — vui lòng kiểm tra email đã đăng kí để biết thêm chi tiết.`,
+      `Tài khoản của bạn đã bị xác nhận vi phạm sau khi bị người dùng khác báo cáo.\nLý do: ${report.reason}.`,
       "report",
-      ""
+      "#"
     );
     }
     
@@ -367,6 +395,45 @@ PawShelter
   }
 }
 
+async function getPostReports() {
+  try {
+    const reports = await Report.find({
+      reportType: "post",
+      status: {$ne: "pending"},
+    })
+      .populate("post reportedBy reviewedBy")
+      .populate({
+        path: "post",
+        populate: { path: "createdBy", select: "_id fullName email avatar" },
+      })
+      .sort({ createdAt: -1 });
+
+    return reports.map((report) => ({
+      _id: report._id,
+      reportType: report.reportType,
+      post: {
+        _id: report.post._id,
+        title: report.post.title,
+        photos: report.post.photos,
+        privacy: report.post.privacy,
+        createdBy: safeUser(report.post.createdBy),
+        status: report.post.status,
+        createdAt: report.post.createdAt,
+        updatedAt: report.post.updatedAt,
+      },
+      reportedBy: safeUser(report.reportedBy),
+      reviewedBy: safeUser(report.reviewedBy),
+      reason: report.reason ?? "",
+      photos: report.photos ?? [],
+      status: report.status ?? "pending",
+      createdAt: report.createdAt,
+      updatedAt: report.updatedAt,
+    }));
+
+  } catch (error) {
+    throw error;
+  }
+}
 async function getPendingPostReports() {
   try {
     const reports = await Report.find({
@@ -406,6 +473,193 @@ async function getPendingPostReports() {
     throw error;
   }
 }
+async function reviewPostReport(adminId, reportId, decision = "reject") {
+  try {
+    // 1. Tìm báo cáo
+    const report = await Report.findById(reportId).populate("post reportedBy");
+    if (!report) {
+      throw new Error("Id báo cáo không hợp lệ");
+    }
+
+    if (report.status !== "pending") {
+      throw new Error("Báo cáo đã được xử lý");
+    }
+
+    // 2. Tìm bài post bị báo cáo
+    const reportedPost = await Post.findById(report.post._id);
+    if (!reportedPost) {
+      throw new Error("Id bài post bị báo cáo không hợp lệ");
+    }
+
+    // 3. Xử lý từ chối báo cáo
+    if (decision === "reject") {
+      report.status = "rejected";
+      report.reviewedBy = adminId;
+      await report.save();
+
+      return {
+        message: "Xử lý báo cáo bài post thành công!",
+      };
+    }
+
+    // 4. Phê duyệt báo cáo
+    report.status = "approved";
+    report.reviewedBy = adminId;
+    reportedPost.status = "hidden";
+    await report.save();
+    await reportedPost.save();
+
+    // 5. Gửi thông báo
+    try {
+      await createNotification(
+        adminId,
+        [reportedPost.createdBy],
+        `Bài viết của bạn đã bị xác nhận vi phạm sau khi bị người dùng khác báo cáo.\nLý do: ${report.reason}.`,
+        "report",
+        "#"
+      );
+    } catch (error) {
+      console.log(error);
+    }
+    
+  
+    return {
+      message: "Xử lý báo cáo bài post thành công!",
+    };
+  } catch (error) {
+    throw error;
+  }
+}
+
+async function getBlogReports() {
+  try {
+    const reports = await Report.find({
+      reportType: "blog",
+      status: {$ne: "pending"},
+    })
+      .populate("blog reportedBy reviewedBy")
+      .populate({
+        path: "blog",
+        populate: { path: "createdBy", select: "_id fullName email avatar" },
+      })
+      .populate({
+        path: "blog",
+        populate: { path: "shelter", select: "_id name avatar address" },
+      })
+      .sort({ createdAt: -1 });
+
+    return reports.map((report) => ({
+      _id: report._id,
+      reportType: report.reportType,
+      blog: safeBlog(report.blog),
+      reportedBy: safeUser(report.reportedBy),
+      reviewedBy: safeUser(report.reviewedBy),
+      reason: report.reason ?? "",
+      photos: report.photos ?? [],
+      status: report.status ?? "pending",
+      createdAt: report.createdAt,
+      updatedAt: report.updatedAt,
+    }));
+
+  } catch (error) {
+    throw error;
+  }
+}
+async function getPendingBlogReports() {
+  try {
+    const reports = await Report.find({
+      reportType: "blog",
+      status: "pending",
+    })
+      .populate("blog reportedBy reviewedBy")
+      .populate({
+        path: "blog",
+        populate: { path: "createdBy", select: "_id fullName email avatar" },
+      })
+      .populate({
+        path: "blog",
+        populate: { path: "shelter", select: "_id name avatar address" },
+      })
+      .sort({ createdAt: -1 });
+
+    return reports.map((report) => ({
+      _id: report._id,
+      reportType: report.reportType,
+      blog: safeBlog(report.blog),
+      reportedBy: safeUser(report.reportedBy),
+      reviewedBy: safeUser(report.reviewedBy),
+      reason: report.reason ?? "",
+      photos: report.photos ?? [],
+      status: report.status ?? "pending",
+      createdAt: report.createdAt,
+      updatedAt: report.updatedAt,
+    }));
+
+  } catch (error) {
+    throw error;
+  }
+}
+async function reviewBlogReport(adminId, reportId, decision = "reject") {
+  try {
+    // 1. Tìm báo cáo
+    const report = await Report.findById(reportId).populate("blog reportedBy");
+    if (!report) {
+      throw new Error("Id báo cáo không hợp lệ");
+    }
+
+    if (report.status !== "pending") {
+      throw new Error("Báo cáo đã được xử lý");
+    }
+
+    // 2. Tìm bài viết blog bị báo cáo
+    const reportedBlog = await Blog.findById(report.blog._id);
+    if (!reportedBlog) {
+      throw new Error("Id bài viết blog bị báo cáo không hợp lệ");
+    }
+    const relatedShelter = await Shelter.findById(reportedBlog.shelter);
+    if(!relatedShelter){
+      throw new Error("Không tìm thấy trạm cứu hộ blog thuộc về");
+    }
+
+    // 3. Xử lý từ chối báo cáo
+    if (decision === "reject") {
+      report.status = "rejected";
+      report.reviewedBy = adminId;
+      await report.save();
+
+      return {
+        message: "Xử lý báo cáo bài viết blog thành công!",
+      };
+    }
+
+    // 4. Phê duyệt báo cáo
+    report.status = "approved";
+    report.reviewedBy = adminId;
+    reportedBlog.status = "deleted";
+    await report.save();
+    await reportedBlog.save();
+
+    // 5. Gửi thông báo
+    try {
+      await createNotification(
+        adminId,
+        [...relatedShelter.members],
+        `Bài viết blog của trạm cứu hộ ${relatedShelter.name} tên ${reportedBlog.title} đã bị xác nhận vi phạm sau khi bị người dùng khác báo cáo và đã bị xóa khỏi hệ thống.\nLý do: ${report.reason}.`,
+        "report",
+        "#"
+      );
+    } catch (error) {
+      console.log(error);
+    }
+    
+  
+    return {
+      message: "Xử lý báo cáo bài viết blog thành công!",
+    };
+  } catch (error) {
+    throw error;
+  }
+}
 
 const reportService = {
   //USER
@@ -413,13 +667,16 @@ const reportService = {
   reportPost,
   reportBlog,
 
-
   //ADMIN
   getUserReports,
   getPendingUserReports,
   reviewUserReport,
-
+  getPostReports,
   getPendingPostReports,
+  reviewPostReport,
+  getBlogReports,
+  getPendingBlogReports,
+  reviewBlogReport,
 };
 
 module.exports = reportService;

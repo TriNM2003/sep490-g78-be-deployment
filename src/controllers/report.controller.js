@@ -80,7 +80,14 @@ const reviewUserReport = async (req, res) => {
     res.status(400).json({ message: error.message });
   }
 };
-
+const getPostReports = async (req, res) => {
+  try {
+    const reports = await reportService.getPostReports();
+    res.status(200).json(reports);
+  } catch (error) {
+    res.status(400).json({ message: error.message });
+  }
+};
 const getPendingPostReports = async (req, res) => {
   try {
     const reports = await reportService.getPendingPostReports();
@@ -89,7 +96,38 @@ const getPendingPostReports = async (req, res) => {
     res.status(400).json({ message: error.message });
   }
 };
-
+const reviewPostReport = async (req, res) => {
+  try {
+    const reports = await reportService.reviewPostReport(req.payload.id, req.params.reportId, req.params.decision);
+    res.status(200).json(reports);
+  } catch (error) {
+    res.status(400).json({ message: error.message });
+  }
+};
+const getBlogReports = async (req, res) => {
+  try {
+    const reports = await reportService.getBlogReports();
+    res.status(200).json(reports);
+  } catch (error) {
+    res.status(400).json({ message: error.message });
+  }
+};
+const getPendingBlogReports = async (req, res) => {
+  try {
+    const reports = await reportService.getPendingBlogReports();
+    res.status(200).json(reports);
+  } catch (error) {
+    res.status(400).json({ message: error.message });
+  }
+};
+const reviewBlogReport = async (req, res) => {
+  try {
+    const reports = await reportService.reviewBlogReport(req.payload.id, req.params.reportId, req.params.decision);
+    res.status(200).json(reports);
+  } catch (error) {
+    res.status(400).json({ message: error.message });
+  }
+};
 
 const reportController = {
   //USER
@@ -101,8 +139,12 @@ const reportController = {
   getUserReports,
   getPendingUserReports,
   reviewUserReport,
-
+  getPostReports,
   getPendingPostReports,
+  reviewPostReport,
+  getBlogReports,
+  getPendingBlogReports,
+  reviewBlogReport,
 };
 
 module.exports = reportController;
