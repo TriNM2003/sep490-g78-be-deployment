@@ -14,6 +14,8 @@ const adoptionTemplateService = require("./adoptionTemplate.service");
 const adoptionFormService = require("./adoptionForm.service")
 const notificationService = require("./notification.service");
 const breedsService = require("./breed.service");
+const consentFormService = require("./consentForm.service");
+
 
 module.exports = {
     authService,
@@ -31,5 +33,6 @@ module.exports = {
     donationService,
     blogService,
     reportService,
-    notificationService
+    notificationService,
+    consentFormService,
 }

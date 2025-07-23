@@ -47,7 +47,7 @@ const consentFormSchema = new mongoose.Schema(
     },
     status: {
       type: String,
-      enum: ["draft", "send", "approved", "rejected"],
+      enum: ["draft", "send", "accepted", "approved", "rejected"],
       default: "draft",
     },
     attachments: [
