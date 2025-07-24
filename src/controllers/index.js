@@ -14,6 +14,7 @@ const breedController = require("./breed.controller");
 const reportController = require("./report.controller");
 const notificationController = require("./notification.controller");
 const returnRequestController = require("./returnRequest.controller");
+const consentFormController = require("./consentForm.controller");
 
 
 
@@ -33,5 +34,7 @@ module.exports = {
   blogController,
   reportController,
   notificationController,
-  returnRequestController
+  returnRequestController,
+  consentFormController,
+
 };

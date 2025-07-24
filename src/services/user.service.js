@@ -365,7 +365,7 @@ const unbanUser = async (userId) => {
     }
     const updatedUser = await db.User.findByIdAndUpdate(
       userId,
-      { status: "active" },
+      { status: "active", warningCount: 2 },
       { new: true }
     );
     return {

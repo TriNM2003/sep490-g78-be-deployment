@@ -1,7 +1,7 @@
 const express = require("express");
 const blogRouter = express.Router();
 const bodyParser = require("body-parser");
-const { verifyAccessToken, optionalVerifyAccessToken } = require("../middlewares/auth.middleware");
+const { verifyAccessToken, optionalVerifyAccessToken, isActive } = require("../middlewares/auth.middleware");
 const {isShelterStaff, isShelterManager} = require("../middlewares/shelter.middleware");
 const { isAdmin } = require("../middlewares/admin.middleware");
 const { cloudinary } = require("../configs");
