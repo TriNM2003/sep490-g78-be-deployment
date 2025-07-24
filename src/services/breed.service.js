@@ -101,7 +101,7 @@ const deleteBreed = async (adminId, breedId) => {
   }
 };
 
-const breedService = {
+const breedsService = {
   //USER
     
 
@@ -112,4 +112,4 @@ const breedService = {
   deleteBreed,
 };
 
-module.exports = breedService;
+module.exports = breedsService;
