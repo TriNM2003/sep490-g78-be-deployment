@@ -199,9 +199,47 @@ const getReturnRequestsByUser = async (userId) => {
   try {
     if (!userId) throw new Error("Thiếu id người dùng");
 
-    return await db.ReturnRequest.find({ requestedBy: userId })
+    const returnRequests = await db.ReturnRequest.find({ requestedBy: userId })
       .populate("pet requestedBy shelter approvedBy")
       .sort({ createdAt: -1 });
+
+    const result = returnRequests.map((request) => {
+      return {
+        _id: request._id,
+        pet: {
+          _id: request.pet._id,
+          name: request.pet.name,
+          status: request.pet.status,
+          age: request.pet.age,
+          petCode: request.pet.petCode,
+          photos: request.pet.photos,
+          isMale: request.pet.isMale,
+        },
+        requestedBy: {
+          _id: request.requestedBy._id,
+          name: request.requestedBy.name,
+          email: request.requestedBy.email,
+          avatar: request.requestedBy.avatar,
+          status: request.requestedBy.status,
+        },
+        shelter: {
+          _id: request.shelter._id,
+          name: request.shelter.name,
+          address: request.shelter.address,
+          email: request.shelter.email,
+          avatar: request.shelter.avatar,
+          status: request.shelter.status,
+        },
+        status: request.status,
+        reason: request.reason,
+        photos: request.photos,
+        createdAt: request.createdAt,
+        updatedAt: request.updatedAt,
+        approvedBy: request.approvedBy,
+      };
+    })
+
+    return result;
   } catch (error) {
     throw new Error(`Lỗi khi lấy yêu cầu trả thú cưng: ${error.message}`);
   }
@@ -211,9 +249,48 @@ const getReturnRequestsByShelter = async (shelterId) => {
   try {
     if (!shelterId) throw new Error("Thiếu id shelter");
 
-    return await db.ReturnRequest.find({ shelter: shelterId })
+    const returnRequests = await db.ReturnRequest.find({ shelter: shelterId })
       .populate("pet requestedBy shelter approvedBy")
       .sort({ createdAt: -1 });
+
+    const result = returnRequests.map((request) => {
+      return {
+        _id: request._id,
+        pet: {
+          _id: request.pet._id,
+          name: request.pet.name,
+          status: request.pet.status,
+          age: request.pet.age,
+          petCode: request.pet.petCode,
+          photos: request.pet.photos,
+          isMale: request.pet.isMale,
+        },
+        requestedBy: {
+          _id: request.requestedBy._id,
+          name: request.requestedBy.name,
+          email: request.requestedBy.email,
+          avatar: request.requestedBy.avatar,
+          status: request.requestedBy.status,
+        },
+        shelter: {
+          _id: request.shelter._id,
+          name: request.shelter.name,
+          address: request.shelter.address,
+          email: request.shelter.email,
+          avatar: request.shelter.avatar,
+          status: request.shelter.status,
+        },
+        status: request.status,
+        reason: request.reason,
+        photos: request.photos,
+        createdAt: request.createdAt,
+        updatedAt: request.updatedAt,
+        approvedBy: request.approvedBy,
+      };
+    });
+
+    return result;
+
   } catch (error) {
     throw new Error(
       `Lỗi khi lấy yêu cầu trả thú cưng: ${error.message}`

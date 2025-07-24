@@ -14,7 +14,7 @@ returnRequestRouter.put("/:requestId/update", cloudinary.upload.array("photos", 
 
 returnRequestRouter.get("/get-by-user", verifyAccessToken, returnRequestController.getReturnRequestsByUser);
 
-returnRequestRouter.get("/get-by-shelter/:shelterId", [verifyAccessToken, isShelterMember], returnRequestController.getReturnRequestsByShelter);
+returnRequestRouter.get("/get-by-shelter", [verifyAccessToken, isShelterMember], returnRequestController.getReturnRequestsByShelter);
 
 returnRequestRouter.delete("/:requestId/delete", verifyAccessToken, returnRequestController.deleteReturnRequest);
 
