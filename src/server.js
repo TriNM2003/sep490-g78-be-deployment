@@ -24,8 +24,8 @@ const {
   reportRouter,
   blogRouter,
   notificationRouter,
+  returnRequestRouter,
   consentFormRouter,
-  returnRequestRouter
 } = require("./routes");
 
 const path = require("path");

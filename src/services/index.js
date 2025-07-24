@@ -17,7 +17,6 @@ const returnRequestService = require("./returnRequest.service");
 const breedsService = require("./breed.service");
 const consentFormService = require("./consentForm.service");
 
-
 module.exports = {
     authService,
     userService,

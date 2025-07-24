@@ -17,6 +17,7 @@ const returnRequestController = require("./returnRequest.controller");
 const consentFormController = require("./consentForm.controller");
 
 
+
 module.exports = {
   authController,
   userController,
@@ -33,6 +34,7 @@ module.exports = {
   blogController,
   reportController,
   notificationController,
+  returnRequestController,
   consentFormController,
-  returnRequestController
+
 };
