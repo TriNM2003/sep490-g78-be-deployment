@@ -125,7 +125,7 @@ async function changeFormStatus(req, res, next) {
   const { consentFormId } = req.params;
   const { status } = req.body;
 
-  if (!["draft", "send", "accepted", "approved", "rejected"].includes(status)) {
+  if (!["draft", "send", "accepted", "approved", "cancelled", "rejected"].includes(status)) {
     return res.status(400).json({ message: "Trạng thái không hợp lệ" });
   }
 

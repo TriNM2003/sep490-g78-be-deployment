@@ -39,7 +39,7 @@ const getById = async (consentFormId) => {
       .populate("createdBy", "_id fullName avatar status");
 
     if (!consentForm) {
-      throw new Error("Không tìm thấy mẫu đồng ý với ID đã cho.");
+      throw new Error("Không tìm thấy bản đồng ý với ID đã cho.");
     }
 
     return consentForm;
@@ -81,7 +81,7 @@ const editForm = async (consentFormId, updateForm) => {
       .populate("createdBy", "_id fullName avatar status");
 
     if (!consentForm) {
-      throw new Error("Không tìm thấy mẫu đồng ý với ID đã cho.");
+      throw new Error("Không tìm thấy bản đồng ý với ID đã cho.");
     }
     if (consentForm.status != "draft") {
       throw new Error(
@@ -108,7 +108,10 @@ const changeFormStatus = async (consentFormId, status) => {
   try {
     const consentForm = await db.ConsentForm.findById(consentFormId);
     if (!consentForm) {
-      throw new Error("Không tìm thấy mẫu đồng ý với ID đã cho.");
+      throw new Error("Không tìm thấy bản đồng ý với ID đã cho.");
+    }
+    if (consentForm.status == "cancelled") {
+      throw new Error("Bản đồng ý đã bị hủy, không thể thay đổi trạng thái.");
     }
   
     if (consentForm.status == "draft" && status != "send") {
@@ -143,11 +146,11 @@ const deleteForm = async (consentFormId) => {
   try {
     const consentForm = await db.ConsentForm.findById(consentFormId);
     if (!consentForm) {
-      throw new Error("Không tìm thấy mẫu đồng ý với ID đã cho.");
+      throw new Error("Không tìm thấy bản đồng ý với ID đã cho.");
     }
     if (consentForm.status != "draft") {
       throw new Error(
-        "Chỉ có thể xóa mẫu đồng ý trong trạng thái nháp."
+        "Chỉ có thể xóa bản đồng ý trong trạng thái nháp."
       );
     }
 
