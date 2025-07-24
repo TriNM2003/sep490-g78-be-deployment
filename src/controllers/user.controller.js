@@ -59,6 +59,23 @@ const editProfile = async (req, res) => {
   }
 };
 
+const wishListPet = async (req, res) => {
+  try {
+    const userId = req.payload.id;
+    if (!userId) {
+      return res.status(400).json({ message: "User ID is required" });
+    }
+    const { petId } = req.params;
+    if (!petId) {
+      return res.status(400).json({ message: "Pet ID is required" });
+    }
+    const result = await userService.wishListPet(userId, petId);
+    res.status(200).json(result);
+  } catch (error) {
+    res.status(400).json({ message: error.message });
+  }
+};
+
 
 // ADMIN
 const getUsersList = async (req, res) => {
@@ -133,6 +150,7 @@ const userController = {
   changePassword,
   editProfile,
   getUserByToken,
+  wishListPet,
 
   //ADMIN
   getUsersList,

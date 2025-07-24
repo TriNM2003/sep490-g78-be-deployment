@@ -20,6 +20,7 @@ userRouter.put("/edit-profile",
   verifyAccessToken,
   userController.editProfile
 );
+userRouter.put( "/wishlist/:petId", verifyAccessToken, userController.wishListPet);
 
 //ADMIN
 userRouter.get("/admin/get-users-list",[verifyAccessToken, isAdmin], userController.getUsersList);
