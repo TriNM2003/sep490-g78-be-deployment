@@ -195,7 +195,48 @@ const updateSubmissionStatus = async (req, res) => {
     }
 
     const updateSubmission = await adoptionSubmissionService.updateSubmissionStatus(submissionId, status);
+
     res.status(200).json({ status: updateSubmission.status });
+
+    if (status === "rejected") {
+      setTimeout(async () => {
+        try {
+          const submission = await AdoptionSubmission.findById(submissionId)
+            .populate("performedBy", "email name")
+            .populate({
+              path: "adoptionForm",
+              populate: {
+                path: "pet",
+                populate: { path: "shelter", select: "name" },
+              },
+            });
+
+          const user = submission.performedBy;
+          const petName = submission.adoptionForm?.pet?.name || "thú cưng";
+          const shelterName = submission.adoptionForm?.pet?.shelter?.name || "Trung tâm cứu hộ";
+
+          if (user?.email) {
+            const to = user.email;
+            const subject = `Thông báo kết quả đơn nhận nuôi ${petName}`;
+
+            const body = `
+          <div style="font-family: Arial, sans-serif; line-height: 1.5;">
+            <h2>Thông báo từ chối đơn nhận nuôi</h2>
+            <p>Xin chào <strong>${user.name || "bạn"}</strong>,</p>
+            <p>Chúng tôi rất tiếc phải thông báo rằng đơn đăng ký nhận nuôi bé <strong>${petName}</strong> của bạn đã không được <strong>${shelterName}</strong> chấp nhận.</p>
+            <p>Cảm ơn bạn đã quan tâm và hi vọng bạn sẽ tiếp tục yêu thương và đồng hành cùng các bé thú cưng khác trong tương lai.</p>
+            <p style="margin-top: 20px;">Trân trọng,<br>${shelterName}</p>
+          </div>
+        `;
+
+            await mailer.sendEmail(to, subject, body);
+          }
+
+        } catch (error) {
+          console.log(error)
+        }
+      }, 0);
+    }
 
 
   } catch (error) {
@@ -204,8 +245,6 @@ const updateSubmissionStatus = async (req, res) => {
   }
 
 }
-
-
 
 
 const adoptionSubmissionController = {

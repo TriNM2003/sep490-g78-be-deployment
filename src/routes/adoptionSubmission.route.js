@@ -14,7 +14,7 @@ adoptionSubmissionRouter.post("/by-pet-ids", verifyAccessToken, adoptionSubmissi
 adoptionSubmissionRouter.post("/create-adoption-submission",verifyAccessToken ,adoptionSubmissionController.createAdoptionSubmission);
 adoptionSubmissionRouter.post("/check-user-submitted",verifyAccessToken ,adoptionSubmissionController.checkUserSubmitted);
 adoptionSubmissionRouter.patch("/update-submission-status/:shelterId", [verifyAccessToken, shelterMiddleware.isShelterMember], adoptionSubmissionController.updateSubmissionStatus);
-adoptionSubmissionRouter.get("/:submissionId", verifyAccessToken, adoptionSubmissionController.updateSubmissionStatus);
+adoptionSubmissionRouter.get("/:submissionId", verifyAccessToken, adoptionSubmissionController.getAdoptionSubmissionById);
 
 
 

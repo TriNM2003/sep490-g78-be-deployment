@@ -26,6 +26,31 @@ const adoptionSubmissionSchema = new mongoose.Schema(
         ],
       },
     ],
+     interview: {
+      interviewId: {
+        type: mongoose.Schema.Types.ObjectId,
+      },
+      scheduleAt: Date,
+      method: String,
+      feedback: String,
+      performedBy: {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: "User",
+      },
+      reviewedBy: {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: "User",
+      },
+      note: String,
+      createAt: {
+        type: Date,
+        default: Date.now,
+      },
+      updateAt: {
+        type: Date,
+        default: Date.now,
+      },
+    },
     adoptionsLastMonth: {
       type: Number,
       default: 0,

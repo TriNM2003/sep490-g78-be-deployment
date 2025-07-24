@@ -95,38 +95,49 @@ const getSubmissionsByPetIds = async (petIds) => {
 };
 
 // update status submisison
-
 const updateSubmissionStatus = async (submissionId, status) => {
   try {
     const allowedStatus = {
       pending: ["pending", "interviewing", "rejected"],
       interviewing: ["pending", "reviewed", "interviewing"],
       reviewed: ["reviewed", "approved", "rejected"],
-      approved: [],
-      rejected: [],
+      approved: ["approved"],
+      rejected: ["rejected"],
     };
+
     const submission = await db.AdoptionSubmission.findById(submissionId);
     if (!submission) {
       const error = new Error("Không tìm thấy hồ sơ nhận nuôi");
       error.statusCode = 404;
       throw error;
     }
+
     const currentStatus = submission.status;
-    const allowedStatusForCurrentStatus = allowedStatus[currentStatus];
-    if (!allowedStatusForCurrentStatus.includes(status)) {
-      const error = new Error(`Trạng thái không hợp lệ. Chỉ cho phép: ${allowedNextStatuses.join(", ")}`);
+    const allowedNextStatuses = allowedStatus[currentStatus];
+
+    if (!allowedNextStatuses) {
+      const error = new Error(`Trạng thái hiện tại "${currentStatus}" không hợp lệ`);
       error.statusCode = 400;
       throw error;
     }
+
+    if (!allowedNextStatuses.includes(status)) {
+      const error = new Error(
+        `Trạng thái không hợp lệ. Chỉ cho phép: ${allowedNextStatuses.join(", ")}`
+      );
+      error.statusCode = 400;
+      throw error;
+    }
+
     submission.status = status;
     await submission.save();
     return submission;
+
   } catch (error) {
     throw error;
   }
+};
 
-
-}
 
 
 const adoptionSubmissionService = {
