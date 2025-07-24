@@ -13,6 +13,7 @@ const reportRouter = require("./report.route");
 const postRouter = require("./post.route");
 const donationRouter = require("./donation.route");
 const notificationRouter = require("./notification.route");
+const consentFormRouter = require("./consentForm.route");
 
 module.exports = {
   petRouter,
@@ -29,6 +30,7 @@ module.exports = {
   donationRouter,
   blogRouter,
   reportRouter,
-  notificationRouter
+  notificationRouter,
+  consentFormRouter
 };
 
