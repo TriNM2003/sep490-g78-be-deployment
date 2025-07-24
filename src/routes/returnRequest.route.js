@@ -2,7 +2,7 @@ const express = require("express");
 const returnRequestRouter = express.Router({ mergeParams: true });
 const returnRequestController = require("../controllers/returnRequest.controller");
 const {verifyAccessToken} = require("../middlewares/auth.middleware");
-const {isShelterMember} = require("../middlewares/shelter.middleware");
+const {isShelterStaff} = require("../middlewares/shelter.middleware");
 const cloudinary = require("../configs/cloudinary");
 
 
@@ -14,12 +14,12 @@ returnRequestRouter.put("/:requestId/update", cloudinary.upload.array("photos", 
 
 returnRequestRouter.get("/get-by-user", verifyAccessToken, returnRequestController.getReturnRequestsByUser);
 
-returnRequestRouter.get("/get-by-shelter", [verifyAccessToken, isShelterMember], returnRequestController.getReturnRequestsByShelter);
+returnRequestRouter.get("/get-by-shelter", [verifyAccessToken, isShelterStaff], returnRequestController.getReturnRequestsByShelter);
 
-returnRequestRouter.delete("/:requestId/delete", verifyAccessToken, returnRequestController.deleteReturnRequest);
+returnRequestRouter.delete("/:requestId/delete", [verifyAccessToken, isShelterStaff], returnRequestController.deleteReturnRequest);
 
-returnRequestRouter.put("/:requestId/approve", [verifyAccessToken, isShelterMember], returnRequestController.approveReturnRequest);
+returnRequestRouter.put("/:requestId/approve", [verifyAccessToken, isShelterStaff], returnRequestController.approveReturnRequest);
 
-returnRequestRouter.put("/:requestId/reject", [verifyAccessToken, isShelterMember], returnRequestController.rejectReturnRequest);
+returnRequestRouter.put("/:requestId/reject", [verifyAccessToken, isShelterStaff], returnRequestController.rejectReturnRequest);
 
 module.exports = returnRequestRouter;

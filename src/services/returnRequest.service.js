@@ -3,6 +3,26 @@ const { cloudinary } = require("../configs/cloudinary");
 const fs = require("fs/promises");
 const NotificationService = require("./notification.service");
 
+
+const safeUser = (user) => ({
+  _id: user?._id ?? null,
+  fullName: user?.fullName ?? "",
+  email: user?.email ?? "",
+  avatar: user?.avatar ?? "",
+  phoneNumber: user?.phoneNumber ?? "",
+  dob: user?.dob ?? null,
+  bio: user?.bio ?? "",
+  address: user?.address ?? "",
+  background: user?.background ?? "",
+  location: {
+    lat: user?.location?.lat ?? 0,
+    lng: user?.location?.lng ?? 0,
+  },
+  warningCount: user?.warningCount ?? 0,
+  createdAt: user?.createdAt ?? null,
+  updatedAt: user?.updatedAt ?? null,
+});
+
 const createReturnRequest = async (userId, data, files) => {
   const uploadedPhotoUrls = [];
 
@@ -215,13 +235,7 @@ const getReturnRequestsByUser = async (userId) => {
           photos: request.pet.photos,
           isMale: request.pet.isMale,
         },
-        requestedBy: {
-          _id: request.requestedBy._id,
-          name: request.requestedBy.name,
-          email: request.requestedBy.email,
-          avatar: request.requestedBy.avatar,
-          status: request.requestedBy.status,
-        },
+        requestedBy: safeUser(request.requestedBy),
         shelter: {
           _id: request.shelter._id,
           name: request.shelter.name,
@@ -235,7 +249,7 @@ const getReturnRequestsByUser = async (userId) => {
         photos: request.photos,
         createdAt: request.createdAt,
         updatedAt: request.updatedAt,
-        approvedBy: request.approvedBy,
+        approvedBy: safeUser(request.approvedBy),
       };
     })
 
@@ -265,13 +279,7 @@ const getReturnRequestsByShelter = async (shelterId) => {
           photos: request.pet.photos,
           isMale: request.pet.isMale,
         },
-        requestedBy: {
-          _id: request.requestedBy._id,
-          name: request.requestedBy.name,
-          email: request.requestedBy.email,
-          avatar: request.requestedBy.avatar,
-          status: request.requestedBy.status,
-        },
+        requestedBy: safeUser(request.requestedBy),
         shelter: {
           _id: request.shelter._id,
           name: request.shelter.name,
@@ -285,7 +293,7 @@ const getReturnRequestsByShelter = async (shelterId) => {
         photos: request.photos,
         createdAt: request.createdAt,
         updatedAt: request.updatedAt,
-        approvedBy: request.approvedBy,
+        approvedBy: safeUser(request.approvedBy),
       };
     });
 
