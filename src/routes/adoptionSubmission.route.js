@@ -5,6 +5,7 @@ const { verifyAccessToken } = require("../middlewares/auth.middleware");
 
 
 const { adoptionSubmissionController } = require("../controllers");
+const shelterMiddleware = require("../middlewares/shelter.middleware");
 
 adoptionSubmissionRouter.use(bodyParser.json());
 
@@ -12,7 +13,9 @@ adoptionSubmissionRouter.get("/get-adoption-request-list",verifyAccessToken ,ado
 adoptionSubmissionRouter.post("/by-pet-ids", verifyAccessToken, adoptionSubmissionController.getSubmissionsByPetIds);
 adoptionSubmissionRouter.post("/create-adoption-submission",verifyAccessToken ,adoptionSubmissionController.createAdoptionSubmission);
 adoptionSubmissionRouter.post("/check-user-submitted",verifyAccessToken ,adoptionSubmissionController.checkUserSubmitted);
-adoptionSubmissionRouter.get("/:submissionId", verifyAccessToken, adoptionSubmissionController.getAdoptionSubmissionById);
+adoptionSubmissionRouter.patch("/update-submission-status/:shelterId", [verifyAccessToken, shelterMiddleware.isShelterMember], adoptionSubmissionController.updateSubmissionStatus);
+adoptionSubmissionRouter.get("/:submissionId", verifyAccessToken, adoptionSubmissionController.updateSubmissionStatus);
+
 
 
 

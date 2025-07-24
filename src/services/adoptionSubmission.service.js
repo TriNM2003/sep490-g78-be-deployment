@@ -2,39 +2,39 @@ const db = require("../models/");
 
 
 const getAdtoptionRequestList = async (id) => {
-    try {
-        const adoptionRequest = await db.AdoptionSubmission.find({ performedBy: id })
-        .populate("performedBy")
-         .populate({
+  try {
+    const adoptionRequest = await db.AdoptionSubmission.find({ performedBy: id })
+      .populate("performedBy")
+      .populate({
         path: "adoptionForm",
         populate: [
-          { path: "pet", model: "Pet" , select:"name petCode tokenMoney photos"},
+          { path: "pet", model: "Pet", select: "name petCode tokenMoney photos" },
           { path: "shelter", model: "Shelter", select: "name" },
         ]
       })
-        .populate("answers.questionId");
-        if (!adoptionRequest) {
-            throw new Error("No adoption requests found for this user");
-        }
-        return adoptionRequest;
-    } catch (error) {
-        throw error;
+      .populate("answers.questionId");
+    if (!adoptionRequest) {
+      throw new Error("No adoption requests found for this user");
     }
+    return adoptionRequest;
+  } catch (error) {
+    throw error;
+  }
 }
 
 // submit adoption request for user
 const createAdoptionSubmission = async (data) => {
-    return await db.AdoptionSubmission.create(data);
+  return await db.AdoptionSubmission.create(data);
 };
 
 // check user submission exist
 const checkUserSubmittedForm = async (userId, adoptionFormId) => {
-    const existingSubmission = await db.AdoptionSubmission.findOne({
-        performedBy: userId,
-        adoptionForm: adoptionFormId,
-    });
+  const existingSubmission = await db.AdoptionSubmission.findOne({
+    performedBy: userId,
+    adoptionForm: adoptionFormId,
+  });
 
-    return existingSubmission; // true nếu đã submit, false nếu chưa
+  return existingSubmission; // true nếu đã submit, false nếu chưa
 };
 
 // get adoption form submission by id
@@ -42,10 +42,10 @@ const getAdoptionSubmissionById = async (id) => {
   try {
     const adoptionSubmission = await db.AdoptionSubmission.findById(id)
       .populate("performedBy")
-       .populate({
+      .populate({
         path: "adoptionForm",
         populate: [
-          { path: "pet", model: "Pet" , select:"name petCode"},
+          { path: "pet", model: "Pet", select: "name petCode" },
           { path: "shelter", model: "Shelter", select: "name" },
         ]
       })
@@ -94,13 +94,47 @@ const getSubmissionsByPetIds = async (petIds) => {
   }
 };
 
+// update status submisison
+
+const updateSubmissionStatus = async (submissionId, status) => {
+  try {
+    const allowedStatus = {
+      pending: ["pending", "interviewing", "rejected"],
+      interviewing: ["pending", "reviewed", "interviewing"],
+      reviewed: ["reviewed", "approved", "rejected"],
+      approved: [],
+      rejected: [],
+    };
+    const submission = await db.AdoptionSubmission.findById(submissionId);
+    if (!submission) {
+      const error = new Error("Không tìm thấy hồ sơ nhận nuôi");
+      error.statusCode = 404;
+      throw error;
+    }
+    const currentStatus = submission.status;
+    const allowedStatusForCurrentStatus = allowedStatus[currentStatus];
+    if (!allowedStatusForCurrentStatus.includes(status)) {
+      const error = new Error(`Trạng thái không hợp lệ. Chỉ cho phép: ${allowedNextStatuses.join(", ")}`);
+      error.statusCode = 400;
+      throw error;
+    }
+    submission.status = status;
+    await submission.save();
+    return submission;
+  } catch (error) {
+    throw error;
+  }
+
+
+}
 
 
 const adoptionSubmissionService = {
-    getAdtoptionRequestList,
-    createAdoptionSubmission,
-    checkUserSubmittedForm,
-    getAdoptionSubmissionById,
-    getSubmissionsByPetIds
+  getAdtoptionRequestList,
+  createAdoptionSubmission,
+  checkUserSubmittedForm,
+  getAdoptionSubmissionById,
+  getSubmissionsByPetIds,
+  updateSubmissionStatus
 };
 module.exports = adoptionSubmissionService;

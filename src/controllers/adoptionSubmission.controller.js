@@ -7,12 +7,12 @@ const { mailer } = require("../configs");
 
 
 const getAdtoptionRequestList = async (req, res) => {
-    try {
-        const adoptionRequests = await adoptionSubmissionService.getAdtoptionRequestList(req.payload.id);
-        res.status(200).json(adoptionRequests);
-    } catch (error) {
-        res.status(400).json({ message: error.message });
-    }
+  try {
+    const adoptionRequests = await adoptionSubmissionService.getAdtoptionRequestList(req.payload.id);
+    res.status(200).json(adoptionRequests);
+  } catch (error) {
+    res.status(400).json({ message: error.message });
+  }
 }
 
 // submit adoption request for user
@@ -139,7 +139,7 @@ const checkUserSubmitted = async (req, res) => {
       adoptionFormId
     );
 
-     if (submission) {
+    if (submission) {
       return res.status(200).json({
         submitted: true,
         submissionId: submission._id,
@@ -147,7 +147,7 @@ const checkUserSubmitted = async (req, res) => {
     }
 
     return res.status(200).json({ submitted: false });
-    
+
 
     return res.status(200).json({ submitted });
   } catch (error) {
@@ -184,14 +184,37 @@ const getSubmissionsByPetIds = async (req, res) => {
   }
 };
 
+// update status of submission
+const updateSubmissionStatus = async (req, res) => {
+  try {
+    const { submissionId, status } = req.body;
+    if (!submissionId || !status) {
+      return res.status(400).json({
+        message: "Thiếu submissionId hoặc trạng thái (status) cần cập nhật",
+      });
+    }
+
+    const updateSubmission = await adoptionSubmissionService.updateSubmissionStatus(submissionId, status);
+    res.status(200).json({ status: updateSubmission.status });
+
+
+  } catch (error) {
+    console.error("Lỗi khi lấy submissions:", error);
+    res.status(400).json({ message: "Lỗi server", error: error.message });
+  }
+
+}
+
+
 
 
 const adoptionSubmissionController = {
-    getAdtoptionRequestList,
-    createAdoptionSubmission,
-    checkUserSubmitted,
-    getAdoptionSubmissionById,
-    getSubmissionsByPetIds
+  getAdtoptionRequestList,
+  createAdoptionSubmission,
+  checkUserSubmitted,
+  getAdoptionSubmissionById,
+  getSubmissionsByPetIds,
+  updateSubmissionStatus
 };
 
 module.exports = adoptionSubmissionController;
