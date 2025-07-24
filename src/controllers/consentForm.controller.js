@@ -185,6 +185,7 @@ async function changeFormStatusShelter(req, res, next) {
   }
 }
 
+
 async function changeFormStatusUser(req, res, next) {
   const { consentFormId } = req.params;
   const { id } = req.payload;
@@ -232,6 +233,7 @@ const consentFormController = {
   createForm,
   editForm,
   changeFormStatusShelter,
+  changeFormStatusUser,
   deleteForm,
 };
 

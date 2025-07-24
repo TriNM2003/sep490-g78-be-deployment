@@ -6,7 +6,7 @@ const getByShelter = async (shelterId) => {
     const consentForms = await db.ConsentForm.find({ shelter: shelterId })
       .populate("shelter", "_id name avatar status")
       .populate("adopter", "_id fullName avatar status")
-      .populate("pet", "_id name avatar status")
+      .populate("pet", "_id name photos status")
       .populate("createdBy", "_id fullName avatar status");
 
     return consentForms;
@@ -21,7 +21,7 @@ const getByUser = async (userId) => {
     const consentForms = await db.ConsentForm.find({ adopter: userId })
       .populate("shelter", "_id name avatar status")
       .populate("adopter", "_id fullName avatar status")
-      .populate("pet", "_id name avatar status")
+      .populate("pet", "_id name photos status")
       .populate("createdBy", "_id fullName avatar status");
 
     return consentForms;
@@ -36,7 +36,7 @@ const getById = async (consentFormId) => {
     const consentForm = await db.ConsentForm.findById(consentFormId)
       .populate("shelter", "_id name avatar status")
       .populate("adopter", "_id fullName avatar status")
-      .populate("pet", "_id name avatar status")
+      .populate("pet", "_id name photos status")
       .populate("createdBy", "_id fullName avatar status");
 
     if (!consentForm) {
@@ -93,7 +93,7 @@ const create = async (consentForm) => {
     )
       .populate("shelter", "_id name avatar status")
       .populate("adopter", "_id fullName avatar status")
-      .populate("pet", "_id name avatar status")
+      .populate("pet", "_id name photos status")
       .populate("createdBy", "_id fullName avatar status");
 
     return populatedConsentForm;
@@ -107,7 +107,7 @@ const editForm = async (consentFormId, updateForm) => {
     const consentForm = await db.ConsentForm.findById(consentFormId)
       .populate("shelter", "_id name avatar status")
       .populate("adopter", "_id fullName avatar status")
-      .populate("pet", "_id name avatar status")
+      .populate("pet", "_id name photos status")
       .populate("createdBy", "_id fullName avatar status");
 
     if (!consentForm) {
@@ -154,7 +154,7 @@ const editForm = async (consentFormId, updateForm) => {
     )
       .populate("shelter", "_id name avatar status")
       .populate("adopter", "_id fullName avatar status")
-      .populate("pet", "_id name avatar status")
+      .populate("pet", "_id name photos status")
       .populate("createdBy", "_id fullName avatar status");
 
     if (!updatedConsentForm) {
@@ -189,7 +189,7 @@ const changeFormStatusShelter = async (consentFormId, status) => {
     )
       .populate("shelter", "_id name avatar status")
       .populate("adopter", "_id fullName avatar status")
-      .populate("pet", "_id name avatar status")
+      .populate("pet", "_id name photos status")
       .populate("createdBy", "_id fullName avatar status");
 
     if (!updatedConsentForm) {
@@ -228,7 +228,7 @@ const changeFormStatusUser = async (consentFormId, status, userId) => {
     )
       .populate("shelter", "_id name avatar status")
       .populate("adopter", "_id fullName avatar status")
-      .populate("pet", "_id name avatar status")
+      .populate("pet", "_id name photos status")
       .populate("createdBy", "_id fullName avatar status");
 
     if (!updatedConsentForm) {
