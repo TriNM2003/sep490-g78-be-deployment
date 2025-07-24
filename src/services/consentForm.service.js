@@ -1,3 +1,4 @@
+const { cloudinary } = require("../configs/cloudinary");
 const db = require("../models");
 
 const getByShelter = async (shelterId) => {
@@ -51,7 +52,36 @@ const getById = async (consentFormId) => {
 
 const create = async (consentForm) => {
   try {
-    const newConsentForm = new db.ConsentForm(consentForm);
+    const attachmentsRaw = consentForm.attachments;
+
+    const attachments = [];
+
+    if (attachmentsRaw && attachmentsRaw.length > 0) {
+      for (const attachment of attachmentsRaw) {
+        const { fileName, url, size, mimeType } = attachment;
+        try {
+          const uploadedPhoto = await cloudinary.uploader.upload(url, {
+            folder: "consentForms",
+            resource_type: "auto",
+          });
+          attachments.push({
+            fileName: fileName || "attachment",
+            url: uploadedPhoto.secure_url,
+            size: size || 0,
+            mimeType: mimeType || "application/octet-stream",
+          });
+          await fs.unlink(attachment.url);
+        } catch (error) {
+          throw new Error(error);
+        }
+      }
+    }
+
+    const newConsentForm = new db.ConsentForm({
+      ...consentForm,
+      attachments: attachments,
+      status: "draft",
+    });
     const savedConsentForm = await newConsentForm.save();
     if (!savedConsentForm) {
       throw new Error(
@@ -88,39 +118,69 @@ const editForm = async (consentFormId, updateForm) => {
         "Chỉ có thể chỉnh sửa bản đồng ý nhận nuôi trong trạng thái nháp."
       );
     }
+    const attachmentsRaw = consentForm.attachments;
 
-    
+    const attachments = [];
+
+    if (attachmentsRaw && attachmentsRaw.length > 0) {
+      for (const attachment of attachmentsRaw) {
+        const { fileName, url, size, mimeType } = attachment;
+        try {
+          const uploadedPhoto = await cloudinary.uploader.upload(url, {
+            folder: "consentForms",
+            resource_type: "auto",
+          });
+          attachments.push({
+            fileName: fileName || "attachment",
+            url: uploadedPhoto.secure_url,
+            size: size || 0,
+            mimeType: mimeType || "application/octet-stream",
+          });
+          await fs.unlink(attachment.url);
+
+        } catch (error) {
+          throw new Error(error);
+        }
+      }
+    }
+
     const updatedConsentForm = await db.ConsentForm.findByIdAndUpdate(
       consentFormId,
-      updateForm,
+      {
+        ...updateForm,
+        attachments: attachments,
+      },
       { new: true }
     )
       .populate("shelter", "_id name avatar status")
       .populate("adopter", "_id fullName avatar status")
       .populate("pet", "_id name avatar status")
       .populate("createdBy", "_id fullName avatar status");
+
+    if (!updatedConsentForm) {
+      throw new Error(
+        "Lỗi khi cập nhật bản đồng ý nhận nuôi. Vui lòng thử lại sau."
+      );
+    }
+    return updatedConsentForm;
   } catch (error) {
     throw new Error(error);
   }
 };
 
-const changeFormStatus = async (consentFormId, status) => {
+const changeFormStatusShelter = async (consentFormId, status) => {
   try {
     const consentForm = await db.ConsentForm.findById(consentFormId);
     if (!consentForm) {
       throw new Error("Không tìm thấy bản đồng ý với ID đã cho.");
     }
-    if (consentForm.status == "cancelled") {
-      throw new Error("Bản đồng ý đã bị hủy, không thể thay đổi trạng thái.");
-    }
-  
+
     if (consentForm.status == "draft" && status != "send") {
       throw new Error("Không thể chuyển đến trạng thái này!");
-    } 
-    if ( (consentForm.status != "send" | "draft") && status == "draft") {  
+    }
+    if ((consentForm.status == "approved" || "accepted") && status == "draft") {
       throw new Error("Không thể chuyển về trạng thái nháp!");
     }
-
 
     const updatedConsentForm = await db.ConsentForm.findByIdAndUpdate(
       consentFormId,
@@ -140,7 +200,46 @@ const changeFormStatus = async (consentFormId, status) => {
   } catch (error) {
     throw new Error(error);
   }
-}
+};
+
+const changeFormStatusUser = async (consentFormId, status, userId) => {
+  try {
+    const consentForm = await db.ConsentForm.findById(consentFormId);
+    
+    if (!consentForm) {
+      throw new Error("Không tìm thấy bản đồng ý với ID đã cho.");
+    }
+
+    if (consentForm.adopter != userId) {
+      throw new Error("Bạn không có quyền thay đổi trạng thái bản đồng ý này.");
+    }
+
+    if (consentForm.status == "draft" && status != "send") {
+      throw new Error("Không thể chuyển đến trạng thái này!");
+    }
+    if ((consentForm.status == "approved" || "accepted") && status == "draft") {
+      throw new Error("Không thể chuyển về trạng thái nháp!");
+    }
+
+    const updatedConsentForm = await db.ConsentForm.findByIdAndUpdate(
+      consentFormId,
+      { status: status },
+      { new: true }
+    )
+      .populate("shelter", "_id name avatar status")
+      .populate("adopter", "_id fullName avatar status")
+      .populate("pet", "_id name avatar status")
+      .populate("createdBy", "_id fullName avatar status");
+
+    if (!updatedConsentForm) {
+      throw new Error(error);
+    }
+
+    return updatedConsentForm;
+  } catch (error) {
+    throw new Error(error);
+  }
+};
 
 const deleteForm = async (consentFormId) => {
   try {
@@ -149,9 +248,7 @@ const deleteForm = async (consentFormId) => {
       throw new Error("Không tìm thấy bản đồng ý với ID đã cho.");
     }
     if (consentForm.status != "draft") {
-      throw new Error(
-        "Chỉ có thể xóa bản đồng ý trong trạng thái nháp."
-      );
+      throw new Error("Chỉ có thể xóa bản đồng ý trong trạng thái nháp.");
     }
 
     const deletedConsentForm = await db.ConsentForm.findByIdAndDelete(
@@ -170,8 +267,9 @@ const consentFormService = {
   getById,
   create,
   editForm,
-  changeFormStatus,
-  deleteForm
+  changeFormStatusShelter,
+  changeFormStatusUser,
+  deleteForm,
 };
 
 module.exports = consentFormService;
