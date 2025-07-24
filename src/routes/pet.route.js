@@ -19,6 +19,11 @@ petRouter.get(
   [verifyAccessToken, isShelterStaff],
   petController.getAllPets
 );
+petRouter.get(
+  "/get-by-shelter-for-submission/:shelterId",
+  [verifyAccessToken, isShelterStaff],
+  petController.getAllPetsForSubmission
+);
 petRouter.post(
   "/createPet/:shelterId",
   [verifyAccessToken, isShelterStaff],

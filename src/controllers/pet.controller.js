@@ -7,6 +7,7 @@ const db = require("../models");
 const fs = require("fs/promises");
 const { speciesService, breedsService } = require("../services");
 
+
 const getAllPets = async (req, res) => {
   try {
     const { shelterId } = req.params;
@@ -22,6 +23,25 @@ const getAllPets = async (req, res) => {
   } catch (error) {
     console.error("❌ getAllPets:", error);
     res.status(500).json({ message: "Lỗi máy chủ", error: error.message });
+  }
+};
+const getAllPetsForSubmission = async (req, res, next) => {
+  try {
+    const { shelterId } = req.params;
+    const { status } = req.query;
+    const page = parseInt(req.query.page, 10) || 1;
+    const limit = parseInt(req.query.limit, 10) || 8;
+
+
+
+    if (!shelterId) {
+      return res.status(400).json({ message: "Missing shelterId" });
+    }
+
+    const result = await petService.getAllPetsByShelterForSubmission(shelterId, page, limit, status);
+    return res.status(200).json(result);
+  } catch (err) {
+    next(err);
   }
 };
 
@@ -247,7 +267,8 @@ const petController = {
   getPetById,
   getAdoptedPetbyUser,
   getMedicalRecordsByPet,
-  searchPetByImage
+  searchPetByImage,
+  getAllPetsForSubmission
 };
 
 module.exports = petController;
