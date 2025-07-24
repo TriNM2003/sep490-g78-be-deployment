@@ -3,6 +3,7 @@ const shelterRouter = express.Router();
 const bodyParser = require("body-parser");
 const shelterController = require("../controllers/shelter.controller");
 const postRouter = require("./post.route");
+const returnRequestRouter = require("./returnRequest.route");
 const { verifyAccessToken, optionalVerifyAccessToken } = require("../middlewares/auth.middleware");
 const { isAdmin } = require("../middlewares/admin.middleware");
 const cloudinary = require("../configs/cloudinary");
@@ -69,6 +70,7 @@ shelterRouter.get("/eligible-shelters", verifyAccessToken, shelterController.get
 shelterRouter.put("/:shelterId/review-user-request", [verifyAccessToken, isShelterManager], shelterController.reviewShelterRequest);
 shelterRouter.put("/:shelterId/change-member-roles",[verifyAccessToken, isShelterManager], shelterController.changeShelterMemberRole);
 shelterRouter.use("/:shelterId/posts", postRouter);
+shelterRouter.use("/:shelterId/return-requests", returnRequestRouter);
 
 // ADMIN
 shelterRouter.get(

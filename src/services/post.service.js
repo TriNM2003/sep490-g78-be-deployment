@@ -115,10 +115,10 @@ const getPostDetail = async (postId) => {
   }
 };
 
-const createPost = async (userId, postData, files, shelterId) => {
+const createPost = async (userId, postData, files) => {
   const uploadedPhotoUrls = [];
   const tempFilePaths = [];
-
+  const shelterId = postData.shelter;
   try {
     if (shelterId) {
       const shelter = await db.Shelter.findById(shelterId);
@@ -144,7 +144,7 @@ const createPost = async (userId, postData, files, shelterId) => {
             resource_type: "image",
           });
           uploadedPhotoUrls.push(result.secure_url);
-          await fs.unlink(file.path); // xoá file tạm thành công
+          await fs.unlink(file.path);
         } catch (uploadError) {
           console.error("Upload error:", uploadError);
           await Promise.all(
@@ -327,7 +327,6 @@ const reactPost = async (postId, userId) => {
     await NotificationService.createNotification(
       userId,
       [updatedPost.createdBy._id],
-      // tên tài khoản khác đã thích hoặc bỏ thích bài viết
       `${hasLiked ? "Bỏ thích" : "Thích"} bài viết: ${updatedPost.title}`,
       "system",
       `/newfeed?postId=${updatedPost._id}`
