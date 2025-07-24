@@ -117,10 +117,12 @@ const rejectReturnRequest = async (req, res) => {
   try {
     const { requestId } = req.params;
     const shelterUserId = req.payload.id;
+    const { rejectReason } = req.body;
 
     const result = await returnRequestService.rejectReturnRequest(
       requestId,
-      shelterUserId
+      shelterUserId,
+      rejectReason
     );
     res.status(200).json({ message: "Yêu cầu đã bị từ chối", data: result });
   } catch (error) {

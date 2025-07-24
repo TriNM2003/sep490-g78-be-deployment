@@ -17,6 +17,12 @@ const createReturnRequest = async (userId, data, files) => {
       throw new Error("Chỉ được tải lên tối đa 5 ảnh");
     }
 
+    const adoptedPet = await db.Pet.findById(pet);
+    if (!adoptedPet) throw new Error("Không tìm thấy thú cưng");
+    if (!adoptedPet.adopter || adoptedPet.adopter.toString() !== userId.toString()) {
+      throw new Error("Bạn không phải người đã nhận nuôi thú cưng này");
+    }
+
     for (const file of files) {
       try {
         const result = await cloudinary.uploader.upload(file.path, {
@@ -191,26 +197,26 @@ const updateReturnRequest = async (requestId, userId, updateData, files) => {
 
 const getReturnRequestsByUser = async (userId) => {
   try {
-    if (!userId) throw new Error("userId is required");
+    if (!userId) throw new Error("Thiếu id người dùng");
 
     return await db.ReturnRequest.find({ requestedBy: userId })
       .populate("pet requestedBy shelter approvedBy")
       .sort({ createdAt: -1 });
   } catch (error) {
-    throw new Error(`Error fetching return requests by user: ${error.message}`);
+    throw new Error(`Lỗi khi lấy yêu cầu trả thú cưng: ${error.message}`);
   }
 };
 
 const getReturnRequestsByShelter = async (shelterId) => {
   try {
-    if (!shelterId) throw new Error("shelterId is required");
+    if (!shelterId) throw new Error("Thiếu id shelter");
 
     return await db.ReturnRequest.find({ shelter: shelterId })
       .populate("pet requestedBy shelter approvedBy")
       .sort({ createdAt: -1 });
   } catch (error) {
     throw new Error(
-      `Error fetching return requests by shelter: ${error.message}`
+      `Lỗi khi lấy yêu cầu trả thú cưng: ${error.message}`
     );
   }
 };
@@ -218,13 +224,13 @@ const getReturnRequestsByShelter = async (shelterId) => {
 const deleteReturnRequest = async (requestId, userId) => {
   try {
     if (!requestId || !userId) {
-      throw new Error("Request ID and user ID are required");
+      throw new Error("Thiếu Request ID và User ID");
     }
     const request = await db.ReturnRequest.findById(requestId);
-    if (!request) throw new Error("Request not found");
+    if (!request) throw new Error("Không tìm thấy yêu cầu");
 
     if (!request.requestedBy.equals(userId)) {
-      throw new Error("Permission denied");
+      throw new Error("Bạn không có quyền xoá yêu cầu này");
     }
 
     if (request.status === "pending") {
@@ -233,23 +239,23 @@ const deleteReturnRequest = async (requestId, userId) => {
         { status: "cancelled" },
         { new: true }
       );
-      return { message: "Request cancelled" };
+      return { message: "Yêu cầu đã bị hủy" };
     }
   } catch (error) {
-    throw new Error(`Error deleting return request: ${error.message}`);
+    throw new Error(`Lỗi khi xoá yêu cầu trả thú cưng: ${error.message}`);
   }
 };
 
 const approveReturnRequest = async (requestId, shelterUserId) => {
   try {
     if (!requestId || !shelterUserId) {
-      throw new Error("Request ID and shelter user ID are required");
+      throw new Error("Thiếu Request ID và Shelter User ID");
     }
     const request = await db.ReturnRequest.findById(requestId).populate("pet");
-    if (!request) throw new Error("Request not found");
+    if (!request) throw new Error("Không tìm thấy yêu cầu");
 
     if (request.status !== "pending") {
-      throw new Error("Cannot approve non-pending request");
+      throw new Error("Không thể duyệt yêu cầu không ở trạng thái pending");
     }
 
     await db.ReturnRequest.findByIdAndUpdate(
@@ -265,40 +271,71 @@ const approveReturnRequest = async (requestId, shelterUserId) => {
     );
 
     await db.AdoptionForm.updateMany(
-      { pet: request.pet._id, status: "approved" },
+      { pet: request.pet._id, status: "active" },
       { status: "draft" }
     );
 
+    const relatedForms = await db.AdoptionForm.find({ pet: request.pet._id });
+    const relatedFormIds = relatedForms.map((form) => form._id);
+
     await db.AdoptionSubmission.updateMany(
-      { pet: request.pet._id, status: "approved" },
+      {
+        adoptionForm: { $in: relatedFormIds },
+        status: "approved",
+      },
       { status: "rejected" }
+    );
+
+    await NotificationService.createNotification(
+      shelterUserId,
+      [request.requestedBy],
+      "Yêu cầu trả thú cưng đã được duyệt",
+      "other",
+      `/user/return-requests/${requestId}`
     );
 
     return request;
   } catch (error) {
-    throw new Error(`Error approving return request: ${error.message}`);
+    throw new Error(`Lỗi khi duyệt yêu cầu trả thú cưng: ${error.message}`);
   }
 };
 
-const rejectReturnRequest = async (requestId, shelterUserId) => {
+const rejectReturnRequest = async (requestId, shelterUserId, rejectReason) => {
   try {
     if (!requestId || !shelterUserId) {
-      throw new Error("Request ID and shelter user ID are required");
+      throw new Error("Thiếu Request ID và Shelter User ID");
     }
+
+    if (!rejectReason || rejectReason.trim() === "") {
+      throw new Error("Thiếu lý do từ chối");
+    }
+
     const request = await db.ReturnRequest.findById(requestId);
-    if (!request) throw new Error("Request not found");
+    if (!request) throw new Error("Không tìm thấy yêu cầu");
 
     if (request.status !== "pending") {
-      throw new Error("Cannot reject non-pending request");
+      throw new Error("Không thể từ chối yêu cầu không đang ở trạng thái pending");
     }
 
-    await db.ReturnRequest.findByIdAndUpdate(
+    const rejectRequest = await db.ReturnRequest.findByIdAndUpdate(
       requestId,
-      { status: "rejected", approvedBy: shelterUserId },
+      {
+        status: "rejected",
+        approvedBy: shelterUserId,
+        rejectReason: rejectReason.trim(),
+      },
       { new: true }
     );
 
-    return request;
+    await NotificationService.createNotification(
+      shelterUserId,
+      [request.requestedBy],
+      "Yêu cầu trả thú cưng đã bị từ chối",
+      "other",
+      `/user/return-requests/${requestId}`
+    );
+
+    return rejectRequest;
   } catch (error) {
     throw new Error(`Error rejecting return request: ${error.message}`);
   }
