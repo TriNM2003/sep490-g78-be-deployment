@@ -13,6 +13,8 @@ adoptionSubmissionRouter.post("/by-pet-ids", verifyAccessToken, adoptionSubmissi
 adoptionSubmissionRouter.post("/create-adoption-submission",verifyAccessToken ,adoptionSubmissionController.createAdoptionSubmission);
 adoptionSubmissionRouter.post("/check-user-submitted",verifyAccessToken ,adoptionSubmissionController.checkUserSubmitted);
 adoptionSubmissionRouter.get("/:submissionId", verifyAccessToken, adoptionSubmissionController.getAdoptionSubmissionById);
+adoptionSubmissionRouter.get("/user/:userId", verifyAccessToken, adoptionSubmissionController.getSubmissionsByUser);
+
 
 
 

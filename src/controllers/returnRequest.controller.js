@@ -69,6 +69,16 @@ const getReturnRequestsByUser = async (req, res) => {
   }
 };
 
+const getReturnRequestsByUserId = async (req, res) => {
+  try {
+    const { userId } = req.params;
+    const result = await returnRequestService.getReturnRequestsByUserId(userId);
+    res.status(200).json(result);
+  } catch (error) {
+    res.status(400).json({ error: error.message });
+  }
+};
+
 const getReturnRequestsByShelter = async (req, res) => {
   try {
     const { shelterId } = req.params;
@@ -90,7 +100,10 @@ const deleteReturnRequest = async (req, res) => {
       requestId,
       userId
     );
-    res.status(200).json(result);
+    res.status(200).json({
+      message: "Đã huỷ yêu cầu",
+      data: result,
+    });
   } catch (error) {
     res.status(403).json({ error: error.message });
   }
@@ -135,6 +148,7 @@ const returnRequestController = {
   updateReturnRequest,
   //getReturnRequests,
   getReturnRequestsByUser,
+  getReturnRequestsByUserId,
   getReturnRequestsByShelter,
   deleteReturnRequest,
   approveReturnRequest,

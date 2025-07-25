@@ -30,6 +30,13 @@ const getUserById = async (userId) => {
       address: user.address || null,
       background: user.background || null,
       wishList: user.wishList || null,
+      googleId: user.googleId || null,
+      roles: user.roles || null,
+      status: user.status || null,
+      location: user.location || null,
+      warningCount: user.warningCount || 0,
+      createdAt: user.createdAt || null,
+      updatedAt: user.updatedAt || null,
     };
     return result;
   } catch (error) {

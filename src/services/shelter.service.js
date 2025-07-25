@@ -37,6 +37,30 @@ async function getAll() {
   }
 }
 
+const  getShelterById = async (shelterId) => {
+  try {
+    const shelter = await Shelter.findById(shelterId)
+      .populate("members._id", "fullName avatar email roles status")
+      .lean();
+    if (!shelter) {
+      throw new Error("Shelter not found");
+    }
+    return {
+      ...shelter,
+      members: shelter.members.map((m) => ({
+        _id: String(m._id._id),
+        fullName: m._id.fullName,
+        avatar: m._id.avatar,
+        email: m._id.email,
+        roles: m.roles,
+        status: m._id.status,
+      })),
+    };
+  } catch (error) {
+    throw error;
+  }
+}
+
 const getShelterRequestByUserId = async (userId) => {
   try {
     const shelter = await Shelter.find({ "members._id": userId });
@@ -1191,6 +1215,7 @@ const reviewShelterEstablishmentRequest = async ({
 const shelterService = {
   // USER
   getAll,
+  getShelterById,
   sendShelterEstablishmentRequest,
   getShelterRequestByUserId,
   getShelterProfile,
