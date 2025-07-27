@@ -1,4 +1,5 @@
 const returnRequestService = require("../services/returnRequest.service");
+const fs = require("fs/promises");
 
 const createReturnRequest = async (req, res) => {
   try {
@@ -13,6 +14,11 @@ const createReturnRequest = async (req, res) => {
     );
     res.status(201).json(result);
   } catch (error) {
+    if (req.files?.length) {
+      await Promise.allSettled(
+        req.files.map((file) => fs.unlink(file.path).catch(() => {}))
+      );
+    }
     console.error("Error creating return request:", error.message);
     res.status(400).json({ error: error.message });
   }
@@ -41,6 +47,11 @@ const updateReturnRequest = async (req, res) => {
       data: updatedRequest,
     });
   } catch (error) {
+     if (req.files?.length) {
+      await Promise.allSettled(
+        req.files.map((file) => fs.unlink(file.path).catch(() => {}))
+      );
+    }
     console.error("Error updating return request:", error.message);
     res.status(400).json({ error: error.message });
   }

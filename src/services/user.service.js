@@ -85,12 +85,11 @@ const changePassword = async (
 };
 
 const editProfile = async (userId, profileData, files) => {
-  const tempFilePaths = [];
   try {
     const user = await db.User.findById(userId);
     if (!user) throw new Error("Không tìm thấy người dùng");
 
-    //Parse location
+    // Parse location
     let parsedLocation = user.location;
     if (profileData.location) {
       try {
@@ -111,10 +110,9 @@ const editProfile = async (userId, profileData, files) => {
     let newAvatar = user.avatar;
     let newBackground = user.background;
 
-    // Xử lý ảnh tạm thời
+    // Xử lý ảnh avatar 
     if (files?.avatar?.length > 0) {
       const avatarFile = files.avatar[0];
-      tempFilePaths.push(avatarFile.path);
       try {
         const uploadResult = await cloudinary.uploader.upload(avatarFile.path, {
           folder: "user_profiles",
@@ -123,16 +121,15 @@ const editProfile = async (userId, profileData, files) => {
         newAvatar = uploadResult.secure_url;
         await fs.unlink(avatarFile.path);
       } catch (error) {
-        console.error("Cloudinary Upload Error:", error);
-        await Promise.allSettled(tempFilePaths.map((path) => fs.unlink(path)));
+        console.error("Cloudinary Upload Error (Avatar):", error);
+        await fs.unlink(avatarFile.path).catch(() => {});
         throw new Error("Lỗi khi tải lên ảnh đại diện. Vui lòng thử lại.");
       }
     }
 
-    // Xử lý background
+    // Xử lý ảnh background
     if (files?.background?.length > 0) {
       const backgroundFile = files.background[0];
-      tempFilePaths.push(backgroundFile.path);
       try {
         const uploadResult = await cloudinary.uploader.upload(
           backgroundFile.path,
@@ -144,14 +141,13 @@ const editProfile = async (userId, profileData, files) => {
         newBackground = uploadResult.secure_url;
         await fs.unlink(backgroundFile.path);
       } catch (error) {
-        console.error("Cập nhật cloudinary lỗi:", error);
-        await Promise.allSettled(tempFilePaths.map((path) => fs.unlink(path)));
+        console.error("Cloudinary Upload Error (Background):", error);
+        await fs.unlink(backgroundFile.path).catch(() => {});
         throw new Error("Lỗi khi tải lên ảnh nền. Vui lòng thử lại.");
       }
     }
 
     // Validate dữ liệu đầu vào
-
     if (
       !profileData.fullName &&
       !profileData.bio &&
@@ -166,18 +162,13 @@ const editProfile = async (userId, profileData, files) => {
     // Validate họ tên
     if (profileData.fullName) {
       const fullName = profileData.fullName.trim();
-
       if (fullName.length < 2 || fullName.length > 50) {
         throw new Error("Họ và tên phải từ 2 đến 50 ký tự.");
       }
-
-      // Kiểm tra có ít nhất 2 từ
       const nameParts = fullName.split(/\s+/);
       if (nameParts.length < 2) {
         throw new Error("Họ và tên phải bao gồm ít nhất 2 từ (họ và tên).");
       }
-
-      // chỉ cho phép chữ cái và khoảng trắng
       const nameRegex = /^[A-ZÀ-Ỹ][a-zà-ỹ]+(?:\s[A-ZÀ-Ỹ][a-zà-ỹ]+)+$/u;
       if (!nameRegex.test(fullName)) {
         throw new Error(
@@ -194,6 +185,7 @@ const editProfile = async (userId, profileData, files) => {
       }
     }
 
+    // Validate số điện thoại
     if (
       profileData.phoneNumber &&
       !/^(0[0-9])+([0-9]{8})$/.test(profileData.phoneNumber)
@@ -203,6 +195,7 @@ const editProfile = async (userId, profileData, files) => {
       );
     }
 
+    // Validate ngày sinh
     if (profileData.dob) {
       const dob = new Date(profileData.dob);
       const today = new Date();
@@ -236,8 +229,7 @@ const editProfile = async (userId, profileData, files) => {
 
     return updatedUser;
   } catch (error) {
-    // Cleanup nếu có lỗi
-    await Promise.allSettled(tempFilePaths.map((path) => fs.unlink(path)));
+    console.error("Lỗi khi cập nhật thông tin:", error.message);
     throw error;
   }
 };
