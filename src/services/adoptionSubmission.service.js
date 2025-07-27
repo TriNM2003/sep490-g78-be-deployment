@@ -138,6 +138,45 @@ const updateSubmissionStatus = async (submissionId, status) => {
   }
 };
 
+// schedule interview
+const scheduleInterview = async ({
+  submissionId,
+  interviewId,
+  availableFrom,
+  availableTo,
+  method,
+  performedBy,
+  reviewedBy
+}) => {
+  try {
+    const submission = await db.AdoptionSubmission.findById(submissionId);
+    if (!submission) {
+      throw new Error("Không tìm thấy đơn nhận nuôi.");
+    }
+    if(submission.status !== "scheduling"){
+      throw new Error("Chỉ có thể tạo lịch phỏng vấn với những đơn nhận nuôi trong trạng thái chờ phỏng vấn.");
+    }
+
+    // Cập nhật trường interview
+    submission.interview = {
+      interviewId,
+      availableFrom,
+      availableTo,
+      method,
+      performedBy,
+      reviewedBy,
+      createAt: new Date(),
+      updateAt: new Date(),
+    };
+    submission.status = "interviewing";
+    await submission.save();
+    return submission;
+  } catch (err) {
+    throw err;
+  }
+};
+
+
 
 
 const adoptionSubmissionService = {
@@ -146,6 +185,7 @@ const adoptionSubmissionService = {
   checkUserSubmittedForm,
   getAdoptionSubmissionById,
   getSubmissionsByPetIds,
-  updateSubmissionStatus
+  updateSubmissionStatus,
+  scheduleInterview
 };
 module.exports = adoptionSubmissionService;

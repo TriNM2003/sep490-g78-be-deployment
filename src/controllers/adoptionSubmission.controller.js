@@ -4,6 +4,7 @@ const db = require("../models/index");
 const adoptionSubmissionService = require("../services/adoptionSubmission.service");
 const AdoptionSubmission = require("../models/adoptionSubmission.model");
 const { mailer } = require("../configs");
+const { default: mongoose } = require("mongoose");
 
 
 const getAdtoptionRequestList = async (req, res) => {
@@ -245,6 +246,40 @@ const updateSubmissionStatus = async (req, res) => {
   }
 
 }
+// schedule interview
+const createInterviewSchedule = async (req, res) => {
+  try {
+    const {
+      submissionId,
+      availableFrom,
+      availableTo,
+      method,
+      performedBy,
+    } = req.body;
+
+    const reviewedBy = req.payload.id; 
+    const interviewId = new mongoose.Types.ObjectId();
+
+    const updated = await adoptionSubmissionService.scheduleInterview({
+      submissionId,
+      interviewId,
+      availableFrom,
+      availableTo,
+      method,
+      performedBy,
+      reviewedBy
+    });
+
+    res.status(200).json({
+      message: "Tạo lịch phỏng vấn thành công",
+      data: updated,
+    });
+  } catch (error) {
+    console.error("Lỗi tạo lịch phỏng vấn:", error);
+    res.status(500).json({ message: error.message });
+  }
+};
+
 
 
 const adoptionSubmissionController = {
@@ -253,7 +288,8 @@ const adoptionSubmissionController = {
   checkUserSubmitted,
   getAdoptionSubmissionById,
   getSubmissionsByPetIds,
-  updateSubmissionStatus
+  updateSubmissionStatus,
+  createInterviewSchedule
 };
 
 module.exports = adoptionSubmissionController;

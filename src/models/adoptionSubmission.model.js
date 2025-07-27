@@ -26,22 +26,44 @@ const adoptionSubmissionSchema = new mongoose.Schema(
         ],
       },
     ],
-     interview: {
+    interview: {
       interviewId: {
         type: mongoose.Schema.Types.ObjectId,
+          default: () => new mongoose.Types.ObjectId(),
       },
-      scheduleAt: Date,
-      method: String,
-      feedback: String,
+      availableFrom: {
+        type: Date,
+        required: true,
+      },
+      availableTo: {
+        type: Date,
+        required: true,
+      },
+      selectedSchedule: {
+        type: Date,
+      },
+      scheduleAt: {
+        type: Date,
+      },
+      method: {
+        type: String,
+        required: true,
+      },
+      feedback: {
+        type: String,
+      },
       performedBy: {
         type: mongoose.Schema.Types.ObjectId,
         ref: "User",
+        required: true,
       },
       reviewedBy: {
         type: mongoose.Schema.Types.ObjectId,
         ref: "User",
       },
-      note: String,
+      note: {
+        type: String,
+      },
       createAt: {
         type: Date,
         default: Date.now,
@@ -51,6 +73,7 @@ const adoptionSubmissionSchema = new mongoose.Schema(
         default: Date.now,
       },
     },
+
     adoptionsLastMonth: {
       type: Number,
       default: 0,
@@ -61,7 +84,7 @@ const adoptionSubmissionSchema = new mongoose.Schema(
     },
     status: {
       type: String,
-      enum: ["pending", "interviewing", "approved", "rejected", "reviewed"],
+      enum: ["pending","scheduling", "interviewing", "approved", "rejected", "reviewed"],
       default: "pending",
     },
   },
