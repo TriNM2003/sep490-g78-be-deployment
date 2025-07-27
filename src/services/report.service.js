@@ -319,37 +319,30 @@ async function getPendingUserReports() {
 }
 async function reviewUserReport(adminId, reportId, decision = "reject") {
   try {
-    // 1. Tìm báo cáo
     const report = await Report.findById(reportId).populate("user reportedBy");
     if (!report) {
       throw new Error("Id báo cáo không hợp lệ");
     }
-
     if (report.status !== "pending") {
       throw new Error("Báo cáo đã được xử lý");
     }
-
-    // 2. Tìm người dùng bị báo cáo
     const reportedUser = await User.findById(report.user._id);
     if (!reportedUser) {
       throw new Error("Id tài khoản bị báo cáo không hợp lệ");
     }
+    const adminUser = await User.findById(adminId);
+    if (!adminUser) {
+      throw new Error("Tài khoản của người duyệt báo cáo không hợp lệ");
+    }
 
-    await createNotification(
-      adminId,
-      [report.reportedBy._id],
-      `Báo cáo của bạn về tài khoản ${report.user.fullName} đã được duyệt.\n Vui lòng kiểm trả email để xem chi tiết`,
-      "report",
-      "#"
-    );
-
-    // 3. Từ chối
+    // Xử lý từ chối
     if (decision === "reject") {
-      report.status = "rejected";
-      report.reviewedBy = adminId;
-      await report.save();
+      await Report.findByIdAndUpdate(report._id, {
+        status: "rejected",
+        reviewedBy: adminId,
+      });
     } else {
-      // Chấp thuận
+      // Xử lý chấp thuận
       await Report.updateMany(
         { user: report.user._id, status: "pending" },
         {
@@ -361,22 +354,15 @@ async function reviewUserReport(adminId, reportId, decision = "reject") {
         }
       );
 
-
-      report.status = "approved";
-      report.reviewedBy = adminId;
+      // Cập nhập warningCount và status nếu >= 3
       reportedUser.warningCount++;
       if (reportedUser.warningCount >= 3) {
         reportedUser.status = "banned"; // Ban user nếu warningCount từ 3 trở lên
       }
-
-      await report.save();
       const updatedUser = await reportedUser.save();
 
-      // 5. Tìm thông tin admin để dùng trong email
-      const adminUser = await User.findById(adminId);
-
-      // 6. Gửi thông báo notification
-      if (updatedUser.warningCount < 3) {
+      // Gửi notification đến tài khoản bị vi phạm nếu chưa bị banned
+      if (updatedUser.status !== "banned") {
         await createNotification(
           adminId,
           [report.user._id],
@@ -386,61 +372,8 @@ async function reviewUserReport(adminId, reportId, decision = "reject") {
         );
       }
 
-      // 7. Gửi mail cho tài khoản báo cáo
-      const reportedByEmailTitle = `Báo cáo của bạn về tài khoản ${report.user.fullName} đã được duyệt`;
-      const reportedByEmailBody = `
-  <div style="font-family: Arial, sans-serif; line-height: 1.6; color: #333;">
-    <p>Chào <strong>${report.reportedBy.fullName}</strong>,</p>
-
-    <p>
-      Báo cáo của bạn về tài khoản <strong>${
-        report.user.fullName
-      }</strong> đã được 
-      duyệt bởi đội ngũ quản trị <strong>PawShelter</strong>.
-    </p>
-
-    <p><strong>Thông tin chi tiết báo cáo:</strong></p>
-    <ul style="padding-left: 20px;">
-      <li><strong>Tài khoản bị báo cáo:</strong> ${report.user.fullName}</li>
-      <li><strong>Thời gian gửi báo cáo:</strong> ${new Date(
-        report.createdAt
-      ).toLocaleString("vi-VN")}</li>
-      ${
-        decision === "approve"
-          ? '<li><strong>Trạng thái:</strong> <span style="color: green;">Chấp thuận</span></li>'
-          : '<li><strong>Trạng thái:</strong> <span style="color: red;">Từ chối</span></li>'
-      }
-      <li><strong>Duyệt vào:</strong> ${new Date().toLocaleString("vi-VN")}</li>
-    </ul>
-
-    <p>
-      Cảm ơn bạn đã góp phần xây dựng một cộng đồng văn minh và an toàn. Chúng tôi đánh giá cao sự hợp tác của bạn.
-    </p>
-
-    <hr style="border: none; border-top: 1px solid #ccc;" />
-
-    <p>
-      📩 Nếu bạn có bất kỳ thắc mắc hoặc cần hỗ trợ thêm, vui lòng liên hệ quản trị viên tại: 
-      <a href="mailto:${adminUser.email}" style="color: #1a73e8;">${
-        adminUser.email
-      }</a>
-    </p>
-
-    <p style="margin-top: 24px;">
-      Trân trọng,<br />
-      <strong style="color: #4CAF50;">PawShelter Team</strong>
-    </p>
-  </div>
-`;
-
-      await mailer.sendEmail(
-        report.reportedBy.email,
-        reportedByEmailTitle,
-        reportedByEmailBody
-      );
-
-      // 8. Gửi mail cho tài khoản bị báo cáo (banned)
-      if (updatedUser.warningCount >= 3) {
+      // Gửi mail cho tài khoản bị báo cáo nếu bị ban
+      if (updatedUser.status === "banned") {
         const emailTitle = "Tài khoản của bạn đã bị khóa do vi phạm quy định";
         const emailToSend = `
   <div style="font-family: Arial, sans-serif; line-height: 1.6; color: #333;">
@@ -487,6 +420,68 @@ async function reviewUserReport(adminId, reportId, decision = "reject") {
       }
     }
 
+    // Gửi mail cho tài khoản báo cáo
+    const reportedByEmailTitle = `Báo cáo của bạn về tài khoản ${report.user.fullName} đã được xử lý`;
+    const reportedByEmailBody = `
+  <div style="font-family: Arial, sans-serif; line-height: 1.6; color: #333;">
+    <p>Chào <strong>${report.reportedBy.fullName}</strong>,</p>
+
+    <p>
+      Báo cáo của bạn về tài khoản <strong>${
+        report.user.fullName
+      }</strong> đã được 
+      xử lý bởi đội ngũ quản trị <strong>PawShelter</strong>.
+    </p>
+
+    <p><strong>Thông tin chi tiết báo cáo:</strong></p>
+    <ul style="padding-left: 20px;">
+      <li><strong>Tài khoản bị báo cáo:</strong> ${report.user.fullName}</li>
+      <li><strong>Thời gian gửi báo cáo:</strong> ${new Date(
+        report.createdAt
+      ).toLocaleString("vi-VN")}</li>
+      ${
+        decision === "approve"
+          ? '<li><strong>Trạng thái:</strong> <span style="color: green;">Chấp thuận</span></li>'
+          : '<li><strong>Trạng thái:</strong> <span style="color: red;">Từ chối</span></li>'
+      }
+      <li><strong>Duyệt vào:</strong> ${new Date().toLocaleString("vi-VN")}</li>
+    </ul>
+
+    <p>
+      Cảm ơn bạn đã góp phần xây dựng một cộng đồng văn minh và an toàn. Chúng tôi đánh giá cao sự hợp tác của bạn.
+    </p>
+
+    <hr style="border: none; border-top: 1px solid #ccc;" />
+
+    <p>
+      📩 Nếu bạn có bất kỳ thắc mắc hoặc cần hỗ trợ thêm, vui lòng liên hệ quản trị viên tại: 
+      <a href="mailto:${adminUser.email}" style="color: #1a73e8;">${
+      adminUser.email
+    }</a>
+    </p>
+
+    <p style="margin-top: 24px;">
+      Trân trọng,<br />
+      <strong style="color: #4CAF50;">PawShelter Team</strong>
+    </p>
+  </div>
+`;
+
+    // tạo notification cho tài khoản báo cáo
+    await createNotification(
+      adminId,
+      [report.reportedBy._id],
+      `Báo cáo của bạn về tài khoản ${report.user.fullName} đã được xử lý.\n Vui lòng kiểm trả email để xem chi tiết`,
+      "report",
+      "#"
+    );
+
+    // Gửi mail cho tài khoản báo cáo (chi tiết về report sau khi duyệt)
+    await mailer.sendEmail(
+      report.reportedBy.email,
+      reportedByEmailTitle,
+      reportedByEmailBody
+    );
 
     return {
       message: "Xử lý báo cáo tài khoản thành công!",
@@ -758,58 +753,118 @@ async function getPendingBlogReports() {
 }
 async function reviewBlogReport(adminId, reportId, decision = "reject") {
   try {
-    // 1. Tìm báo cáo
     const report = await Report.findById(reportId).populate("blog reportedBy");
     if (!report) {
       throw new Error("Id báo cáo không hợp lệ");
     }
-
     if (report.status !== "pending") {
       throw new Error("Báo cáo đã được xử lý");
     }
-
-    // 2. Tìm bài viết blog bị báo cáo
     const reportedBlog = await Blog.findById(report.blog._id);
     if (!reportedBlog) {
       throw new Error("Id bài viết blog bị báo cáo không hợp lệ");
     }
     const relatedShelter = await Shelter.findById(reportedBlog.shelter);
-    if(!relatedShelter){
+    if (!relatedShelter) {
       throw new Error("Không tìm thấy trạm cứu hộ blog thuộc về");
     }
-
-    // 3. Xử lý từ chối báo cáo
-    if (decision === "reject") {
-      report.status = "rejected";
-      report.reviewedBy = adminId;
-      await report.save();
-
-      return {
-        message: "Xử lý báo cáo bài viết blog thành công!",
-      };
+    const adminUser = await User.findById(adminId);
+    if (!adminUser) {
+      throw new Error("Tài khoản của người duyệt báo cáo không hợp lệ");
     }
 
-    // 4. Phê duyệt báo cáo
-    report.status = "approved";
-    report.reviewedBy = adminId;
-    reportedBlog.status = "deleted";
-    await report.save();
-    await reportedBlog.save();
+    //Xử lý từ chối báo cáo
+    if (decision === "reject") {
+      await Report.findByIdAndUpdate(reportId, {
+        status: "rejected",
+        reviewedBy: adminId,
+      });
+    } else {
+      //Xử lý chấp thuận báo cáo
+      await Blog.findByIdAndUpdate(reportedBlog._id, { status: "deleted" });
+      await Report.updateMany(
+        { blog: report.blog._id, status: "pending" },
+        {
+          $set: {
+            status: "approved",
+            reviewedBy: adminId,
+            updatedAt: new Date(),
+          },
+        }
+      );
 
-    // 5. Gửi thông báo
-    try {
+      // gửi notification cho tất cả thành viên trạm cứu hộ thuộc bài blog
       await createNotification(
         adminId,
         [...relatedShelter.members],
-        `Bài viết blog của trạm cứu hộ ${relatedShelter.name} tên ${reportedBlog.title} đã bị xác nhận vi phạm sau khi bị người dùng khác báo cáo và đã bị xóa khỏi hệ thống.\nLý do: ${report.reason}.`,
+        `Trạm của bạn có một bài blog bị vi phạm và đã bị xóa khỏi hệ thống.\nLý do: ${report.reason}.`,
         "report",
         "#"
       );
-    } catch (error) {
-      console.log(error);
     }
-    
-  
+
+    // Mail để gửi cho tài khoản báo cáo bài viết post
+    const reportedByEmailTitle = `Báo cáo của bạn về bài viết blog ${report.blog.title} đã được xử lý`;
+    const reportedByEmailBody = `
+  <div style="font-family: Arial, sans-serif; line-height: 1.6; color: #333;">
+    <p>Chào <strong>${report.reportedBy.fullName}</strong>,</p>
+
+    <p>
+      Báo cáo của bạn về bài viết blog <strong>${
+        report.blog.title
+      }</strong> đã được 
+      xử lý bởi đội ngũ quản trị <strong>PawShelter</strong>.
+    </p>
+
+    <p><strong>Thông tin chi tiết báo cáo:</strong></p>
+    <ul style="padding-left: 20px;">
+      <li><strong>Bài viết post bị báo cáo:</strong> ${report.blog.title}</li>
+      <li><strong>Thời gian gửi báo cáo:</strong> ${new Date(
+        report.createdAt
+      ).toLocaleString("vi-VN")}</li>
+      ${
+        decision === "approve"
+          ? '<li><strong>Trạng thái:</strong> <span style="color: green;">Chấp thuận</span></li>'
+          : '<li><strong>Trạng thái:</strong> <span style="color: red;">Từ chối</span></li>'
+      }
+      <li><strong>Duyệt vào:</strong> ${new Date().toLocaleString("vi-VN")}</li>
+    </ul>
+
+    <p>
+      Cảm ơn bạn đã góp phần xây dựng một cộng đồng văn minh và an toàn. Chúng tôi đánh giá cao sự hợp tác của bạn.
+    </p>
+
+    <hr style="border: none; border-top: 1px solid #ccc;" />
+
+    <p>
+      📩 Nếu bạn có bất kỳ thắc mắc hoặc cần hỗ trợ thêm, vui lòng liên hệ quản trị viên tại: 
+      <a href="mailto:${adminUser.email}" style="color: #1a73e8;">${
+      adminUser.email
+    }</a>
+    </p>
+
+    <p style="margin-top: 24px;">
+      Trân trọng,<br />
+      <strong style="color: #4CAF50;">PawShelter Team</strong>
+    </p>
+  </div>
+        `;
+    // Gửi notification cho tài khoản báo cáo bài viết blog
+    await createNotification(
+      adminId,
+      [report.reportedBy._id],
+      `Báo cáo của bạn về bài viết blog ${report.blog.title} đã được duyệt.\n Vui lòng kiểm trả email để xem chi tiết`,
+      "report",
+      "#"
+    );
+
+    // gửi mail thông báo cho người báo cáo bài viết post
+    await mailer.sendEmail(
+      report.reportedBy.email,
+      reportedByEmailTitle,
+      reportedByEmailBody
+    );
+
     return {
       message: "Xử lý báo cáo bài viết blog thành công!",
     };
