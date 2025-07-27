@@ -29,15 +29,41 @@ const adoptionSubmissionSchema = new mongoose.Schema(
     interview: {
       interviewId: {
         type: mongoose.Schema.Types.ObjectId,
-          default: () => new mongoose.Types.ObjectId(),
+        default: () => new mongoose.Types.ObjectId(),
       },
       availableFrom: {
         type: Date,
-        required: true,
+        validate: [
+          {
+            validator: function (v) {
+              return !this.availableTo || v < this.availableTo;
+            },
+            message: "Thời gian bắt đầu phải trước thời gian kết thúc.",
+          },
+          {
+            validator: function (v) {
+              return !this.createdAt || v > this.createdAt;
+            },
+            message: "Thời gian bắt đầu phải sau ngày tạo lịch phỏng vấn.",
+          },
+        ],
       },
       availableTo: {
         type: Date,
-        required: true,
+        validate: [
+          {
+            validator: function (v) {
+              return !this.availableFrom || v > this.availableFrom;
+            },
+            message: "Thời gian kết thúc phải sau thời gian bắt đầu.",
+          },
+          {
+            validator: function (v) {
+              return !this.createdAt || v > this.createdAt;
+            },
+            message: "Thời gian kết thúc phải sau ngày tạo lịch phỏng vấn.",
+          },
+        ],
       },
       selectedSchedule: {
         type: Date,
@@ -47,7 +73,6 @@ const adoptionSubmissionSchema = new mongoose.Schema(
       },
       method: {
         type: String,
-        required: true,
       },
       feedback: {
         type: String,
@@ -55,7 +80,6 @@ const adoptionSubmissionSchema = new mongoose.Schema(
       performedBy: {
         type: mongoose.Schema.Types.ObjectId,
         ref: "User",
-        required: true,
       },
       reviewedBy: {
         type: mongoose.Schema.Types.ObjectId,
@@ -84,7 +108,7 @@ const adoptionSubmissionSchema = new mongoose.Schema(
     },
     status: {
       type: String,
-      enum: ["pending","scheduling", "interviewing", "approved", "rejected", "reviewed"],
+      enum: ["pending", "scheduling", "interviewing", "approved", "rejected", "reviewed"],
       default: "pending",
     },
   },

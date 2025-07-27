@@ -98,8 +98,9 @@ const getSubmissionsByPetIds = async (petIds) => {
 const updateSubmissionStatus = async (submissionId, status) => {
   try {
     const allowedStatus = {
-      pending: ["pending", "interviewing", "rejected"],
-      interviewing: ["pending", "reviewed", "interviewing"],
+      pending: ["pending", "scheduling", "rejected"],
+      scheduling: ["pending", "interviewing", "rejected", "scheduling"],
+      interviewing: ["rejected", "reviewed", "interviewing"],
       reviewed: ["reviewed", "approved", "rejected"],
       approved: ["approved"],
       rejected: ["rejected"],
@@ -156,6 +157,14 @@ const scheduleInterview = async ({
     if(submission.status !== "scheduling"){
       throw new Error("Chỉ có thể tạo lịch phỏng vấn với những đơn nhận nuôi trong trạng thái chờ phỏng vấn.");
     }
+    if (!availableFrom || !availableTo || !method || !performedBy) {
+  throw new Error("Thiếu thông tin bắt buộc để lên lịch phỏng vấn.");
+  }
+  if (new Date(availableFrom) >= new Date(availableTo)) {
+  throw new Error("Thời gian bắt đầu phải trước thời gian kết thúc.");
+}
+
+
 
     // Cập nhật trường interview
     submission.interview = {

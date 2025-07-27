@@ -5,6 +5,7 @@ const adoptionSubmissionService = require("../services/adoptionSubmission.servic
 const AdoptionSubmission = require("../models/adoptionSubmission.model");
 const { mailer } = require("../configs");
 const { default: mongoose } = require("mongoose");
+const { format } = require("date-fns");
 
 
 const getAdtoptionRequestList = async (req, res) => {
@@ -107,7 +108,7 @@ const createAdoptionSubmission = async (req, res) => {
       const body = `
         <div style="font-family: Arial, sans-serif; line-height: 1.5;">
           <h2>Cảm ơn bạn đã gửi đơn nhận nuôi!</h2>
-          <p>Xin chào <strong>${user.name || "bạn"}</strong>,</p>
+          <p>Xin chào <strong>${user.fullName || "bạn"}</strong>,</p>
           <p>Chúng tôi rất cảm kích vì bạn đã gửi đơn nhận nuôi cho thú cưng <strong>${petName}</strong> từ trung tâm <strong>${shelterName}</strong>.</p>
           <p>Đơn của bạn đã được tiếp nhận và đang chờ xét duyệt. Chúng tôi sẽ xem xét và phản hồi bạn trong thời gian sớm nhất.</p>
           <p style="margin-top: 20px;">Trân trọng,<br>${shelterName}</p>
@@ -203,7 +204,7 @@ const updateSubmissionStatus = async (req, res) => {
       setTimeout(async () => {
         try {
           const submission = await AdoptionSubmission.findById(submissionId)
-            .populate("performedBy", "email name")
+            .populate("performedBy", "email fullName")
             .populate({
               path: "adoptionForm",
               populate: {
@@ -223,7 +224,7 @@ const updateSubmissionStatus = async (req, res) => {
             const body = `
           <div style="font-family: Arial, sans-serif; line-height: 1.5;">
             <h2>Thông báo từ chối đơn nhận nuôi</h2>
-            <p>Xin chào <strong>${user.name || "bạn"}</strong>,</p>
+            <p>Xin chào <strong>${user.fullName || "bạn"}</strong>,</p>
             <p>Chúng tôi rất tiếc phải thông báo rằng đơn đăng ký nhận nuôi bé <strong>${petName}</strong> của bạn đã không được <strong>${shelterName}</strong> chấp nhận.</p>
             <p>Cảm ơn bạn đã quan tâm và hi vọng bạn sẽ tiếp tục yêu thương và đồng hành cùng các bé thú cưng khác trong tương lai.</p>
             <p style="margin-top: 20px;">Trân trọng,<br>${shelterName}</p>
@@ -257,7 +258,7 @@ const createInterviewSchedule = async (req, res) => {
       performedBy,
     } = req.body;
 
-    const reviewedBy = req.payload.id; 
+    const reviewedBy = req.payload.id;
     const interviewId = new mongoose.Types.ObjectId();
 
     const updated = await adoptionSubmissionService.scheduleInterview({
@@ -274,6 +275,56 @@ const createInterviewSchedule = async (req, res) => {
       message: "Tạo lịch phỏng vấn thành công",
       data: updated,
     });
+
+    setTimeout(async () => {
+      try {
+        const submission = await AdoptionSubmission.findById(submissionId)
+          .populate("performedBy", "email fullName")
+          .populate({
+            path: "adoptionForm",
+            populate: {
+              path: "pet",
+              populate: { path: "shelter", select: "name" },
+            },
+          });
+
+        const user = submission.performedBy;
+        const petName = submission.adoptionForm?.pet?.name || "thú cưng";
+        const shelterName = submission.adoptionForm?.pet?.shelter?.name || "Trung tâm cứu hộ";
+
+        if (user?.email) {
+          const to = user.email;
+          const subject = `Chọn lịch phỏng vấn cho đơn nhận nuôi bé ${petName}`;
+          const from = new Date(availableFrom);
+          const deadline = new Date(from);
+          deadline.setDate(deadline.getDate() - 1);
+
+          const formatScheduleFrom = format(availableFrom, "HH:mm 'ngày' dd/MM/yyyy");
+          const formatScheduleTo = format(availableTo, "HH:mm 'ngày' dd/MM/yyyy");
+          const formatDeadline = format(deadline, "HH:mm 'ngày' dd/MM/yyyy");
+
+          const body = `
+          <div style="font-family: Arial, sans-serif; line-height: 1.6;">
+            <h2>Thông báo lịch phỏng vấn</h2>
+            <p>Xin chào <strong>${user.fullName || "bạn"}</strong>,</p>
+            <p>Đơn đăng ký nhận nuôi bé <strong>${petName}</strong> của bạn đã được <strong>${shelterName}</strong> xem xét.</p>
+            <p>Chúng tôi mời bạn tham gia một buổi phỏng vấn nhận nuôi. Vui lòng chọn một thời gian phù hợp trong khoảng sau:</p>
+            <p><strong>Từ:</strong> ${formatScheduleFrom}<br/><strong>Đến:</strong> ${formatScheduleTo}</p>
+            <p>Hình thức phỏng vấn: <strong>${method}</strong></p>
+            <p><strong>Lưu ý:</strong> Bạn cần đăng nhập vào hệ thống PawShelter và chọn lịch phỏng vấn <strong>trước ${formatDeadline}</strong>. Nếu bạn không chọn lịch đúng hạn, đơn của bạn có thể bị hủy.</p>
+            <p style="margin-top: 20px;">Trân trọng,<br/>${shelterName}</p>
+          </div>
+        `;
+
+          await mailer.sendEmail(to, subject, body);
+        }
+
+      } catch (error) {
+        console.log(error)
+      }
+    }, 0);
+
+
   } catch (error) {
     console.error("Lỗi tạo lịch phỏng vấn:", error);
     res.status(500).json({ message: error.message });
