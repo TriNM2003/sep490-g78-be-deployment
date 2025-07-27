@@ -13,5 +13,6 @@ donationRouter.get("/get-all-donations", verifyAccessToken, donationController.g
 
 //ADMIN
 donationRouter.get("/admin/get-all-donations", [verifyAccessToken, isAdmin], donationController.getAllDonations);
+donationRouter.get("/admin/get-monthly-donations", [verifyAccessToken, isAdmin], donationController.getMonthlyDonationStats);
 
 module.exports = donationRouter;

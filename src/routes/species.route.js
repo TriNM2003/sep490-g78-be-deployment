@@ -18,6 +18,6 @@ speciesRouter.post("/create", createSpecies);
 speciesRouter.get("/admin/get-all", [verifyAccessToken, isAdmin], speciesController.adminGetAll)
 speciesRouter.post("/admin/create", [verifyAccessToken, isAdmin], speciesController.adminCreateSpecies)
 speciesRouter.put("/admin/edit", [verifyAccessToken, isAdmin], speciesController.adminEditSpecies)
-speciesRouter.delete("/admin/delete/:speciesId/:differentSpeciesId", [verifyAccessToken, isAdmin], speciesController.adminDeleteSpecies)
+speciesRouter.delete("/admin/delete/:speciesId", [verifyAccessToken, isAdmin], speciesController.adminDeleteSpecies)
 
 module.exports = speciesRouter;

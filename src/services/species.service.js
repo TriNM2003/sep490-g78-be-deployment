@@ -1,4 +1,5 @@
-const {Species, Breed, Pet} = require("../models");
+const {Species, Breed, Pet, Shelter} = require("../models");
+const {createNotification} = require("./notification.service")
 
 async function sendNotificationToAllShelter(senderId, message){
   try {
