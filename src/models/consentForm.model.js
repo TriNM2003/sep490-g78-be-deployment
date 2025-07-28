@@ -1,7 +1,12 @@
 const mongoose = require("mongoose");
 
 const consentFormSchema = new mongoose.Schema(
-  {
+  { 
+    title: {
+      type: String,
+      required: true,
+      trim: true,
+    },
     adopter: {
       type: mongoose.Schema.Types.ObjectId,
       ref: "User",

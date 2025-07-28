@@ -8,7 +8,7 @@ const {
   optionalVerifyAccessToken,
 } = require("../middlewares/auth.middleware");
 const { isAdmin } = require("../middlewares/admin.middleware");
-const cloudinary = require("../configs/cloudinary");
+
 const {
   isShelterManager,
   isShelterMember,
@@ -17,6 +17,8 @@ const {
 const { consentFormController } = require("../controllers");
 const authMiddleware = require("../middlewares/auth.middleware");
 const shelterMiddleware = require("../middlewares/shelter.middleware");
+const  cloudinary  = require("../configs/cloudinary");
+
 
 shelterRouter.use(bodyParser.json());
 
@@ -157,7 +159,7 @@ shelterRouter.post(
     shelterMiddleware.isShelterMember,
     cloudinary.upload.array("attachments", 2),
     (err, req, res, next) => {
-      if (err?.code === "LIMIT_UNEXPECTED_FILE") {
+      if (err?.code == "LIMIT_UNEXPECTED_FILE") {
         return res
           .status(400)
           .json({ message: "Tối đa 2 ảnh được phép đăng." });
@@ -174,10 +176,9 @@ shelterRouter.put(
     authMiddleware.verifyAccessToken,
     authMiddleware.isActive,
     shelterMiddleware.isShelterMember,
-    ,
     cloudinary.upload.array("attachments", 2),
     (err, req, res, next) => {
-      if (err?.code === "LIMIT_UNEXPECTED_FILE") {
+      if (err?.code == "LIMIT_UNEXPECTED_FILE") {
         return res
           .status(400)
           .json({ message: "Tối đa 2 ảnh được phép đăng." });

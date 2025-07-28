@@ -58,6 +58,7 @@ async function createForm(req, res, next) {
   const { shelterId } = req.params;
   const { id } = req.payload;
   const {
+    title,
     commitments,
     tokenMoney,
     deliveryMethod,
@@ -67,7 +68,7 @@ async function createForm(req, res, next) {
     adopterId,
   } = req.body;
 
-  const attachments = req.files || [];
+  const attachments = req.files ||[];
 
   if (attachments.length > 2) {
     return res.status(400).json({
@@ -124,7 +125,8 @@ async function createForm(req, res, next) {
   }
 
   try {
-    const newConsentForm = await consentFormService.create({
+    const newConsentForm = await consentFormService.createForm({
+      title,
       shelter: shelterId,
       pet: petId,
       adopter: adopterId,
@@ -145,13 +147,14 @@ async function createForm(req, res, next) {
 
 async function editForm(req, res, next) {
   const { consentFormId } = req.params;
-  const { commitments, tokenMoney, deliveryMethod, note, address } = req.body;
-  const attachments = req.files || [];
+  const { title, commitments, tokenMoney, deliveryMethod, note, address } = req.body;
+  const attachments = req.files ||[];
 
   try {
     const updatedConsentForm = await consentFormService.editForm(
       consentFormId,
       {
+        title,
         commitments,
         tokenMoney,
         deliveryMethod,
@@ -191,11 +194,8 @@ async function changeFormStatusUser(req, res, next) {
   const { id } = req.payload;
   const { status } = req.body;
 
-  const selectedUser = await db.User.findOne({
-    _id: id,
-    status: "active",
-  });
-
+  
+  
 
   if (!["accepted", "cancelled", "rejected"].includes(status)) {
     return res.status(400).json({ message: "Trạng thái không hợp lệ" });
