@@ -164,8 +164,6 @@ const scheduleInterview = async ({
   throw new Error("Thời gian bắt đầu phải trước thời gian kết thúc.");
 }
 
-
-
     // Cập nhật trường interview
     submission.interview = {
       interviewId,

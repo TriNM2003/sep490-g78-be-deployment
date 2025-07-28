@@ -325,10 +325,23 @@ const createInterviewSchedule = async (req, res) => {
     }, 0);
 
 
-  } catch (error) {
-    console.error("Lỗi tạo lịch phỏng vấn:", error);
-    res.status(500).json({ message: error.message });
+  }catch (error) {
+  console.error("Lỗi tạo lịch phỏng vấn:", error);
+
+  if (error.name === "ValidationError") {
+    const messages = Object.values(error.errors).map((err) => err.message);
+    return res.status(400).json({ message: messages.join(" ") });
   }
+
+  // Thêm dòng này để hiển thị lỗi Error thường (do bạn throw trong service)
+  if (error.message) {
+    return res.status(400).json({ message: error.message });
+  }
+
+  res.status(500).json({ message: "Đã xảy ra lỗi khi tạo lịch phỏng vấn." });
+}
+
+
 };
 
 
