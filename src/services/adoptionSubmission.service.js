@@ -41,12 +41,16 @@ const checkUserSubmittedForm = async (userId, adoptionFormId) => {
 const getAdoptionSubmissionById = async (id) => {
   try {
     const adoptionSubmission = await db.AdoptionSubmission.findById(id)
-      .populate("performedBy")
+      .populate({
+        path: "performedBy",
+        select: "-password -googleId -createdAt -updatedAt", 
+      })
+      
       .populate({
         path: "adoptionForm",
         populate: [
           { path: "pet", model: "Pet", select: "name petCode" },
-          { path: "shelter", model: "Shelter", select: "name" },
+          { path: "shelter", model: "Shelter", select: "name address hotline email" },
         ]
       })
       .populate("answers.questionId");
@@ -183,6 +187,60 @@ const scheduleInterview = async ({
   }
 };
 
+// count interviewing of staff
+const getInterviewCountsByStaff = async (shelterId, from, to) => {
+  const shelter = await db.Shelter.findById(shelterId);
+  if (!shelter) {
+    throw new Error("Không tìm thấy shelter");
+  }
+
+  const staffIds = shelter.members
+    .filter((m) => m.roles.includes("staff"))
+    .map((m) => m._id);
+
+  const interviewCounts = await db.AdoptionSubmission.aggregate([
+    {
+      $match: {
+        "interview.performedBy": { $in: staffIds },
+        "interview.availableFrom": { $lt: new Date(to) },
+        "interview.availableTo": { $gt: new Date(from) },
+      },
+    },
+    {
+      $group: {
+        _id: "$interview.performedBy",
+        interviewCount: { $sum: 1 },
+      },
+    },
+  ]);
+
+  // Map staffId → interviewCount
+  const countMap = new Map();
+  for (const item of interviewCounts) {
+    countMap.set(item._id.toString(), item.interviewCount);
+  }
+
+  // Truy vấn thêm thông tin user
+  const users = await db.User.find({ _id: { $in: staffIds } }).select(
+    "fullName email avatar"
+  );
+
+  // Trả về danh sách gộp
+  const result = users.map((u) => ({
+    staffId: u._id,
+    fullName: u.fullName,
+    email: u.email,
+    avatar: u.avatar,
+    interviewCount: countMap.get(u._id.toString()) || 0,
+  }));
+
+  // Sắp xếp giảm dần theo số cuộc phỏng vấn
+  result.sort((a, b) => a.interviewCount - b.interviewCount);
+
+  return result;
+};
+
+
 
 
 
@@ -193,6 +251,7 @@ const adoptionSubmissionService = {
   getAdoptionSubmissionById,
   getSubmissionsByPetIds,
   updateSubmissionStatus,
-  scheduleInterview
+  scheduleInterview,
+  getInterviewCountsByStaff
 };
 module.exports = adoptionSubmissionService;

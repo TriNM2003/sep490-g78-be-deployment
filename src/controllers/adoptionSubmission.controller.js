@@ -344,6 +344,29 @@ const createInterviewSchedule = async (req, res) => {
 
 };
 
+const getInterviewCounts = async (req, res) => {
+  try {
+    const { from, to } = req.query;
+    const { shelterId } = req.params; 
+
+    if (!from || !to || !shelterId) {
+      return res.status(400).json({ message: "Thiếu from, to hoặc shelterId" });
+    }
+
+    const result = await adoptionSubmissionService.getInterviewCountsByStaff(
+      shelterId,
+      from,
+      to
+    );
+
+    res.status(200).json(result);
+  } catch (error) {
+    console.error("Lỗi đếm phỏng vấn theo staff:", error);
+    res.status(500).json({ message: "Lỗi server", error: error.message });
+  }
+};
+
+
 
 
 const adoptionSubmissionController = {
@@ -353,7 +376,8 @@ const adoptionSubmissionController = {
   getAdoptionSubmissionById,
   getSubmissionsByPetIds,
   updateSubmissionStatus,
-  createInterviewSchedule
+  createInterviewSchedule,
+  getInterviewCounts
 };
 
 module.exports = adoptionSubmissionController;
