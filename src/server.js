@@ -23,6 +23,9 @@ const {
   donationRouter,
   reportRouter,
   blogRouter,
+  notificationRouter,
+  returnRequestRouter,
+  consentFormRouter,
 } = require("./routes");
 
 const path = require("path");
@@ -69,13 +72,15 @@ app.use("/pets/:petId/medical-records", medicalRecordRouter);
 app.use("/pets/:petId/adoption-submissions", adoptionSubmissionRouter);
 app.use("/shelters/:shelterId/adoptionForms", adoptionFormRouter);
 app.use("/shelters/:shelterId/adoptionTemplates", adoptionTemplateRouter);
-// app.use("/shelters/:shelterId/consentForms", );
+app.use("/consentForms", consentFormRouter);
 app.use("/species", speciesRouter);
 app.use("/breeds", breedRouter);
 app.use("/posts", postRouter);
 app.use("/donations", donationRouter);
 app.use("/reports", reportRouter);
 app.use("/blogs", blogRouter);
+app.use("/notifications", notificationRouter);
+app.use("/return-requests", returnRequestRouter);
 // app.use("/posts/:postId/comments", );
 // app.use("/notifications", );
 app.use("/uploads", express.static(path.join(__dirname, "../uploads")));

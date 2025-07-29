@@ -2,6 +2,7 @@ const MedicalRecord = require("../models/medicalRecord.model");
 const Pet = require("../models/pet.model");
 const db = require("../models/");
 const Shelter = require("../models/shelter.model");
+const mongoose = require("mongoose");
 
 const getAllPets = async () => {
   try {
@@ -15,6 +16,7 @@ const getAllPets = async () => {
     throw error;
   }
 };
+
 const getAllPetsByShelter = async (shelterId, page = 1, limit = 8) => {
   const skip = (page - 1) * limit;
 
@@ -35,6 +37,85 @@ const getAllPetsByShelter = async (shelterId, page = 1, limit = 8) => {
     totalPages: Math.ceil(total / limit),
   };
 };
+const getAllPetsByShelterForSubmission = async (shelterId, page = 1, limit = 8, status) => {
+  const skip = (page - 1) * limit;
+
+  const matchFilter = { shelter: new mongoose.Types.ObjectId(shelterId) };
+  if (status) matchFilter.status = status;
+
+  const pets = await Pet.aggregate([
+    { $match: matchFilter },
+    {
+      $lookup: {
+        from: "adoptionforms",
+        localField: "_id",
+        foreignField: "pet",
+        as: "forms"
+      }
+    },
+    { $unwind: { path: "$forms", preserveNullAndEmptyArrays: true } },
+    {
+      $lookup: {
+        from: "adoptionsubmissions",
+        localField: "forms._id",
+        foreignField: "adoptionForm",
+        as: "submissions"
+      }
+    },
+    {
+      $addFields: {
+        latestSubmission: { $max: "$submissions.createdAt" }
+      }
+    },
+    {
+      $group: {
+        _id: "$_id",
+        doc: { $first: "$$ROOT" }
+      }
+    },
+    {
+      $replaceRoot: { newRoot: "$doc" }
+    },
+    {
+      $sort: {
+        latestSubmission: -1,
+        createdAt: -1
+      }
+    },
+    { $skip: skip },
+    { $limit: limit },
+    {
+      $lookup: {
+        from: "breeds",
+        localField: "breeds",
+        foreignField: "_id",
+        as: "breeds"
+      }
+    },
+    {
+      $lookup: {
+        from: "species",
+        localField: "species",
+        foreignField: "_id",
+        as: "species"
+      }
+    },
+    {
+      $unwind: { path: "$species", preserveNullAndEmptyArrays: true }
+    }
+  ]);
+
+  const total = await Pet.countDocuments(matchFilter);
+
+  return {
+    pets,
+    total,
+    page,
+    limit,
+    totalPages: Math.ceil(total / limit),
+  };
+};
+
 
 const viewPetDetails = async (petId) => {
   try {
@@ -332,4 +413,5 @@ module.exports = {
   getAdoptedPetbyUser,
   getMedicalRecordsByPet,
   getAllPetsByShelter,
+  getAllPetsByShelterForSubmission
 };

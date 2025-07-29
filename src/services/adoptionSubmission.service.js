@@ -22,6 +22,19 @@ const getAdtoptionRequestList = async (id) => {
     }
 }
 
+const getSubmissionsByUserId = async (userId) => {
+  try {
+    const submissions = await db.AdoptionSubmission.find({ createdBy: userId })
+      .populate("adoptionForm")
+      .populate("adoptionForm.pet")
+      .populate("adoptionForm.shelter");
+
+    return submissions;
+  } catch (error) {
+    throw error;
+  }
+};
+
 // submit adoption request for user
 const createAdoptionSubmission = async (data) => {
     return await db.AdoptionSubmission.create(data);
@@ -61,10 +74,47 @@ const getAdoptionSubmissionById = async (id) => {
   }
 };
 
+// get submission by petId
+const getSubmissionsByPetIds = async (petIds) => {
+  try {
+    // Tìm tất cả AdoptionForm có status là active và thuộc các petId
+    const adoptionForms = await db.AdoptionForm.find({
+      pet: { $in: petIds },
+      status: "active",
+    }).select("_id");
+
+    const formIds = adoptionForms.map((f) => f._id);
+
+    if (!formIds.length) return [];
+
+    const submissions = await db.AdoptionSubmission.find({
+      adoptionForm: { $in: formIds },
+    })
+      .populate("performedBy", "fullName email address dob phoneNumber warningCount avatar")
+      .populate({
+        path: "adoptionForm",
+        populate: [
+          { path: "pet", model: "Pet", select: "name petCode photos" },
+          { path: "shelter", model: "Shelter", select: "name" },
+        ],
+      })
+      .populate("answers.questionId")
+      .sort({ createdAt: -1 });
+
+    return submissions;
+  } catch (error) {
+    throw error;
+  }
+};
+
+
+
 const adoptionSubmissionService = {
     getAdtoptionRequestList,
+    getSubmissionsByUserId,
     createAdoptionSubmission,
     checkUserSubmittedForm,
-    getAdoptionSubmissionById
+    getAdoptionSubmissionById,
+    getSubmissionsByPetIds
 };
 module.exports = adoptionSubmissionService;

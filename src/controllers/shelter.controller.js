@@ -1,6 +1,16 @@
 const shelterService = require("../services/shelter.service");
 
 // USER
+const getShelterById = async (req, res) => {
+  const shelterId = req.params.shelterId;
+  try {
+    const shelter = await shelterService.getShelterById(shelterId);
+    res.status(200).json(shelter);
+  } catch (error) {
+    res.status(404).json({ message: error.message });
+  }
+};
+
 const getShelterRequestByUserId = async (req, res, next) => {
   try {
     const { id } = req.payload;
@@ -320,6 +330,7 @@ const shelterController = {
   getShelterProfile,
   editShelterProfile,
   getAll,
+  getShelterById,
   getShelterMembers,
   findEligibleUsersToInvite,
   inviteShelterMembers,
