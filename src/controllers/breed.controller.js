@@ -32,8 +32,8 @@ const createBreed = async (req, res) => {
 };
 const editBreed = async (req, res) => {
   try {
-    const {breedId, speciesId, name, description} = req.body;
-    const response = await breedService.editBreed(req.payload.id, breedId, speciesId, name, description);
+    const {breedId, description} = req.body;
+    const response = await breedService.editBreed(req.payload.id, breedId, description);
     res.status(200).json(response);
   } catch (error) {
     res.status(400).json({ message: error.message });

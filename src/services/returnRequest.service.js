@@ -338,6 +338,7 @@ const getReturnRequestsByShelter = async (shelterId) => {
         },
         status: request.status,
         reason: request.reason,
+        rejectReason: request.rejectReason || null,
         photos: request.photos,
         createdAt: request.createdAt,
         updatedAt: request.updatedAt,
