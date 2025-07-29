@@ -1,4 +1,5 @@
 const returnRequestService = require("../services/returnRequest.service");
+const fs = require("fs/promises");
 
 const createReturnRequest = async (req, res) => {
   try {
@@ -13,6 +14,11 @@ const createReturnRequest = async (req, res) => {
     );
     res.status(201).json(result);
   } catch (error) {
+    if (req.files?.length) {
+      await Promise.allSettled(
+        req.files.map((file) => fs.unlink(file.path).catch(() => {}))
+      );
+    }
     console.error("Error creating return request:", error.message);
     res.status(400).json({ error: error.message });
   }
@@ -41,6 +47,11 @@ const updateReturnRequest = async (req, res) => {
       data: updatedRequest,
     });
   } catch (error) {
+     if (req.files?.length) {
+      await Promise.allSettled(
+        req.files.map((file) => fs.unlink(file.path).catch(() => {}))
+      );
+    }
     console.error("Error updating return request:", error.message);
     res.status(400).json({ error: error.message });
   }
@@ -69,6 +80,16 @@ const getReturnRequestsByUser = async (req, res) => {
   }
 };
 
+const getReturnRequestsByUserId = async (req, res) => {
+  try {
+    const { userId } = req.params;
+    const result = await returnRequestService.getReturnRequestsByUserId(userId);
+    res.status(200).json(result);
+  } catch (error) {
+    res.status(400).json({ error: error.message });
+  }
+};
+
 const getReturnRequestsByShelter = async (req, res) => {
   try {
     const { shelterId } = req.params;
@@ -90,7 +111,10 @@ const deleteReturnRequest = async (req, res) => {
       requestId,
       userId
     );
-    res.status(200).json(result);
+    res.status(200).json({
+      message: "Đã huỷ yêu cầu",
+      data: result,
+    });
   } catch (error) {
     res.status(403).json({ error: error.message });
   }
@@ -135,6 +159,7 @@ const returnRequestController = {
   updateReturnRequest,
   //getReturnRequests,
   getReturnRequestsByUser,
+  getReturnRequestsByUserId,
   getReturnRequestsByShelter,
   deleteReturnRequest,
   approveReturnRequest,
