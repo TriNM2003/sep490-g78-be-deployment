@@ -164,16 +164,17 @@ const createPet = async (petData) => {
     } catch (err) {
       // Nếu bị trùng petCode (rất hiếm), thử lại 1 lần nữa
       if (err.code === 11000 && err.keyPattern?.petCode) {
-        console.warn("⚠️ petCode bị trùng, thử lại...");
+        console.warn(" petCode bị trùng, thử lại...");
         return await createPet(petData); // retry 1 lần
       }
       throw err;
     }
   } catch (error) {
-    console.error("❌ CREATE PET ERROR:", error);
+    console.error("CREATE PET ERROR:", error);
     throw error;
   }
 };
+
 const updatePet = async (petId, updateData) => {
   try {
     const pet = await Pet.findById(petId);
@@ -188,7 +189,8 @@ const updatePet = async (petId, updateData) => {
     }
 
     //  Nếu đang muốn đổi sang "available"
-    if (updateData.status === "available") {
+    // Nếu đang muốn đổi sang "available"
+    if (updateData.status === "available" && pet.status !== "available") {
       const form = await db.AdoptionForm.findOne({ pet: petId });
       if (!form) {
         throw new Error(
@@ -196,17 +198,14 @@ const updatePet = async (petId, updateData) => {
         );
       }
 
-      // Nếu form đang là draft, thì cập nhật luôn sang active
       if (form.status === "draft") {
         form.status = "active";
         await form.save();
       }
-
-      // Cho phép đổi sang "available"
     }
 
-    //  Nếu đang muốn đổi sang "unavailable", kiểm tra ngược lại
-    if (updateData.status === "unavailable") {
+    // Nếu đang muốn đổi sang "unavailable"
+    if (updateData.status === "unavailable" && pet.status !== "unavailable") {
       const form = await db.AdoptionForm.findOne({ pet: petId });
       if (!form) {
         throw new Error(
@@ -214,7 +213,6 @@ const updatePet = async (petId, updateData) => {
         );
       }
 
-      // Nếu form đang là active, bạn có thể cho chuyển ngược hoặc chặn lại tuỳ chính sách
       if (form.status === "active") {
         form.status = "draft";
         await form.save();

@@ -170,31 +170,38 @@ async function kickShelterMember(req, res, next) {
   }
 }
 
-async function requestIntoShelter(req, res,next) {
-    try {
-        const response = await shelterService.requestIntoShelter(req.params.shelterEmail, req.payload.id);
-        res.status(200).json(response);
-      } catch (error) {
-        res.status(400).json({ message: error.message });
-      }
+async function requestIntoShelter(req, res, next) {
+  try {
+    const response = await shelterService.requestIntoShelter(
+      req.params.shelterEmail,
+      req.payload.id
+    );
+    res.status(200).json(response);
+  } catch (error) {
+    res.status(400).json({ message: error.message });
+  }
 }
-async function getEligibleShelters(req, res,next) {
-    try {
-        const response = await shelterService.getEligibleShelters(req.payload.id);
-        res.status(200).json(response);
-      } catch (error) {
-        res.status(400).json({ message: error.message });
-      }
+async function getEligibleShelters(req, res, next) {
+  try {
+    const response = await shelterService.getEligibleShelters(req.payload.id);
+    res.status(200).json(response);
+  } catch (error) {
+    res.status(400).json({ message: error.message });
+  }
 }
-async function reviewShelterRequest(req, res,next) {
-    try {
-        const {shelterId} = req.params;
-        const {requestId, decision} = req.body;
-        const response = await shelterService.reviewShelterRequest(shelterId, requestId, decision);
-        res.status(200).json(response);
-      } catch (error) {
-        res.status(400).json({ message: error.message });
-      }
+async function reviewShelterRequest(req, res, next) {
+  try {
+    const { shelterId } = req.params;
+    const { requestId, decision } = req.body;
+    const response = await shelterService.reviewShelterRequest(
+      shelterId,
+      requestId,
+      decision
+    );
+    res.status(200).json(response);
+  } catch (error) {
+    res.status(400).json({ message: error.message });
+  }
 }
 
 // Dashboard statistics
@@ -226,9 +233,14 @@ const getShelterDashboardStatistics = async (req, res) => {
 };
 const changeShelterMemberRole = async (req, res) => {
   const { shelterId } = req.params;
-  const {userId, roles} = req.body;
+  const { userId, roles } = req.body;
   try {
-    const updatedData = await shelterService.changeShelterMemberRole(req.payload.id, shelterId, userId, roles);
+    const updatedData = await shelterService.changeShelterMemberRole(
+      req.payload.id,
+      shelterId,
+      userId,
+      roles
+    );
     res.status(200).json(updatedData);
   } catch (error) {
     res.status(500).json({ message: error.message });
@@ -277,34 +289,72 @@ const reviewShelterEstablishmentRequest = async (req, res, next) => {
   }
 };
 
+const getAdoptedPetsByWeek = async (req, res) => {
+  try {
+    const { shelterId } = req.params;
+    const data = await shelterService.getAdoptedPetsByWeek(shelterId);
+    res.json(data);
+  } catch (error) {
+    console.error("Error getAdoptedPetsByWeek:", error);
+    res.status(500).json({ message: "Server error" });
+  }
+};
+
+const getAdoptionFormsByWeek = async (req, res) => {
+  try {
+    const shelterId = req.params.shelterId;
+    const result = await shelterService.getAdoptionFormsByWeek(shelterId);
+    res.json(result);
+  } catch (error) {
+    console.error("getAdoptionFormsByWeek error:", error);
+    res.status(500).json({ message: error.message });
+  }
+};
+
+const getSubmissionStatistics = async (req, res) => {
+  try {
+    const { shelterId } = req.params;
+    const result = await shelterService.getSubmissionStatistics(shelterId);
+    res.json(result);
+  } catch (error) {
+    console.error("getSubmissionStatistics error:", error);
+    res.status(500).json({ message: "Lỗi khi lấy thống kê đơn nhận nuôi" });
+  }
+};
+
 // EXPORT
 const shelterController = {
-    //USER
-    sendShelterEstablishmentRequest,
-    getShelterRequestByUserId,
-    getShelterProfile,
-    editShelterProfile,
-    getAll,
-    getShelterById,
-    getShelterMembers,
-    findEligibleUsersToInvite,
-    inviteShelterMembers,
-    getShelterInvitationsAndRequests,
-    getUserInvitationsAndRequests,
-    cancelShelterEstabilshmentRequest,
-    reviewShelterInvitationRequest,
-    kickShelterMember,
-    requestIntoShelter,
-    getEligibleShelters,
-    reviewShelterRequest,
-    getShelterDashboardStatistics,
-    changeShelterMemberRole,
+  //USER
+  sendShelterEstablishmentRequest,
+  getShelterRequestByUserId,
+  getShelterProfile,
+  editShelterProfile,
+  getAll,
+  getShelterById,
+  getShelterMembers,
+  findEligibleUsersToInvite,
+  inviteShelterMembers,
+  getShelterInvitationsAndRequests,
+  getUserInvitationsAndRequests,
+  cancelShelterEstabilshmentRequest,
+  reviewShelterInvitationRequest,
+  kickShelterMember,
+  requestIntoShelter,
+  getEligibleShelters,
+  reviewShelterRequest,
+  getShelterDashboardStatistics,
+  changeShelterMemberRole,
 
-    //ADMIN
-    getAllShelter,
-    getAllShelterEstablishmentRequests,
-    getOverviewStatistic,
-    reviewShelterEstablishmentRequest,
+  //MANAGER
+  getAdoptedPetsByWeek,
+  getAdoptionFormsByWeek,
+  getSubmissionStatistics,
+
+  //ADMIN
+  getAllShelter,
+  getAllShelterEstablishmentRequests,
+  getOverviewStatistic,
+  reviewShelterEstablishmentRequest,
 };
 
 module.exports = shelterController;

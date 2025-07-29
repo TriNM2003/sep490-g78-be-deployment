@@ -4,7 +4,10 @@ const bodyParser = require("body-parser");
 const shelterController = require("../controllers/shelter.controller");
 const postRouter = require("./post.route");
 const returnRequestRouter = require("./returnRequest.route");
-const { verifyAccessToken, optionalVerifyAccessToken } = require("../middlewares/auth.middleware");
+const {
+  verifyAccessToken,
+  optionalVerifyAccessToken,
+} = require("../middlewares/auth.middleware");
 const { isAdmin } = require("../middlewares/admin.middleware");
 
 const {
@@ -15,8 +18,7 @@ const {
 const { consentFormController } = require("../controllers");
 const authMiddleware = require("../middlewares/auth.middleware");
 const shelterMiddleware = require("../middlewares/shelter.middleware");
-const  cloudinary  = require("../configs/cloudinary");
-
+const cloudinary = require("../configs/cloudinary");
 
 shelterRouter.use(bodyParser.json());
 
@@ -56,10 +58,86 @@ shelterRouter.get(
   [verifyAccessToken, isShelterManager],
   shelterController.getShelterDashboardStatistics
 );
+shelterRouter.get(
+  "/:shelterId/statistics/adopted-by-week",
+  [verifyAccessToken, isShelterManager],
+
+  shelterController.getAdoptedPetsByWeek
+);
+shelterRouter.get(
+  "/:shelterId/statistics/adoption-forms-by-week",
+  [verifyAccessToken, isShelterManager],
+
+  shelterController.getAdoptionFormsByWeek
+);
+
+shelterRouter.get(
+  "/:shelterId/statistics/submission",
+  [verifyAccessToken, isShelterManager],
+  shelterController.getSubmissionStatistics
+);
+
+shelterRouter.get("/get-all", shelterController.getAll);
+shelterRouter.get(
+  "/get-members/:shelterId",
+  [verifyAccessToken, isShelterMember],
+  shelterController.getShelterMembers
+);
+shelterRouter.get(
+  "/find-eligible-users/:shelterId",
+  [verifyAccessToken, isShelterManager],
+  shelterController.findEligibleUsersToInvite
+);
+shelterRouter.post(
+  "/invite-members/:shelterId",
+  [verifyAccessToken, isShelterManager],
+  shelterController.inviteShelterMembers
+);
+shelterRouter.get(
+  "/get-shelter-invitations-and-requests/:shelterId",
+  [verifyAccessToken, isShelterManager],
+  shelterController.getShelterInvitationsAndRequests
+);
+shelterRouter.get(
+  "/get-user-invitations-and-requests",
+  verifyAccessToken,
+  shelterController.getUserInvitationsAndRequests
+);
+shelterRouter.put(
+  "/review-shelter-invitation",
+  verifyAccessToken,
+  shelterController.reviewShelterInvitationRequest
+);
+shelterRouter.put(
+  "/:shelterId/kick-member",
+  [verifyAccessToken, isShelterManager],
+  shelterController.kickShelterMember
+);
+shelterRouter.put(
+  "/send-staff-request/:shelterEmail",
+  verifyAccessToken,
+  shelterController.requestIntoShelter
+);
+shelterRouter.get(
+  "/eligible-shelters",
+  verifyAccessToken,
+  shelterController.getEligibleShelters
+);
+shelterRouter.put(
+  "/:shelterId/review-user-request",
+  [verifyAccessToken, isShelterManager],
+  shelterController.reviewShelterRequest
+);
+shelterRouter.put(
+  "/:shelterId/change-member-roles",
+  [verifyAccessToken, isShelterManager],
+  shelterController.changeShelterMemberRole
+);
 shelterRouter.get("/get-all", shelterController.getAll);
 
 shelterRouter.get("/get-by-id/:shelterId", shelterController.getShelterById);
-shelterRouter.get("/get-members/:shelterId",
+shelterRouter.get(
+  "/get-members/:shelterId",
   [verifyAccessToken, isShelterMember],
   shelterController.getShelterMembers
 );
@@ -148,8 +226,6 @@ shelterRouter.post(
   [verifyAccessToken, isAdmin],
   shelterController.reviewShelterEstablishmentRequest
 );
-
-
 
 shelterRouter.post(
   "/:shelterId/consentForms/create-form",

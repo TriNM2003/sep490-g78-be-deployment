@@ -11,9 +11,12 @@ const { cloudinary } = require("../configs/cloudinary");
 const fs = require("fs");
 const generateCodename = require("../utils/codeNameGenerator");
 const db = require("../models/index");
+const dayjs = require("dayjs");
 
 const mongoose = require("mongoose");
 const { mailer } = require("../configs");
+const AdoptionForm = require("../models/adoptionForm.model");
+const AdoptionSubmission = require("../models/adoptionSubmission.model");
 
 //USER
 async function getAll() {
@@ -468,8 +471,6 @@ const inviteShelterMembers = async (shelterId, emailsList = [], roles) => {
       };
 
       invitationsToSend.push(newInvitation);
-
-
     }
 
     // Push tất cả invitation vào shelter
@@ -498,7 +499,6 @@ const inviteShelterMembers = async (shelterId, emailsList = [], roles) => {
   </div>
 `;
     await mailer.sendEmail(emailsList, subject, body);
-
 
     return {
       message: "Đã gửi lời mời",
@@ -879,7 +879,10 @@ const reviewShelterRequest = async (shelterId, requestId, decision) => {
 };
 
 const getShelterCaringPetsCount = async (shelterId) => {
-  return await Pet.countDocuments({ shelter: shelterId, status: "caring" });
+  return await Pet.countDocuments({
+    shelter: shelterId,
+    status: "unavailable",
+  });
 };
 
 const getShelterAdoptedPetsCount = async (shelterId) => {
@@ -917,9 +920,14 @@ const getShelterPetGrowthByMonth = async (shelterId) => {
   ]);
   return result;
 };
-const changeShelterMemberRole = async (managerId, shelterId, memberId, roles) => {
+const changeShelterMemberRole = async (
+  managerId,
+  shelterId,
+  memberId,
+  roles
+) => {
   try {
-    if(managerId == memberId){
+    if (managerId == memberId) {
       throw new Error("Quản lý không thể tự thay đổi vai trò của chính mình");
     }
 
@@ -927,12 +935,14 @@ const changeShelterMemberRole = async (managerId, shelterId, memberId, roles) =>
     const validRoles = ["staff", "manager"];
     const isValid = roles.every((r) => validRoles.includes(r));
     if (!isValid) {
-      throw new Error("Vai trò không hợp lệ. Chỉ chấp nhận 'staff' hoặc 'manager'");
+      throw new Error(
+        "Vai trò không hợp lệ. Chỉ chấp nhận 'staff' hoặc 'manager'"
+      );
     }
 
     // check so luong role
-    if(roles.length < 1){
-      throw new Error("Mỗi user thành viên phải có ít nhất 1 vai trò")
+    if (roles.length < 1) {
+      throw new Error("Mỗi user thành viên phải có ít nhất 1 vai trò");
     }
 
     // Cập nhật roles cho member trong mảng members
@@ -962,9 +972,6 @@ const changeShelterMemberRole = async (managerId, shelterId, memberId, roles) =>
     throw error;
   }
 };
-
-
-
 
 // ADMIN
 const getAllShelter = async () => {
@@ -1211,6 +1218,181 @@ const reviewShelterEstablishmentRequest = async ({
     throw error;
   }
 };
+const getISOWeekAndYear = (date) => {
+  const tmp = new Date(date.getTime());
+  tmp.setUTCDate(tmp.getUTCDate() + 4 - (tmp.getUTCDay() || 7));
+  const yearStart = new Date(Date.UTC(tmp.getUTCFullYear(), 0, 1));
+  const weekNo = Math.ceil(((tmp - yearStart) / 86400000 + 1) / 7);
+  return { week: weekNo, year: tmp.getUTCFullYear() };
+};
+
+const getStartEndOfISOWeek = (week, year) => {
+  const simple = new Date(year, 0, 1 + (week - 1) * 7);
+  const dow = simple.getDay();
+  const start = new Date(simple);
+  if (dow <= 4) start.setDate(simple.getDate() - simple.getDay() + 1);
+  else start.setDate(simple.getDate() + 8 - simple.getDay());
+  const end = new Date(start);
+  end.setDate(start.getDate() + 6);
+  return { start, end };
+};
+
+const getAdoptedPetsByWeek = async (shelterId) => {
+  const now = new Date();
+  const twelveWeeksAgo = new Date(now);
+  twelveWeeksAgo.setDate(twelveWeeksAgo.getDate() - 7 * 12);
+
+  const aggregation = await Pet.aggregate([
+    {
+      $match: {
+        shelter: new mongoose.Types.ObjectId(shelterId),
+        status: "adopted",
+        updatedAt: { $gte: twelveWeeksAgo },
+      },
+    },
+    {
+      $project: {
+        week: { $isoWeek: "$updatedAt" },
+        year: { $isoWeekYear: "$updatedAt" },
+      },
+    },
+    {
+      $group: {
+        _id: { week: "$week", year: "$year" },
+        count: { $sum: 1 },
+      },
+    },
+  ]);
+
+  // Lấy 12 tuần gần nhất
+  const currentDate = new Date();
+  const weeks = [];
+  for (let i = 11; i >= 0; i--) {
+    const d = new Date(currentDate);
+    d.setDate(d.getDate() - i * 7);
+    const { week, year } = getISOWeekAndYear(d);
+    const { start, end } = getStartEndOfISOWeek(week, year);
+    const label = `${start.toLocaleDateString(
+      "vi-VN"
+    )} - ${end.toLocaleDateString("vi-VN")}`;
+    weeks.push({ week, year, label });
+  }
+
+  const formatted = weeks.map(({ label, week, year }) => {
+    const found = aggregation.find(
+      (item) => item._id.week === week && item._id.year === year
+    );
+
+    return {
+      week: label,
+      count: found?.count ?? 0, // Có thể bỏ random để đúng dữ liệu thực
+    };
+  });
+
+  return formatted;
+};
+
+function getISOWeekNumber(date) {
+  const tmp = new Date(date.getTime());
+  tmp.setUTCDate(tmp.getUTCDate() + 4 - (tmp.getUTCDay() || 7));
+  const yearStart = new Date(Date.UTC(tmp.getUTCFullYear(), 0, 1));
+  const weekNo = Math.ceil(((tmp - yearStart) / 86400000 + 1) / 7);
+  return weekNo;
+}
+
+const getAdoptionFormsByWeek = async (shelterId) => {
+  const now = new Date();
+  const fourWeeksAgo = new Date();
+  fourWeeksAgo.setDate(now.getDate() - 28);
+
+  const forms = await db.AdoptionForm.aggregate([
+    {
+      $match: {
+        shelter: new mongoose.Types.ObjectId(shelterId),
+        createdAt: { $gte: fourWeeksAgo, $lte: now },
+      },
+    },
+    {
+      $addFields: {
+        weekNumber: { $isoWeek: "$createdAt" },
+        year: { $isoWeekYear: "$createdAt" },
+      },
+    },
+    {
+      $group: {
+        _id: {
+          week: "$weekNumber",
+          year: "$year",
+        },
+        count: { $sum: 1 },
+      },
+    },
+    {
+      $sort: {
+        "_id.year": 1,
+        "_id.week": 1,
+      },
+    },
+  ]);
+
+  const result = [];
+  for (let i = 3; i >= 0; i--) {
+    const tmpDate = new Date();
+    tmpDate.setDate(now.getDate() - i * 7);
+    const week = getISOWeekNumber(tmpDate);
+    const year = tmpDate.getUTCFullYear();
+
+    const found = forms.find((f) => f._id.week === week && f._id.year === year);
+
+    const start = dayjs(tmpDate).startOf("isoWeek");
+    const end = dayjs(tmpDate).endOf("isoWeek");
+
+    result.push({
+      week: `${start.format("DD/MM")} - ${end.format("DD/MM")}`,
+      count: found ? found.count : 0,
+    });
+  }
+
+  return result;
+};
+const getSubmissionStatistics = async (shelterId) => {
+  const submissions = await AdoptionSubmission.aggregate([
+    {
+      $lookup: {
+        from: "adoptionforms",
+        localField: "adoptionForm",
+        foreignField: "_id",
+        as: "form",
+      },
+    },
+    { $unwind: "$form" },
+    {
+      $match: {
+        "form.shelter": new mongoose.Types.ObjectId(shelterId),
+      },
+    },
+    {
+      $group: {
+        _id: "$status",
+        count: { $sum: 1 },
+      },
+    },
+  ]);
+
+  const result = {
+    approved: 0,
+    rejected: 0,
+    pending: 0,
+  };
+
+  submissions.forEach((s) => {
+    if (result.hasOwnProperty(s._id)) {
+      result[s._id] = s.count;
+    }
+  });
+
+  return result;
+};
 
 const shelterService = {
   // USER
@@ -1237,6 +1419,11 @@ const shelterService = {
   getShelterMembersCount,
   getShelterPetGrowthByMonth,
   changeShelterMemberRole,
+
+  //MANAGER
+  getAdoptedPetsByWeek,
+  getSubmissionStatistics,
+  getAdoptionFormsByWeek,
 
   // ADMIN
   getAllShelter,
