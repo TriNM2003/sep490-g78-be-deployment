@@ -155,13 +155,36 @@ const editProfile = async (userId, profileData, files) => {
     ) {
       throw new Error("Hãy điền thông tin để cập nhật hồ sơ của bạn");
     }
-    if (
-      profileData.fullName &&
-      !/^[a-zA-ZÀ-Ỹà-ỹ\s]+$/.test(profileData.fullName)
-    ) {
-      throw new Error(
-        "Họ và tên không hợp lệ. Hoặc tên chỉ chứa chữ cái và khoảng trắng"
-      );
+
+    // Validate họ tên
+    if (profileData.fullName) {
+      const fullName = profileData.fullName.trim();
+
+      if (fullName.length < 2 || fullName.length > 50) {
+        throw new Error("Họ và tên phải từ 2 đến 50 ký tự.");
+      }
+
+      // Kiểm tra có ít nhất 2 từ
+      const nameParts = fullName.split(/\s+/);
+      if (nameParts.length < 2) {
+        throw new Error("Họ và tên phải bao gồm ít nhất 2 từ (họ và tên).");
+      }
+
+      // chỉ cho phép chữ cái và khoảng trắng
+      const nameRegex = /^[A-ZÀ-Ỹ][a-zà-ỹ]+(?:\s[A-ZÀ-Ỹ][a-zà-ỹ]+)+$/u;
+      if (!nameRegex.test(fullName)) {
+        throw new Error(
+          "Họ và tên không hợp lệ. Mỗi từ nên viết hoa đầu, không chứa số/ký tự đặc biệt."
+        );
+      }
+    }
+
+    // Validate tiểu sử (bio)
+    if (profileData.bio) {
+      const wordCount = profileData.bio.trim().split(/\s+/).length;
+      if (wordCount > 300) {
+        throw new Error("Tiểu sử không được vượt quá 300 từ.");
+      }
     }
 
     if (
