@@ -61,6 +61,13 @@ shelterRouter.get(
 
   shelterController.getAdoptionFormsByWeek
 );
+
+shelterRouter.get(
+  "/:shelterId/statistics/submission",
+  [verifyAccessToken, isShelterManager],
+  shelterController.getSubmissionStatistics
+);
+
 shelterRouter.get("/get-all", shelterController.getAll);
 shelterRouter.get(
   "/get-members/:shelterId",

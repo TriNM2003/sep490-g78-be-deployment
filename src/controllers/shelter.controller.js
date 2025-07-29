@@ -301,6 +301,17 @@ const getAdoptionFormsByWeek = async (req, res) => {
   }
 };
 
+const getSubmissionStatistics = async (req, res) => {
+  try {
+    const { shelterId } = req.params;
+    const result = await shelterService.getSubmissionStatistics(shelterId);
+    res.json(result);
+  } catch (error) {
+    console.error("getSubmissionStatistics error:", error);
+    res.status(500).json({ message: "Lỗi khi lấy thống kê đơn nhận nuôi" });
+  }
+};
+
 // EXPORT
 const shelterController = {
   //USER
@@ -326,6 +337,7 @@ const shelterController = {
   //MANAGER
   getAdoptedPetsByWeek,
   getAdoptionFormsByWeek,
+  getSubmissionStatistics,
 
   //ADMIN
   getAllShelter,
