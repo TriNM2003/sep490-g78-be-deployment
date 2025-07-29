@@ -3,7 +3,6 @@ const { cloudinary } = require("../configs/cloudinary");
 const fs = require("fs/promises");
 const NotificationService = require("./notification.service");
 
-
 const safeUser = (user) => ({
   _id: user?._id ?? null,
   fullName: user?.fullName ?? "",
@@ -39,7 +38,10 @@ const createReturnRequest = async (userId, data, files) => {
 
     const adoptedPet = await db.Pet.findById(pet);
     if (!adoptedPet) throw new Error("Không tìm thấy thú cưng");
-    if (!adoptedPet.adopter || adoptedPet.adopter.toString() !== userId.toString()) {
+    if (
+      !adoptedPet.adopter ||
+      adoptedPet.adopter.toString() !== userId.toString()
+    ) {
       throw new Error("Bạn không phải người đã nhận nuôi thú cưng này");
     }
 
@@ -110,13 +112,15 @@ const updateReturnRequest = async (requestId, userId, updateData, files) => {
   const uploadedPhotoUrls = [];
 
   try {
+    const existingPhotos = JSON.parse(updateData.existingPhotos || "[]");
+
     if (!requestId || !userId) {
       throw new Error("Request ID và User ID là bắt buộc");
     }
     if (!updateData.reason || updateData.reason.trim() === "") {
       throw new Error("Lý do trả thú cưng là bắt buộc");
     }
-    if (!files || files.length === 0) {
+    if (existingPhotos.length === 0 && (!files || files.length === 0)) {
       throw new Error("Cần ít nhất một ảnh");
     }
     if (files.length > 5) {
@@ -133,8 +137,6 @@ const updateReturnRequest = async (requestId, userId, updateData, files) => {
     if (request.status !== "pending") {
       throw new Error("Chỉ có thể chỉnh sửa yêu cầu khi đang chờ duyệt");
     }
-
-    const existingPhotos = request.photos || [];
 
     for (const file of files) {
       try {
@@ -162,7 +164,9 @@ const updateReturnRequest = async (requestId, userId, updateData, files) => {
         photos: [...existingPhotos, ...uploadedPhotoUrls],
       },
       { new: true }
-    );
+    )
+      .populate("pet")
+      .populate("shelter");
 
     const shelter = await db.Shelter.findById(request.shelter);
     if (!shelter) throw new Error("Không tìm thấy shelter");
@@ -219,51 +223,7 @@ const getReturnRequestsByUser = async (userId) => {
   try {
     if (!userId) throw new Error("Thiếu id người dùng");
 
-    const returnRequests = await db.ReturnRequest.find({ requestedBy: userId })
-      .populate("pet requestedBy shelter approvedBy")
-      .sort({ createdAt: -1 });
-
-    const result = returnRequests.map((request) => {
-      return {
-        _id: request._id,
-        pet: {
-          _id: request.pet._id,
-          name: request.pet.name,
-          status: request.pet.status,
-          age: request.pet.age,
-          petCode: request.pet.petCode,
-          photos: request.pet.photos,
-          isMale: request.pet.isMale,
-        },
-        requestedBy: safeUser(request.requestedBy),
-        shelter: {
-          _id: request.shelter._id,
-          name: request.shelter.name,
-          address: request.shelter.address,
-          email: request.shelter.email,
-          avatar: request.shelter.avatar,
-          status: request.shelter.status,
-        },
-        status: request.status,
-        reason: request.reason,
-        photos: request.photos,
-        createdAt: request.createdAt,
-        updatedAt: request.updatedAt,
-        approvedBy: safeUser(request.approvedBy),
-      };
-    })
-
-    return result;
-  } catch (error) {
-    throw new Error(`Lỗi khi lấy yêu cầu trả thú cưng: ${error.message}`);
-  }
-};
-
-const getReturnRequestsByShelter = async (shelterId) => {
-  try {
-    if (!shelterId) throw new Error("Thiếu id shelter");
-
-    const returnRequests = await db.ReturnRequest.find({ shelter: shelterId })
+    const returnRequests = await db.ReturnRequest.find({ requestedBy: userId, status: { $ne: "cancelled" }})
       .populate("pet requestedBy shelter approvedBy")
       .sort({ createdAt: -1 });
 
@@ -298,11 +258,97 @@ const getReturnRequestsByShelter = async (shelterId) => {
     });
 
     return result;
-
   } catch (error) {
-    throw new Error(
-      `Lỗi khi lấy yêu cầu trả thú cưng: ${error.message}`
-    );
+    throw new Error(`Lỗi khi lấy yêu cầu trả thú cưng: ${error.message}`);
+  }
+};
+
+const getReturnRequestsByUserId = async (userId) => {
+  try {
+    if (!userId) throw new Error("Thiếu id người dùng");
+
+    const returnRequests = await db.ReturnRequest.find({ requestedBy: userId })
+      .populate("pet requestedBy shelter approvedBy")
+      .sort({ createdAt: -1 });
+
+    const result = returnRequests.map((request) => {
+      return {
+        _id: request._id,
+        pet: {
+          _id: request.pet._id,
+          name: request.pet.name,
+          status: request.pet.status,
+          age: request.pet.age,
+          petCode: request.pet.petCode,
+          photos: request.pet.photos,
+          isMale: request.pet.isMale,
+        },
+        requestedBy: safeUser(request.requestedBy),
+        shelter: {
+          _id: request.shelter._id,
+          name: request.shelter.name,
+          address: request.shelter.address,
+          email: request.shelter.email,
+          avatar: request.shelter.avatar,
+          status: request.shelter.status,
+        },
+        status: request.status,
+        reason: request.reason,
+        photos: request.photos,
+        createdAt: request.createdAt,
+        updatedAt: request.updatedAt,
+        approvedBy: safeUser(request.approvedBy),
+      };
+    });
+
+    return result;
+  } catch (error) {
+    throw new Error(`Lỗi khi lấy yêu cầu trả thú cưng của người dùng ${userId}: ${error.message}`);
+  }
+}
+
+const getReturnRequestsByShelter = async (shelterId) => {
+  try {
+    if (!shelterId) throw new Error("Thiếu id shelter");
+
+    const returnRequests = await db.ReturnRequest.find({ shelter: shelterId })
+      .populate("pet requestedBy shelter approvedBy")
+      .sort({ createdAt: -1 });
+
+    const result = returnRequests.map((request) => {
+      return {
+        _id: request._id,
+        pet: {
+          _id: request.pet._id,
+          name: request.pet.name,
+          status: request.pet.status,
+          age: request.pet.age,
+          petCode: request.pet.petCode,
+          photos: request.pet.photos,
+          isMale: request.pet.isMale,
+        },
+        requestedBy: safeUser(request.requestedBy),
+        shelter: {
+          _id: request.shelter._id,
+          name: request.shelter.name,
+          address: request.shelter.address,
+          email: request.shelter.email,
+          avatar: request.shelter.avatar,
+          status: request.shelter.status,
+        },
+        status: request.status,
+        reason: request.reason,
+        rejectReason: request.rejectReason || null,
+        photos: request.photos,
+        createdAt: request.createdAt,
+        updatedAt: request.updatedAt,
+        approvedBy: safeUser(request.approvedBy),
+      };
+    });
+
+    return result;
+  } catch (error) {
+    throw new Error(`Lỗi khi lấy yêu cầu trả thú cưng: ${error.message}`);
   }
 };
 
@@ -319,12 +365,14 @@ const deleteReturnRequest = async (requestId, userId) => {
     }
 
     if (request.status === "pending") {
-      await db.ReturnRequest.findByIdAndUpdate(
+      const updatedRequest = await db.ReturnRequest.findByIdAndUpdate(
         requestId,
         { status: "cancelled" },
         { new: true }
-      );
-      return { message: "Yêu cầu đã bị hủy" };
+      )
+        .populate("pet")
+        .populate("shelter");
+      return updatedRequest;
     }
   } catch (error) {
     throw new Error(`Lỗi khi xoá yêu cầu trả thú cưng: ${error.message}`);
@@ -351,7 +399,10 @@ const approveReturnRequest = async (requestId, shelterUserId) => {
 
     await db.Pet.findByIdAndUpdate(
       request.pet._id,
-      { status: "unavailable" },
+      { 
+        status: "unavailable",
+        adopter: null,
+       },
       { new: true }
     );
 
@@ -376,7 +427,7 @@ const approveReturnRequest = async (requestId, shelterUserId) => {
       [request.requestedBy],
       "Yêu cầu trả thú cưng đã được duyệt",
       "other",
-      `/user/return-requests/${requestId}`
+      `/profile/${request.requestedBy}?tab=return-request`
     );
 
     return request;
@@ -399,7 +450,9 @@ const rejectReturnRequest = async (requestId, shelterUserId, rejectReason) => {
     if (!request) throw new Error("Không tìm thấy yêu cầu");
 
     if (request.status !== "pending") {
-      throw new Error("Không thể từ chối yêu cầu không đang ở trạng thái pending");
+      throw new Error(
+        "Không thể từ chối yêu cầu không đang ở trạng thái pending"
+      );
     }
 
     const rejectRequest = await db.ReturnRequest.findByIdAndUpdate(
@@ -417,7 +470,7 @@ const rejectReturnRequest = async (requestId, shelterUserId, rejectReason) => {
       [request.requestedBy],
       "Yêu cầu trả thú cưng đã bị từ chối",
       "other",
-      `/user/return-requests/${requestId}`
+      `/profile/${request.requestedBy}?tab=return-request`
     );
 
     return rejectRequest;
@@ -431,6 +484,7 @@ const returnRequestService = {
   updateReturnRequest,
   //getReturnRequests,
   getReturnRequestsByUser,
+  getReturnRequestsByUserId,
   getReturnRequestsByShelter,
   deleteReturnRequest,
   approveReturnRequest,

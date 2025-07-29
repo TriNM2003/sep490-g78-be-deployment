@@ -1,4 +1,5 @@
-const {Species, Breed, Pet} = require("../models");
+const {Species, Breed, Pet, Shelter} = require("../models");
+const {createNotification} = require("./notification.service")
 
 async function sendNotificationToAllShelter(senderId, message){
   try {
@@ -43,15 +44,14 @@ const createSpecies = async (adminId, name, description) => {
     throw error;
   }
 };
-const editSpecies = async (adminId, speciesId, name, description) => {
+const editSpecies = async (adminId, speciesId, description) => {
   try {
     const species = await Species.findById(speciesId);
     if(!species){
       throw new Error("Loài không tồn tại!")
     }
     await Species.findByIdAndUpdate(speciesId, {
-      name,
-      description
+      description: description
     })
 
     // gui thong bao cho tat ca shelter
@@ -64,34 +64,22 @@ const editSpecies = async (adminId, speciesId, name, description) => {
     throw error;
   }
 };
-const deleteSpecies = async (adminId, speciesId, differentSpeciesId) => {
+const deleteSpecies = async (adminId, speciesId) => {
   try {
-    if(speciesId === differentSpeciesId){
-      throw new Error("Iđ của loài xóa đi và loài để chuyển sang trùng nhau");
-    }
-
     const species = await Species.findById(speciesId);
     if (!species) {
       throw new Error("Id của loài không hợp lệ!");
     }
 
-    const differentSpecies = await Species.findById(differentSpeciesId);
-    if (!differentSpecies) {
-      throw new Error("Id của loài để chuyển sang không hợp lệ!");
+    const petCountsBySpecies = await Pet.countDocuments({species: speciesId})
+    if(petCountsBySpecies > 0){
+      throw new Error(`Không thể xóa loài vì đang có ${petCountsBySpecies} thú cưng đang sử dụng loài này!`);
     }
-
-    // Chuyển các breed sang loài mới
-    await Breed.updateMany(
-      { species: speciesId },
-      { $set: { species: differentSpeciesId } }
-    );
-
-    // Chuyển các pet sang loài mới
-    await Pet.updateMany(
-      { species: speciesId },
-      { $set: { species: differentSpeciesId } }
-    );
-
+    const breedCountsBySpecies = await Breed.countDocuments({species: speciesId})
+    if(breedCountsBySpecies > 0){
+      throw new Error(`Không thể xóa loài vì đang có ${breedCountsBySpecies} giống đang sử dụng loài này!`);
+    }
+    
     // Xoá species
     await Species.findByIdAndDelete(speciesId);
 
@@ -99,7 +87,7 @@ const deleteSpecies = async (adminId, speciesId, differentSpeciesId) => {
     await sendNotificationToAllShelter(adminId, `Loài ${species.name} vừa bị xóa khỏi hệ thống!`)
 
     return {
-      message: "Xóa loài thành công và đã chuyển toàn bộ giống + thú cưng sang loài mới!",
+      message: "Xóa loài thành công!",
     };
   } catch (error) {
     throw error;

@@ -57,8 +57,9 @@ shelterRouter.get(
   shelterController.getShelterDashboardStatistics
 );
 shelterRouter.get("/get-all", shelterController.getAll);
-shelterRouter.get(
-  "/get-members/:shelterId",
+
+shelterRouter.get("/get-by-id/:shelterId", shelterController.getShelterById);
+shelterRouter.get("/get-members/:shelterId",
   [verifyAccessToken, isShelterMember],
   shelterController.getShelterMembers
 );

@@ -1,20 +1,21 @@
 const userService = require("../services/user.service");
+const fs = require("fs/promises");
 
 const getAllUsers = async (req, res) => {
   try {
     const users = await userService.getAllUsers();
     res.status(200).json(users);
   } catch (error) {
-    res.status(500).json({ message: error.message });
+    res.status(400).json({ message: error.message });
   }
 };
 
 const getUserById = async (req, res) => {
   try {
-    const user = await userService.getUserById(req.params.id);
+    const user = await userService.getUserById(req.params.userId);
     res.status(200).json(user);
   } catch (error) {
-    res.status(500).json({ message: error.message });
+    res.status(400).json({ message: error.message });
   }
 };
 
@@ -23,7 +24,7 @@ const getUserByToken = async (req, res) => {
     const user = await userService.getUserById(req.payload.id);
     res.status(200).json(user);
   } catch (error) {
-    res.status(500).json({ message: error.message });
+    res.status(400).json({ message: error.message });
   }
 };
 
@@ -54,6 +55,13 @@ const editProfile = async (req, res) => {
     );
     res.status(200).json(result);
   } catch (error) {
+    const { avatar, background } = req.files || {};
+    if (avatar?.length) {
+      await fs.unlink(avatar[0].path).catch(() => {});
+    }
+    if (background?.length) {
+      await fs.unlink(background[0].path).catch(() => {});
+    }
     console.error("Lỗi khi cập nhật thông tin:", error.message);
     res.status(400).json({ message: error.message });
   }
@@ -109,7 +117,7 @@ const addUser = async (req, res) => {
     const newUser = await userService.addUser(userData);
     res.status(201).json(newUser);
   } catch (error) {
-    res.status(500).json({ message: error.message });
+    res.status(400).json({ message: error.message });
   }
 }
 
@@ -120,7 +128,7 @@ const changeUserRole = async (req, res) => {
     const updatedUser = await userService.changeUserRole(userId, roles);
     res.status(200).json(updatedUser);
   } catch (error) {
-    res.status(500).json({ message: error.message });
+    res.status(400).json({ message: error.message });
   }
 };
 
@@ -130,7 +138,7 @@ const banUser = async (req, res) => {
     const updatedUser = await userService.banUser(userId);
     res.status(200).json(updatedUser);
   } catch (error) {
-    res.status(500).json({ message: error.message });
+    res.status(400).json({ message: error.message });
   }
 };
 
@@ -140,7 +148,7 @@ const unbanUser = async (req, res) => {
     const updatedUser = await userService.unbanUser(userId);
     res.status(200).json(updatedUser);
   } catch (error) {
-    res.status(500).json({ message: error.message });
+    res.status(400).json({ message: error.message });
   }
 };
 
