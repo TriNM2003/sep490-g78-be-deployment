@@ -58,8 +58,8 @@ const adminCreateSpecies = async (req, res) => {
 };
 const adminEditSpecies = async (req, res) => {
   try {
-    const {speciesId, name, description} = req.body;
-    const response = await speciesService.editSpecies(req.payload.id, speciesId, name, description);
+    const {speciesId, description} = req.body;
+    const response = await speciesService.editSpecies(req.payload.id, speciesId, description);
     res.status(200).json(response);
   } catch (error) {
     res.status(400).json({ message: error.message });
@@ -67,8 +67,8 @@ const adminEditSpecies = async (req, res) => {
 };
 const adminDeleteSpecies = async (req, res) => {
   try {
-    const {speciesId, differentSpeciesId} = req.params;
-    const response = await speciesService.deleteSpecies(req.payload.id, speciesId, differentSpeciesId);
+    const {speciesId} = req.params;
+    const response = await speciesService.deleteSpecies(req.payload.id, speciesId);
     res.status(200).json(response);
   } catch (error) {
     res.status(400).json({ message: error.message });
