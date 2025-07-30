@@ -193,7 +193,7 @@ const changeFormStatusShelter = async (consentFormId, status) => {
     if (consentForm.status == "draft" && status != "send") {
       throw new Error("Không thể chuyển đến trạng thái này!");
     }
-    if ((consentForm.status == "approved" || "accepted") && status == "draft") {
+    if ((consentForm.status == "approved" || consentForm.status == "accepted") && status == "draft") {
       throw new Error("Không thể chuyển về trạng thái nháp!");
     }
 
@@ -232,7 +232,7 @@ const changeFormStatusUser = async (consentFormId, status, userId) => {
     if (consentForm.status == "draft" && status != "send") {
       throw new Error("Không thể chuyển đến trạng thái này!");
     }
-    if ((consentForm.status == "approved" || "accepted") && status == "draft") {
+    if ((consentForm.status == "approved" || consentForm.status =="accepted") && status == "draft") {
       throw new Error("Không thể chuyển về trạng thái nháp!");
     }
 
