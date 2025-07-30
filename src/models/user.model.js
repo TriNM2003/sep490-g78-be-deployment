@@ -33,7 +33,7 @@ const userSchema = new mongoose.Schema(
     avatar: {
       type: String,
       default:
-        "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcRTgD14vQ6I-UBiHTcwxZYnpSfLFJ2fclwS2A&s",
+        "https://cdn.pixabay.com/photo/2021/07/02/04/48/user-6380868_960_720.png",
     },
     bio: {
       type: String,
@@ -54,7 +54,7 @@ const userSchema = new mongoose.Schema(
     },
     background: {
       type: String,
-      default: "",
+      default: "https://images.hdqwalls.com/wallpapers/geometry-blue-abstract-4k-3y.jpg",
     },
     address: {
       type: String,

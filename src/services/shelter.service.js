@@ -159,10 +159,10 @@ const sendShelterEstablishmentRequest = async (
       bio: "",
       email: shelterRequestData.email,
       hotline: shelterRequestData.hotline,
-      avatar: "",
+      avatar: "https://cdn-icons-png.flaticon.com/512/5054/5054989.png",
       address: shelterRequestData.address,
       location: shelterRequestData.location,
-      background: "",
+      background: "https://i.pinimg.com/1200x/5b/db/33/5bdb3309976c34cb8e6d42c1b2090c21.jpg",
       members: [
         {
           _id: requesterId,

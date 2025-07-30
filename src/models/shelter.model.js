@@ -30,7 +30,7 @@ const shelterSchema = new mongoose.Schema(
     },
     avatar: {
       type: String,
-      default: "https://cdn-icons-png.flaticon.com/512/616/616408.png",
+      default: "https://cdn-icons-png.flaticon.com/512/5054/5054989.png",
     },
     address: {
       type: String,
@@ -50,7 +50,7 @@ const shelterSchema = new mongoose.Schema(
     background: {
       type: String,
       default:
-        "https://cdn.pixabay.com/photo/2015/10/01/20/17/01/background-980970_1280.jpg",
+        "https://i.pinimg.com/1200x/5b/db/33/5bdb3309976c34cb8e6d42c1b2090c21.jpg",
     },
     members: [
       {
