@@ -280,6 +280,48 @@ const selected = new Date(selectedSchedule);
   return submission;
 };
 
+// add feedback interview
+const addInterviewFeedback = async (submissionId, userId, feedback) => {
+  const submission = await db.AdoptionSubmission.findById(submissionId);
+
+  if (!submission) {
+    const error = new Error("Không tìm thấy đơn nhận nuôi");
+    error.statusCode = 404;
+    throw error;
+  }
+
+    // Chỉ cho phép khi status là 'interviewing'
+  if (submission.status !== "interviewing") {
+    const error = new Error("Chỉ có thể gửi phản hồi khi đơn đang ở trạng thái phỏng vấn");
+    error.statusCode = 400;
+    throw error;
+  }
+
+  // Đảm bảo user đã chọn lịch hẹn
+  if (!submission.interview?.selectedSchedule) {
+    const error = new Error("Người dùng chưa chọn lịch phỏng vấn");
+    error.statusCode = 400;
+    throw error;
+  }
+
+  // Kiểm tra quyền: chỉ interview.performedBy mới được thêm feedback
+  if (
+    !submission.interview?.performedBy ||
+    submission.interview.performedBy.toString() !== userId.toString()
+  ) {
+    const error = new Error("Bạn không có quyền gửi phản hồi phỏng vấn");
+    error.statusCode = 403;
+    throw error;
+  }
+
+  submission.interview.feedback = feedback;
+  submission.interview.scheduleAt = new Date(); 
+  submission.interview.updateAt = new Date();
+  submission.markModified("interview");
+
+  await submission.save();
+  return submission;
+};
 
 
 
@@ -293,6 +335,7 @@ const adoptionSubmissionService = {
   updateSubmissionStatus,
   scheduleInterview,
   getInterviewCountsByStaff,
-  selectInterviewSchedule
+  selectInterviewSchedule,
+  addInterviewFeedback
 };
 module.exports = adoptionSubmissionService;
