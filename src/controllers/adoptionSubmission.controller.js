@@ -145,6 +145,11 @@ const checkUserSubmitted = async (req, res) => {
       return res.status(200).json({
         submitted: true,
         submissionId: submission._id,
+        status: submission.status,
+        availableFrom: submission.interview?.availableFrom,
+        availableTo: submission.interview?.availableTo,
+        selectedSchedule: submission.interview?.selectedSchedule || null,
+         interviewId: submission.interview?.interviewId || null,
       });
     }
 
@@ -366,6 +371,32 @@ const getInterviewCounts = async (req, res) => {
   }
 };
 
+const selectInterviewSchedule = async (req, res) => {
+  try {
+    const { submissionId, selectedSchedule } = req.body;
+    const userId = req.payload.id;
+
+    if (!selectedSchedule) {
+      return res.status(400).json({ message: "Thiếu thời gian bạn chọn" });
+    }
+
+    const result = await adoptionSubmissionService.selectInterviewSchedule(
+      submissionId,
+      userId,
+      selectedSchedule
+    );
+
+    return res.status(200).json({
+      message: "Đã chọn lịch phỏng vấn",
+      selectedSchedule: result.interview.selectedSchedule
+    });
+  } catch (error) {
+    console.error("Lỗi chọn lịch phỏng vấn:", error);
+    return res.status(error.statusCode || 500).json({ message: error.message });
+  }
+};
+
+
 
 
 
@@ -377,7 +408,8 @@ const adoptionSubmissionController = {
   getSubmissionsByPetIds,
   updateSubmissionStatus,
   createInterviewSchedule,
-  getInterviewCounts
+  getInterviewCounts,
+  selectInterviewSchedule
 };
 
 module.exports = adoptionSubmissionController;

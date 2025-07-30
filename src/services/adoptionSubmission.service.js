@@ -1,4 +1,9 @@
 const db = require("../models/");
+const dayjs = require("dayjs");
+const utc = require("dayjs/plugin/utc");
+const timezone = require("dayjs/plugin/timezone");
+dayjs.extend(utc);
+dayjs.extend(timezone);
 
 
 const getAdtoptionRequestList = async (id) => {
@@ -240,6 +245,40 @@ const getInterviewCountsByStaff = async (shelterId, from, to) => {
   return result;
 };
 
+// update selecte schedule from user
+const selectInterviewSchedule = async (submissionId, userId, selectedSchedule) => {
+  const submission = await db.AdoptionSubmission.findById(submissionId);
+
+  if (!submission) {
+    throw new Error("Không tìm thấy đơn nhận nuôi");
+  }
+
+  if (submission.performedBy.toString() !== userId.toString()) {
+    const error = new Error("Bạn không có quyền cập nhật lịch phỏng vấn này");
+    error.statusCode = 403;
+    throw error;
+  }
+
+const selected = new Date(selectedSchedule);
+
+
+  const from = new Date(submission.interview.availableFrom);
+  const to = new Date(submission.interview.availableTo);
+
+  if (!(selected >= from && selected <= to)) {
+    const error = new Error("Thời gian bạn chọn nằm ngoài khoảng cho phép");
+    error.statusCode = 400;
+    throw error;
+  }
+
+  submission.interview.selectedSchedule = selected;
+  submission.interview.scheduleAt = new Date();
+  submission.markModified("interview");
+
+  await submission.save();
+  return submission;
+};
+
 
 
 
@@ -252,6 +291,7 @@ const adoptionSubmissionService = {
   getSubmissionsByPetIds,
   updateSubmissionStatus,
   scheduleInterview,
-  getInterviewCountsByStaff
+  getInterviewCountsByStaff,
+  selectInterviewSchedule
 };
 module.exports = adoptionSubmissionService;
