@@ -95,6 +95,7 @@ const getSubmissionsByPetIds = async (petIds) => {
         ],
       })
       .populate("answers.questionId")
+      .populate("interview.performedBy", "fullName email avatar")
       .sort({ createdAt: -1 });
 
     return submissions;
