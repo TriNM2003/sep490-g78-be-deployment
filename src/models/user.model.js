@@ -33,7 +33,7 @@ const userSchema = new mongoose.Schema(
     avatar: {
       type: String,
       default:
-        "https://cdn.pixabay.com/photo/2021/07/02/04/48/user-6380868_960_720.png",
+        "https://res.cloudinary.com/dpaht6o2y/image/upload/v1753883950/1aa8d75f3498784bcd2617b3e3d1e0c4_fvgwde.jpg",
     },
     bio: {
       type: String,
@@ -54,7 +54,7 @@ const userSchema = new mongoose.Schema(
     },
     background: {
       type: String,
-      default: "https://images.hdqwalls.com/wallpapers/geometry-blue-abstract-4k-3y.jpg",
+      default: "https://res.cloudinary.com/dpaht6o2y/image/upload/v1753884093/2746ae1e9f480a1a5c459355340449aa_zmqvf0.jpg",
     },
     address: {
       type: String,
