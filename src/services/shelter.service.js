@@ -17,6 +17,8 @@ const mongoose = require("mongoose");
 const { mailer } = require("../configs");
 const AdoptionForm = require("../models/adoptionForm.model");
 const AdoptionSubmission = require("../models/adoptionSubmission.model");
+const Species = require("../models/species.model");
+const Breed = require("../models/breed.model");
 
 //USER
 async function getAll() {
@@ -1034,142 +1036,69 @@ const getAllShelterEstablishmentRequests = async () => {
     throw error;
   }
 };
-const getOverviewStatistic = async () => {
+const getOverviewStatistic = async (selectedYear) => {
   try {
-    const calculateDifference = (current, before) => {
-      return ["Infinity%", "NaN%"].includes(
-        (((current - before) / before) * 100).toFixed(2) + "%"
-      )
-        ? "0%"
-        : (((current - before) / before) * 100).toFixed(2) + "%";
-    };
-    // Dau thang
-    const startOfThisMonth = new Date(
-      new Date().getFullYear(),
-      new Date().getMonth(),
-      1
-    );
-
-    const totalSheltersLastMonth = await Shelter.countDocuments({
-      createdAt: { $lt: startOfThisMonth },
-    });
     const totalShelters = await Shelter.countDocuments();
-    const shelterChangePercent = calculateDifference(
-      totalShelters,
-      totalSheltersLastMonth
-    );
-
-    const totalUsersLastMonth = await User.countDocuments({
-      createdAt: { $lt: startOfThisMonth },
-    });
     const totalUsers = await User.countDocuments();
-    const userChangePercent = calculateDifference(
-      totalUsers,
-      totalUsersLastMonth
-    );
-
-    const rescuedPetsLastMonth = await Pet.countDocuments({
-      createdAt: { $lt: startOfThisMonth },
-    });
     const rescuedPets = await Pet.countDocuments();
-    const rescuedPetsChangePercent = calculateDifference(
-      rescuedPets,
-      rescuedPetsLastMonth
-    );
-
-    const adoptedPetsLastMonth = await Pet.countDocuments({
-      createdAt: { $lt: startOfThisMonth },
-      status: "adopted",
-    });
     const adoptedPets = await Pet.countDocuments({ status: "adopted" });
-    const adoptedPetsChangePercent = calculateDifference(
-      adoptedPets,
-      adoptedPetsLastMonth
-    );
-
-    const totalPostsLastMonth = await Post.countDocuments({
-      createdAt: { $lt: startOfThisMonth },
-    });
     const totalPosts = await Post.countDocuments();
-    const totalPostsChangePercent = calculateDifference(
-      totalPosts,
-      totalPostsLastMonth
-    );
-
-    const totalBlogsLastMonth = await Blog.countDocuments({
-      createdAt: { $lt: startOfThisMonth },
-    });
     const totalBlogs = await Blog.countDocuments();
-    const totalBlogsChangePercent = calculateDifference(
-      totalBlogs,
-      totalBlogsLastMonth
-    );
-
-    const totalReportsLastMonth = await Blog.countDocuments({
-      createdAt: { $lt: startOfThisMonth },
-    });
     const totalReports = await Report.countDocuments();
-    const totalReportsChangePercent = calculateDifference(
-      totalReports,
-      totalReportsLastMonth
-    );
-
-    const totalDonationLastMonth = await Donation.aggregate([
-      {
-        $match: {
-          createdAt: { $lte: startOfThisMonth },
-        },
-      },
-      { $group: { _id: null, total: { $sum: "$amount" } } },
-    ]);
-    const donationAmountLastMonth = totalDonationLastMonth[0]?.total || 0;
     const totalDonation = await Donation.aggregate([
       { $group: { _id: null, total: { $sum: "$amount" } } },
     ]);
     const donationAmount = totalDonation[0]?.total || 0;
-    const donationAmountChangePercent = calculateDifference(
-      totalDonation,
-      donationAmountLastMonth
-    );
+    const totalSpecies = await Species.countDocuments();
+    const totalBreeds = await Breed.countDocuments();
 
+    // chart
+    function matchDateField(field, from, to) {   // xử lý cả string hoặc date
+      return {
+        $expr: {
+          $and: [
+            { $gte: [{ $toDate: `$${field}` }, from] },
+            { $lte: [{ $toDate: `$${field}` }, to] },
+          ],
+        },
+      };
+    }
+    const startDate = new Date(`${selectedYear}-01-01T00:00:00.000Z`);
+    const endDate = new Date(`${selectedYear}-12-31T23:59:59.999Z`);
+
+    const months = Array.from(
+      { length: 12 },
+      (_, index) => `Tháng ${index + 1}`
+    );
+    const chartRawData = await db.Pet.find({
+      status: "adopted",
+      ...matchDateField("updatedAt", startDate, endDate),
+    });
+    const chartData = Array.from({ length: 12 }, (_, index) => ({
+      month: months[index],
+      amount: 0,
+    }));
+    for (const pet of chartRawData) {
+      const monthIndex = dayjs(pet.updatedAt).month(); // 0-11
+      chartData[monthIndex].amount++;
+    }
     return {
       status: 200,
       message: "Lấy dữ liệu thống tổng quan thành công!",
       overviewStatistics: {
-        shelter: {
-          totalShelters,
-          shelterChangePercent,
-        },
-        user: {
-          totalUsers,
-          userChangePercent,
-        },
+        shelter: totalShelters,
+        user: totalUsers,
         pet: {
-          rescuedPets: {
-            current: rescuedPets,
-            changePercent: rescuedPetsChangePercent,
-          },
-          adoptedPets: {
-            current: adoptedPets,
-            changePercent: adoptedPetsChangePercent,
-          },
+          rescuedPets: rescuedPets,
+          adoptedPets: adoptedPets,
         },
-        post: {
-          totalPosts,
-          totalPostsChangePercent,
-        },
-        blog: {
-          totalBlogs,
-          totalBlogsChangePercent,
-        },
-        report: {
-          totalReports,
-          totalReportsChangePercent,
-        },
-        donation: {
-          donationAmount,
-          donationAmountChangePercent,
-        },
+        species: totalSpecies,
+        breed: totalBreeds,
+        post: totalPosts,
+        blog: totalBlogs,
+        report: totalReports,
+        donation: donationAmount,
+        chartData: chartData,
       },
     };
   } catch (error) {

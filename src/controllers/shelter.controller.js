@@ -268,7 +268,7 @@ const getAllShelterEstablishmentRequests = async (req, res, next) => {
 
 const getOverviewStatistic = async (req, res, next) => {
   try {
-    const overviewStatistics = await shelterService.getOverviewStatistic();
+    const overviewStatistics = await shelterService.getOverviewStatistic(req.params.year);
     res.status(200).json(overviewStatistics);
   } catch (error) {
     res.status(404).json({ message: error.message });
