@@ -242,7 +242,7 @@ const loginByGoogleCallbackUser = async (req, res, next) => {
         avatar: googleUser.picture,
         googleId: googleUser.sub
     }
-    console.log(googleUser);
+    // console.log(user);
 
     // check user co ton tai trong database
     const isUserExist = await db.User.findOne({ email: user.email });
@@ -254,7 +254,7 @@ const loginByGoogleCallbackUser = async (req, res, next) => {
           username: googleUser.name,
           email: googleUser.email,
           password: hashedPassword,
-          fullName: googleUser.given_name,
+          fullName: `${googleUser.given_name} ${googleUser.family_name}`,
           phoneNumber: null,
           address: null,
           roles: ["user"],
