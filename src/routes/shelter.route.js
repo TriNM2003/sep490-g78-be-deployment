@@ -217,7 +217,7 @@ shelterRouter.get(
   shelterController.getAllShelterEstablishmentRequests
 );
 shelterRouter.get(
-  "/admin/get-overview-statistics",
+  "/admin/get-overview-statistics/:year",
   [verifyAccessToken, isAdmin],
   shelterController.getOverviewStatistic
 );
