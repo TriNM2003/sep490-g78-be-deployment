@@ -24,6 +24,7 @@ const {
   reportRouter,
   blogRouter,
   notificationRouter,
+  returnRequestRouter,
   consentFormRouter,
 } = require("./routes");
 
@@ -79,6 +80,7 @@ app.use("/donations", donationRouter);
 app.use("/reports", reportRouter);
 app.use("/blogs", blogRouter);
 app.use("/notifications", notificationRouter);
+app.use("/return-requests", returnRequestRouter);
 // app.use("/posts/:postId/comments", );
 // app.use("/notifications", );
 app.use("/uploads", express.static(path.join(__dirname, "../uploads")));

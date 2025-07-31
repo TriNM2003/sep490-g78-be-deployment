@@ -21,6 +21,8 @@ adoptionSubmissionRouter.put("/interview-note/:shelterId", [verifyAccessToken, s
 adoptionSubmissionRouter.get("/:submissionId", verifyAccessToken, adoptionSubmissionController.getAdoptionSubmissionById);
 adoptionSubmissionRouter.put("/select-schedule", verifyAccessToken, adoptionSubmissionController.selectInterviewSchedule);
 
+adoptionSubmissionRouter.get("/user/:userId", adoptionSubmissionController.getSubmissionsByUser);
+
 
 
 

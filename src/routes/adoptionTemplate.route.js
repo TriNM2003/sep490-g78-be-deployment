@@ -3,7 +3,7 @@ const adoptionTemplateRouter = express.Router({ mergeParams: true });
 const bodyParser = require("body-parser");
 const cloudinary = require("../configs/cloudinary");
 const {
-  verifyAccessToken,
+  verifyAccessToken, isActive,
   verifyGoogleCallback,
   verifyGoogleCallbackAdmin,
 } = require("../middlewares/auth.middleware");
@@ -13,32 +13,32 @@ const shelterMiddleware = require("../middlewares/shelter.middleware");
 adoptionTemplateRouter.use(bodyParser.json());
 adoptionTemplateRouter.get(
   "/get-all",
-  [verifyAccessToken],
+  [verifyAccessToken, isActive],
   adoptionTemplateController.getAll
 );
 adoptionTemplateRouter.post(
   "/create",
-  [verifyAccessToken, shelterMiddleware.isShelterStaff],
+  [verifyAccessToken, isActive, shelterMiddleware.isShelterStaff],
   adoptionTemplateController.create
 );
 adoptionTemplateRouter.put(
   "/:templateId/edit",
-  [verifyAccessToken, shelterMiddleware.isShelterStaff],
+  [verifyAccessToken, isActive, shelterMiddleware.isShelterStaff],
   adoptionTemplateController.editTemplate
 );
 adoptionTemplateRouter.post(
   "/:templateId/duplicateTemplate",
-  [verifyAccessToken, shelterMiddleware.isShelterStaff],
+  [verifyAccessToken, isActive, shelterMiddleware.isShelterStaff],
   adoptionTemplateController.duplicateTemplate
 );
 adoptionTemplateRouter.put(
   "/:templateId/update-questions",
-  [verifyAccessToken, shelterMiddleware.isShelterStaff],
+  [verifyAccessToken, isActive, shelterMiddleware.isShelterStaff],
   adoptionTemplateController.editTemplateQuestions
 );
 adoptionTemplateRouter.delete(
   "/:templateId/delete",
-  [verifyAccessToken, shelterMiddleware.isShelterStaff],
+  [verifyAccessToken, isActive, shelterMiddleware.isShelterStaff],
   adoptionTemplateController.deleteTemplate
 );
 

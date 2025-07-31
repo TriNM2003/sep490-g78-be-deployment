@@ -27,6 +27,19 @@ const getAdtoptionRequestList = async (id) => {
   }
 }
 
+const getSubmissionsByUserId = async (userId) => {
+  try {
+    const submissions = await db.AdoptionSubmission.find({ createdBy: userId })
+      .populate("adoptionForm")
+      .populate("adoptionForm.pet")
+      .populate("adoptionForm.shelter");
+
+    return submissions;
+  } catch (error) {
+    throw error;
+  }
+};
+
 // submit adoption request for user
 const createAdoptionSubmission = async (data) => {
   return await db.AdoptionSubmission.create(data);
@@ -352,6 +365,7 @@ const addInterviewNote = async (submissionId, note) => {
 
 const adoptionSubmissionService = {
   getAdtoptionRequestList,
+    getSubmissionsByUserId,
   createAdoptionSubmission,
   checkUserSubmittedForm,
   getAdoptionSubmissionById,

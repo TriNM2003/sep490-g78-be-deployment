@@ -17,6 +17,16 @@ const getAdtoptionRequestList = async (req, res) => {
   }
 }
 
+const getSubmissionsByUser = async (req, res) => {
+  try {
+    const userId = req.params.userId;
+    const result = await adoptionSubmissionService.getSubmissionsByUserId(userId);
+    res.status(200).json(result);
+  } catch (error) {
+    res.status(400).json({ message: error.message });
+  }
+};
+
 // submit adoption request for user
 const createAdoptionSubmission = async (req, res) => {
   try {
@@ -453,6 +463,7 @@ const addInterviewNote = async (req, res) => {
 
 const adoptionSubmissionController = {
   getAdtoptionRequestList,
+    getSubmissionsByUser,
   createAdoptionSubmission,
   checkUserSubmitted,
   getAdoptionSubmissionById,

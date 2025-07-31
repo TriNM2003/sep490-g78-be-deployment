@@ -51,20 +51,14 @@ const createBreed = async (adminId, speciesId, name, description) => {
     throw error;
   }
 };
-const editBreed = async (adminId, breedId, speciesId, name, description) => {
+const editBreed = async (adminId, breedId, description) => {
   try {
     const breed = await Breed.findById(breedId);
     if(!breed){
         throw new Error("Id của giống không hợp lệ!")
     }
-    const species = await Species.findById(speciesId);
-    if(!species){
-        throw new Error("Id của loài không hợp lệ!")
-    }
     await Breed.findByIdAndUpdate(breedId, {
-      species: speciesId,
-      name,
-      description
+      description: description
     })
 
     // gui thong bao cho tat ca shelter
@@ -83,11 +77,15 @@ const deleteBreed = async (adminId, breedId) => {
     if(!breed){
         throw new Error("Giống không tồn tại");
     }
+    
+    // Kiểm tra xem có pet nào đang sử dụng breed này không
+    const petsUsingBreed = await Pet.countDocuments({ breeds: breedId });
+    if (petsUsingBreed > 0) {
+      throw new Error(`Không thể xoá giống ${breed.name} vì vẫn còn ${petsUsingBreed} thú cưng đang sử dụng giống này.`);
+    }
 
     // xoa breed
     await Breed.findByIdAndDelete(breedId);
-    // xoa breed khoi cac pet dang su dung
-    await Pet.updateMany({breeds: {$in: breedId}}, {$pull: {breeds: breedId}})
 
     // gui thong bao cho tat ca shelter
     await sendNotificationToAllShelter(adminId, `Giống ${breed.name} vừa bị xóa khỏi hệ thống!`)
