@@ -140,15 +140,18 @@ const verifyAccount = async (req, res) => {
     const { token } = req.body;
     try {
         if (!token) {
-            return res.status(400).json({ message: "Missing token!" });
+            return res.status(400).json({ message: "Thiếu token token!" });
         }
         const decoded = jwt.verify(token, process.env.JWT_SECRET);
         const user = await db.User.findById(decoded.id);
         if (!user) {
-            return res.status(404).json({ message: "User not found!" });
+            return res.status(404).json({ message: "Tài khoản không tồn tại!" });
         }
         if (user.status === "active") {
-            return res.status(200).json({ message: "Account already activated!", alreadyActivated: true });
+            return res.status(200).json({ message: "Tài khoản đã kích hoạt rồi!", alreadyActivated: true });
+        }
+        if (user.status === "banned") {
+            return res.status(200).json({ message: "Tài khoản bị ban không thể kích hoạt!" });
         }
         await db.User.updateOne({ _id: decoded.id }, { $set: { status: "active" } });
         const accessToken = jwt.sign({ id: user._id, email: user.email }, process.env.JWT_SECRET, { expiresIn: "1d" });
