@@ -178,7 +178,7 @@ async function changeFormStatusShelter(req, res, next) {
   }
 
   try {
-    const updatedConsentForm = await consentFormService.changeFormStatus(
+    const updatedConsentForm = await consentFormService.changeFormStatusShelter(
       consentFormId,
       status
     );

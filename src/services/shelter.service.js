@@ -161,10 +161,10 @@ const sendShelterEstablishmentRequest = async (
       bio: "",
       email: shelterRequestData.email,
       hotline: shelterRequestData.hotline,
-      avatar: "",
+      avatar: "https://res.cloudinary.com/dpaht6o2y/image/upload/v1753884169/0265e65863c0d910bf1553816c432275_qfl6nk.jpg",
       address: shelterRequestData.address,
       location: shelterRequestData.location,
-      background: "",
+      background: "https://res.cloudinary.com/dpaht6o2y/image/upload/v1753884183/279dcca3f058ad75a2f3d256799c4634_zt7z3j.jpg",
       members: [
         {
           _id: requesterId,
