@@ -216,8 +216,15 @@ const searchPetByImage = async (req, res) => {
     const speciesRaw = await speciesService.getAll();
     const breedsRaw = await breedsService.getAll();
     
-    const speciesList = speciesRaw.map((species) => (species.name));
-    const breedsList = breedsRaw.map((breed) => (breed.name));
+    const speciesList = speciesRaw.map((species) => ({
+      name: species.name,
+      description: species.description
+    }));
+    
+    const breedsList = breedsRaw.map((breed) => ({
+      name: breed.name,
+      description: breed.description
+    }));
     
     if (!speciesList || !breedsList || !colorsList) {
       return res.status(400).json({ message: "Thiếu dữ liệu của loài, giống và màu sắc" });

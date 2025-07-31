@@ -1,6 +1,7 @@
 const  {cloudinary}  = require("../configs/cloudinary");
 const db = require("../models");
 const fs = require("fs/promises");
+const notificationService = require("./notification.service");
 
 const getByShelter = async (shelterId) => {
   try {
@@ -189,7 +190,7 @@ const changeFormStatusShelter = async (consentFormId, status) => {
       throw new Error("Không tìm thấy bản đồng ý với ID đã cho.");
     }
    
-    if (status != "draft" || status != "approved" ||  status != "send" ) {
+    if (status != "draft" && status != "approved" &&  status != "send" ) {
       throw new Error("Không thể chuyển về trạng thái này!");
     }
 
@@ -214,6 +215,21 @@ const changeFormStatusShelter = async (consentFormId, status) => {
 
     if (!updatedConsentForm) {
       throw new Error(error);
+    }
+    if(updatedConsentForm && status == "send"){
+      await notificationService.createNotification(updatedConsentForm?.createdBy?._id,[updatedConsentForm?.adopter._id],
+        `Trung tâm cứu hộ ${updatedConsentForm?.shelter?.name} đã gửi cho bạn bản đồng ý nhận nuôi bạn ${updatedConsentForm?.pet?.name}!`,
+        "adoption",
+        `/adoption-form/${updatedConsentForm?.pet?._id}`
+        )
+    }
+
+    if(updatedConsentForm && status == "approved"){
+      await notificationService.createNotification(updatedConsentForm?.createdBy?._id,[updatedConsentForm?.adopter._id],
+        `Trung tâm cứu hộ ${updatedConsentForm?.shelter?.name} đã duyệt bản đồng ý nhận nuôi bạn ${updatedConsentForm?.pet?.name}!`,
+        "adoption",
+        `/adoption-form/${updatedConsentForm?.pet?._id}`
+        )
     }
 
     return updatedConsentForm;

@@ -88,7 +88,7 @@ const searchPetWithGPT = async (
       - age: number (ước tính tuổi theo tháng)
       - weight: number (ước tính cân nặng tính bằng kg)
       - color: [string] (danh sách màu lông chủ đạo, chỉ chọn từ danh sách được cung cấp) (trả về ít nhất 1 và không quá 2 màu)
-      - identificationFeature: string (đặc điểm nhận dạng nổi bật, nếu có)
+      - identificationFeature: string (đặc điểm nhận dạng nổi bật chỉ có ở con vật này khác với đặc điểm chung của loài, nếu có)
 
       ## Yêu cầu đặc biệt:
       - Nếu ảnh không đạt tiêu chuẩn, **trả về lỗi** với lý do cụ thể, ví dụ:
@@ -121,9 +121,19 @@ const searchPetWithGPT = async (
 
         Nếu tất cả species và breeds đều hợp lệ, hãy trả về JSON kết quả như bình thường.
         
-        - DANH SÁCH SPECIES: ${JSON.stringify(speciesList)}
-        - DANH SÁCH BREEDS: ${JSON.stringify(breedsList)}
-        - DANH SÁCH MÀU LÔNG: ${JSON.stringify(colorList)}
+        - DANH SÁCH SPECIES (kèm mô tả):
+         ${JSON.stringify(speciesList)}
+        - DANH SÁCH BREEDS (kèm mô tả):
+         ${JSON.stringify(breedsList)}
+        - DANH SÁCH MÀU LÔNG :
+         ${JSON.stringify(colorList)}
+
+        TÊN HỢP LỆ (Dùng để đối chiếu):
+            Loài hợp lệ: ${JSON.stringify(speciesList.map((s) => s.name))}
+
+            Giống hợp lệ: ${JSON.stringify(breedsList.map((b) => b.name))}
+
+            Màu lông hợp lệ: ${JSON.stringify(colorList)}
         
         
 
