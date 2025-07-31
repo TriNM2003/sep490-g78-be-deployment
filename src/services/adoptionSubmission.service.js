@@ -273,7 +273,6 @@ const selected = new Date(selectedSchedule);
   }
 
   submission.interview.selectedSchedule = selected;
-  submission.interview.scheduleAt = new Date();
   submission.markModified("interview");
 
   await submission.save();
@@ -323,6 +322,31 @@ const addInterviewFeedback = async (submissionId, userId, feedback) => {
   return submission;
 };
 
+// add note interview
+const addInterviewNote = async (submissionId, note) => {
+  const submission = await db.AdoptionSubmission.findById(submissionId);
+
+  if (!submission) {
+    const error = new Error("Không tìm thấy đơn nhận nuôi");
+    error.statusCode = 404;
+    throw error;
+  }
+
+    // Chỉ cho phép khi status là 'interviewing'
+  if (submission.status !== "reviewed") {
+    const error = new Error("Chỉ có thể gửi phản hồi khi đơn đang ở trạng thái đã phỏng vấn");
+    error.statusCode = 400;
+    throw error;
+  }
+
+
+  submission.interview.note = note;
+  submission.interview.updateAt = new Date();
+  submission.markModified("interview");
+
+  await submission.save();
+  return submission;
+};
 
 
 
@@ -336,6 +360,7 @@ const adoptionSubmissionService = {
   scheduleInterview,
   getInterviewCountsByStaff,
   selectInterviewSchedule,
-  addInterviewFeedback
+  addInterviewFeedback,
+  addInterviewNote
 };
 module.exports = adoptionSubmissionService;

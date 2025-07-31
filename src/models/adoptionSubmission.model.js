@@ -40,12 +40,7 @@ const adoptionSubmissionSchema = new mongoose.Schema(
             },
             message: "Thời gian bắt đầu phải trước thời gian kết thúc.",
           },
-          {
-            validator: function (v) {
-              return !this.createdAt || v > this.createdAt;
-            },
-            message: "Thời gian bắt đầu phải sau ngày tạo lịch phỏng vấn.",
-          },
+        
         ],
       },
       availableTo: {

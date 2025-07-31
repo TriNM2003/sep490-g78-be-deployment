@@ -422,6 +422,32 @@ const addInterviewFeedback = async (req, res) => {
   }
 };
 
+// add note interview
+const addInterviewNote = async (req, res) => {
+  try {
+    const { submissionId, note } = req.body;
+    const userId = req.payload.id;
+
+    if (!submissionId || !note) {
+      return res.status(400).json({ message: "Thiếu submissionId hoặc feedback" });
+    }
+
+    const result = await adoptionSubmissionService.addInterviewNote(
+      submissionId,
+      note
+    );
+
+    return res.status(200).json({
+      message: "Đã thêm ghi chú phỏng vấn",
+      note: result.interview.note,
+    });
+  } catch (error) {
+    console.error("Lỗi thêm ghi chú phỏng vấn:", error);
+    return res.status(error.statusCode || 500).json({ message: error.message });
+  }
+};
+
+
 
 
 
@@ -435,7 +461,8 @@ const adoptionSubmissionController = {
   createInterviewSchedule,
   getInterviewCounts,
   selectInterviewSchedule,
-  addInterviewFeedback
+  addInterviewFeedback,
+  addInterviewNote
 };
 
 module.exports = adoptionSubmissionController;

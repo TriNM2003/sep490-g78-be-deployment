@@ -17,6 +17,7 @@ adoptionSubmissionRouter.patch("/update-submission-status/:shelterId", [verifyAc
 adoptionSubmissionRouter.post("/schedule-interview/:shelterId", [verifyAccessToken, shelterMiddleware.isShelterManager], adoptionSubmissionController.createInterviewSchedule);
 adoptionSubmissionRouter.get("/staff-schedule-count/:shelterId", [verifyAccessToken, shelterMiddleware.isShelterManager], adoptionSubmissionController.getInterviewCounts);
 adoptionSubmissionRouter.put("/interview-feedback/:shelterId", [verifyAccessToken, shelterMiddleware.isShelterStaff], adoptionSubmissionController.addInterviewFeedback);
+adoptionSubmissionRouter.put("/interview-note/:shelterId", [verifyAccessToken, shelterMiddleware.isShelterManager], adoptionSubmissionController.addInterviewNote);
 adoptionSubmissionRouter.get("/:submissionId", verifyAccessToken, adoptionSubmissionController.getAdoptionSubmissionById);
 adoptionSubmissionRouter.put("/select-schedule", verifyAccessToken, adoptionSubmissionController.selectInterviewSchedule);
 
