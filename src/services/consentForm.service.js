@@ -189,6 +189,9 @@ const changeFormStatusShelter = async (consentFormId, status) => {
       throw new Error("Không tìm thấy bản đồng ý với ID đã cho.");
     }
    
+    if (status != "draft" || status != "approved" ||  status != "send" ) {
+      throw new Error("Không thể chuyển về trạng thái này!");
+    }
 
     if (consentForm.status == "draft" && status != "send") {
       throw new Error("Không thể chuyển đến trạng thái này!");
@@ -196,6 +199,8 @@ const changeFormStatusShelter = async (consentFormId, status) => {
     if ((consentForm.status == "approved" || consentForm.status == "accepted") && status == "draft") {
       throw new Error("Không thể chuyển về trạng thái nháp!");
     }
+
+
 
     const updatedConsentForm = await db.ConsentForm.findByIdAndUpdate(
       consentFormId,
@@ -229,12 +234,10 @@ const changeFormStatusUser = async (consentFormId, status, userId) => {
       throw new Error("Bạn không có quyền thay đổi trạng thái bản đồng ý này.");
     }
 
-    if (consentForm.status == "draft" && status != "send") {
-      throw new Error("Không thể chuyển đến trạng thái này!");
+    if (status == "draft" || status == "approved") {
+      throw new Error("Không thể chuyển về trạng thái này!");
     }
-    if ((consentForm.status == "approved" || consentForm.status =="accepted") && status == "draft") {
-      throw new Error("Không thể chuyển về trạng thái nháp!");
-    }
+
 
     const updatedConsentForm = await db.ConsentForm.findByIdAndUpdate(
       consentFormId,
