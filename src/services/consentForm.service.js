@@ -5,10 +5,10 @@ const fs = require("fs/promises");
 const getByShelter = async (shelterId) => {
   try {
     const consentForms = await db.ConsentForm.find({ shelter: shelterId })
-      .populate("shelter", "_id name avatar status")
-      .populate("adopter", "_id fullName avatar status")
-      .populate("pet", "_id name photos petCode status")
-      .populate("createdBy", "_id fullName avatar status");
+      .populate("shelter", "_id name address avatar status")
+      .populate("adopter", "_id fullName avatar phoneNumber address status")
+      .populate("pet", "_id name photos petCode status identificationFeature sterilizationStatus isMale  ")
+      .populate("createdBy", "_id fullName avatar phoneNumber address status");
 
     return consentForms;
   } catch (error) {
@@ -20,10 +20,10 @@ const getByShelter = async (shelterId) => {
 const getByUser = async (userId) => {
   try {
     const consentForms = await db.ConsentForm.find({ adopter: userId })
-      .populate("shelter", "_id name avatar status")
-      .populate("adopter", "_id fullName avatar status")
-      .populate("pet", "_id name photos petCode status")
-      .populate("createdBy", "_id fullName avatar status");
+      .populate("shelter", "_id name address avatar status")
+      .populate("adopter", "_id fullName avatar phoneNumber address status")
+      .populate("pet", "_id name photos petCode status identificationFeature sterilizationStatus isMale  ")
+      .populate("createdBy", "_id fullName avatar phoneNumber address status");
 
     return consentForms;
   } catch (error) {
@@ -35,10 +35,10 @@ const getByUser = async (userId) => {
 const getById = async (consentFormId) => {
   try {
     const consentForm = await db.ConsentForm.findById(consentFormId)
-      .populate("shelter", "_id name avatar status")
-      .populate("adopter", "_id fullName avatar status")
-      .populate("pet", "_id name photos petCode status")
-      .populate("createdBy", "_id fullName avatar status");
+      .populate("shelter", "_id name address avatar status")
+      .populate("adopter", "_id fullName avatar phoneNumber address status")
+      .populate("pet", "_id name photos petCode status identificationFeature sterilizationStatus isMale  ")
+      .populate("createdBy", "_id fullName avatar phoneNumber address status");
 
     if (!consentForm) {
       throw new Error("Không tìm thấy bản đồng ý với ID đã cho.");
@@ -99,10 +99,10 @@ const createForm = async (consentForm) => {
     const populatedConsentForm = await db.ConsentForm.findById(
       savedConsentForm._id
     )
-      .populate("shelter", "_id name avatar status")
-      .populate("adopter", "_id fullName avatar status")
-      .populate("pet", "_id name photos petCode status")
-      .populate("createdBy", "_id fullName avatar status");
+      .populate("shelter", "_id name address avatar status")
+      .populate("adopter", "_id fullName avatar phoneNumber address status")
+      .populate("pet", "_id name photos petCode status identificationFeature sterilizationStatus isMale  ")
+      .populate("createdBy", "_id fullName avatar phoneNumber address status");
 
     return populatedConsentForm;
   } catch (error) {
@@ -113,10 +113,10 @@ const createForm = async (consentForm) => {
 const editForm = async (consentFormId, updateForm) => {
   try {
     const consentForm = await db.ConsentForm.findById(consentFormId)
-      .populate("shelter", "_id name avatar status")
-      .populate("adopter", "_id fullName avatar status")
-      .populate("pet", "_id name photos petCode status")
-      .populate("createdBy", "_id fullName avatar status");
+      .populate("shelter", "_id name address avatar status")
+      .populate("adopter", "_id fullName avatar phoneNumber address status")
+      .populate("pet", "_id name photos petCode status identificationFeature sterilizationStatus isMale  ")
+      .populate("createdBy", "_id fullName avatar phoneNumber address status");
 
     if (!consentForm) {
       throw new Error("Không tìm thấy bản đồng ý với ID đã cho.");
@@ -166,10 +166,10 @@ const editForm = async (consentFormId, updateForm) => {
       },
       { new: true }
     )
-      .populate("shelter", "_id name avatar status")
-      .populate("adopter", "_id fullName avatar status")
-      .populate("pet", "_id name photos petCode status")
-      .populate("createdBy", "_id fullName avatar status");
+      .populate("shelter", "_id name address avatar status")
+      .populate("adopter", "_id fullName avatar phoneNumber address status")
+      .populate("pet", "_id name photos petCode status identificationFeature sterilizationStatus isMale  ")
+      .populate("createdBy", "_id fullName avatar phoneNumber address status");
 
     if (!updatedConsentForm) {
       throw new Error(
@@ -193,7 +193,7 @@ const changeFormStatusShelter = async (consentFormId, status) => {
     if (consentForm.status == "draft" && status != "send") {
       throw new Error("Không thể chuyển đến trạng thái này!");
     }
-    if ((consentForm.status == "approved" || "accepted") && status == "draft") {
+    if ((consentForm.status == "approved" || consentForm.status == "accepted") && status == "draft") {
       throw new Error("Không thể chuyển về trạng thái nháp!");
     }
 
@@ -202,10 +202,10 @@ const changeFormStatusShelter = async (consentFormId, status) => {
       { status: status },
       { new: true }
     )
-      .populate("shelter", "_id name avatar status")
-      .populate("adopter", "_id fullName avatar status")
-      .populate("pet", "_id name photos petCode status")
-      .populate("createdBy", "_id fullName avatar status");
+      .populate("shelter", "_id name address avatar status")
+      .populate("adopter", "_id fullName avatar phoneNumber address status")
+      .populate("pet", "_id name photos petCode status identificationFeature sterilizationStatus isMale  ")
+      .populate("createdBy", "_id fullName avatar phoneNumber address status");
 
     if (!updatedConsentForm) {
       throw new Error(error);
@@ -232,7 +232,7 @@ const changeFormStatusUser = async (consentFormId, status, userId) => {
     if (consentForm.status == "draft" && status != "send") {
       throw new Error("Không thể chuyển đến trạng thái này!");
     }
-    if ((consentForm.status == "approved" || "accepted") && status == "draft") {
+    if ((consentForm.status == "approved" || consentForm.status =="accepted") && status == "draft") {
       throw new Error("Không thể chuyển về trạng thái nháp!");
     }
 
@@ -241,10 +241,10 @@ const changeFormStatusUser = async (consentFormId, status, userId) => {
       { status: status },
       { new: true }
     )
-      .populate("shelter", "_id name avatar status")
-      .populate("adopter", "_id fullName avatar status")
-      .populate("pet", "_id name photos petCode status")
-      .populate("createdBy", "_id fullName avatar status");
+      .populate("shelter", "_id name address avatar status")
+      .populate("adopter", "_id fullName avatar phoneNumber address status")
+      .populate("pet", "_id name photos petCode status identificationFeature sterilizationStatus isMale  ")
+      .populate("createdBy", "_id fullName avatar phoneNumber address status");
 
     if (!updatedConsentForm) {
       throw new Error(error);
