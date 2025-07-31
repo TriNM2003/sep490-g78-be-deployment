@@ -1,12 +1,14 @@
 const petService = require("../services/pet.service");
 const { cloudinary } = require("../configs/cloudinary");
 const medicalRecordService = require("../services/medicalRecord.service");
-const { analyzePetWithGPT, searchPetWithGPT } = require("../services/gptVision.service");
+const {
+  analyzePetWithGPT,
+  searchPetWithGPT,
+} = require("../services/gptVision.service");
 const mongoose = require("mongoose");
 const db = require("../models");
 const fs = require("fs/promises");
 const { speciesService, breedsService } = require("../services");
-
 
 const getAllPets = async (req, res) => {
   try {
@@ -32,13 +34,16 @@ const getAllPetsForSubmission = async (req, res, next) => {
     const page = parseInt(req.query.page, 10) || 1;
     const limit = parseInt(req.query.limit, 10) || 8;
 
-
-
     if (!shelterId) {
       return res.status(400).json({ message: "Missing shelterId" });
     }
 
-    const result = await petService.getAllPetsByShelterForSubmission(shelterId, page, limit, status);
+    const result = await petService.getAllPetsByShelterForSubmission(
+      shelterId,
+      page,
+      limit,
+      status
+    );
     return res.status(200).json(result);
   } catch (err) {
     next(err);
@@ -209,25 +214,25 @@ const analyzePetImage = async (req, res) => {
 
 const searchPetByImage = async (req, res) => {
   try {
-    
-    const {colorsList } = req.body;
-    const imageRaw = req.file 
+    const { colorsList } = req.body;
+    const imageRaw = req.file;
 
     const speciesRaw = await speciesService.getAll();
     const breedsRaw = await breedsService.getAll();
-    
-    const speciesList = speciesRaw.map((species) => (species.name));
-    const breedsList = breedsRaw.map((breed) => (breed.name));
-    
+
+    const speciesList = speciesRaw.map((species) => species.name);
+    const breedsList = breedsRaw.map((breed) => breed.name);
+
     if (!speciesList || !breedsList || !colorsList) {
-      return res.status(400).json({ message: "Thiếu dữ liệu của loài, giống và màu sắc" });
+      return res
+        .status(400)
+        .json({ message: "Thiếu dữ liệu của loài, giống và màu sắc" });
     }
 
     if (!imageRaw) {
       res.status(400).json({ message: "Thiếu dữ liệu ảnh" });
     }
 
-    
     const image = await cloudinary.uploader.upload(imageRaw.path, {
       folder: "pets",
       resource_type: "image",
@@ -249,8 +254,9 @@ const searchPetByImage = async (req, res) => {
     );
     res.status(200).json(result);
   } catch (err) {
-    res.status(400).json({ message: err.message || "Lỗi khi phân tích hình ảnh!" });
-
+    res
+      .status(400)
+      .json({ message: err.message || "Lỗi khi phân tích hình ảnh!" });
   }
 };
 
@@ -268,7 +274,7 @@ const petController = {
   getAdoptedPetbyUser,
   getMedicalRecordsByPet,
   searchPetByImage,
-  getAllPetsForSubmission
+  getAllPetsForSubmission,
 };
 
 module.exports = petController;
