@@ -93,10 +93,10 @@ app.use(async (err, req, res, next) => {
     .json({ error: { status: err.status, message: err.message } });
 });
 
-const host = process.env.HOSTNAME;
-const port = process.env.PORT;
+const port = process.env.PORT || 3000;
 
-app.listen(port, host, () => {
-  console.log(`Server is running at http://${host}:${port}`);
+app.listen(port, () => {
+  console.log(`Server is running on port ${port}`);
   db.connectDB();
 });
+
