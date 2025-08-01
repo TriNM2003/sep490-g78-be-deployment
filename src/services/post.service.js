@@ -206,7 +206,7 @@ const createPost = async (userId, postData, files) => {
     await Promise.all(
       tempFilePaths.map((path) => fs.unlink(path).catch(() => {}))
     );
-    throw new Error("Lỗi khi tạo bài viết: " + error.message);
+    throw error;
   }
 };
 
@@ -286,7 +286,7 @@ const editPost = async (userId, postId, postData, files) => {
     await Promise.all(
       tempFilePaths.map((path) => fs.unlink(path).catch(() => {}))
     );
-    throw new Error("Lỗi khi cập nhật bài viết: " + error.message);
+    throw error;
   }
 };
 
@@ -376,7 +376,7 @@ const reactPost = async (postId, userId) => {
 
     return updatedPost;
   } catch (error) {
-    throw new Error("Error reacting to post: " + error.message);
+    throw error;
   }
 };
 
@@ -425,7 +425,7 @@ const reportPost = async (userId, postId, reason, files) => {
         if (err) console.error("Lỗi xóa ảnh tạm:", err);
       });
     }
-    throw new Error("Lỗi khi báo cáo bài viết: " + error.message);
+    throw error;
   }
 };
 
@@ -457,7 +457,7 @@ const createComment = async ({ postId, userId, message }) => {
 
     return comment;
   } catch (error) {
-    throw new Error("Error creating comment: " + error.message);
+    throw error;
   }
 };
 
@@ -493,7 +493,7 @@ const removeComment = async (commentId, userId) => {
 
     return comment;
   } catch (error) {
-    throw new Error("Error deleting comment: " + error.message);
+    throw error;
   }
 };
 
@@ -518,7 +518,7 @@ const getCommentsByPost = async (postId) => {
       updatedAt: comment.updatedAt,
     }));
   } catch (error) {
-    throw new Error("Error fetching comments: " + error.message);
+    throw error;
   }
 };
 
