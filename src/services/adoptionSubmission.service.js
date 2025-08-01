@@ -27,12 +27,23 @@ const getAdtoptionRequestList = async (id) => {
   }
 }
 
+
 const getSubmissionsByUserId = async (userId) => {
   try {
-    const submissions = await db.AdoptionSubmission.find({ createdBy: userId })
-      .populate("adoptionForm")
-      .populate("adoptionForm.pet")
-      .populate("adoptionForm.shelter");
+    const submissions = await db.AdoptionSubmission.find({ performedBy: userId })
+       .populate({
+        path: "adoptionForm",
+        populate: [
+          {
+            path: "pet",
+            select: "_id name photos tokenMoney species breed age gender",
+          },
+          {
+            path: "shelter",
+            select: "_id name address avatar phoneNumber", 
+          },
+        ],
+      });
 
     return submissions;
   } catch (error) {
