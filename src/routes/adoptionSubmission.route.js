@@ -11,7 +11,7 @@ adoptionSubmissionRouter.use(bodyParser.json());
 
 adoptionSubmissionRouter.get("/get-adoption-request-list",verifyAccessToken ,adoptionSubmissionController.getAdtoptionRequestList);
 adoptionSubmissionRouter.post("/by-pet-ids", verifyAccessToken, adoptionSubmissionController.getSubmissionsByPetIds);
-adoptionSubmissionRouter.post("/create-adoption-submission",verifyAccessToken ,adoptionSubmissionController.createAdoptionSubmission);
+adoptionSubmissionRouter.post("/create-adoption-submission/:shelterId",[verifyAccessToken, shelterMiddleware.isNotShelterMember] ,adoptionSubmissionController.createAdoptionSubmission);
 adoptionSubmissionRouter.post("/check-user-submitted",verifyAccessToken ,adoptionSubmissionController.checkUserSubmitted);
 adoptionSubmissionRouter.patch("/update-submission-status/:shelterId", [verifyAccessToken, shelterMiddleware.isShelterMember], adoptionSubmissionController.updateSubmissionStatus);
 adoptionSubmissionRouter.post("/schedule-interview/:shelterId", [verifyAccessToken, shelterMiddleware.isShelterManager], adoptionSubmissionController.createInterviewSchedule);

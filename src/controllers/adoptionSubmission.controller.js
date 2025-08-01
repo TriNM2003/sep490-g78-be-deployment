@@ -90,6 +90,26 @@ const createAdoptionSubmission = async (req, res) => {
       return res.status(400).json({ message: "Bạn đã nộp đơn cho thú cưng này rồi." });
     }
 
+    // Lấy form và kiểm tra shelter
+const form = await db.AdoptionForm.findById(adoptionFormId).populate({
+  path: "pet",
+  populate: { path: "shelter" },
+});
+
+if (!form || !form.pet || !form.pet.shelter) {
+  return res.status(400).json({ message: "Form hoặc thú cưng không hợp lệ." });
+}
+
+const shelter = form.pet.shelter;
+const isMember = shelter.members.some(
+  (member) => member._id.toString() === userId
+);
+
+if (isMember) {
+  return res.status(403).json({
+    message: "Bạn không thể gửi đơn vì bạn là thành viên của trạm cứu hộ này.",
+  });
+}
     // Tạo đơn
     const submission = new db.AdoptionSubmission({
       performedBy: userId,
@@ -100,22 +120,25 @@ const createAdoptionSubmission = async (req, res) => {
     });
 
     const saved = await submission.save();
+    res.status(201).json(saved);
 
-    // Gửi email xác nhận
-    const user = await db.User.findById(userId);
-    const form = await db.AdoptionForm.findById(adoptionFormId).populate({
-      path: "pet",
-      populate: { path: "shelter", select: "name" },
-    });
+    setTimeout(async () => {
+      try {
+        // Gửi email xác nhận
+        const user = await db.User.findById(userId);
+        const form = await db.AdoptionForm.findById(adoptionFormId).populate({
+          path: "pet",
+          populate: { path: "shelter", select: "name" },
+        });
 
-    if (user && user.email && form && form.pet) {
-      const to = user.email;
-      const petName = form.pet.name || "thú cưng";
-      const shelterName = form.pet.shelter?.name || "Trung tâm cứu hộ";
+        if (user && user.email && form && form.pet) {
+          const to = user.email;
+          const petName = form.pet.name || "thú cưng";
+          const shelterName = form.pet.shelter?.name || "Trung tâm cứu hộ";
 
-      const subject = "Xác nhận đăng ký nhận nuôi";
+          const subject = "Xác nhận đăng ký nhận nuôi";
 
-      const body = `
+          const body = `
         <div style="font-family: Arial, sans-serif; line-height: 1.5;">
           <h2>Cảm ơn bạn đã gửi đơn nhận nuôi!</h2>
           <p>Xin chào <strong>${user.fullName || "bạn"}</strong>,</p>
@@ -125,10 +148,14 @@ const createAdoptionSubmission = async (req, res) => {
         </div>
       `;
 
-      await mailer.sendEmail(to, subject, body);
-    }
+          await mailer.sendEmail(to, subject, body);
+        }
 
-    res.status(201).json(saved);
+      } catch (error) {
+        console.log(error)
+      }
+    }, 0);
+
   } catch (err) {
     console.error("Lỗi khi tạo đơn nhận nuôi:", err);
     res.status(500).json({ message: "Lỗi server", error: err.message });
