@@ -2,6 +2,7 @@ const db = require("../models");
 const { cloudinary } = require("../configs/cloudinary");
 const fs = require("fs/promises");
 const NotificationService = require("./notification.service");
+const { title } = require("process");
 
 const getPostsList = async (userId, shelterId) => {
   try {
@@ -168,6 +169,11 @@ const createPost = async (userId, postData, files) => {
         }
       }
     }
+
+    if(!postData.title || postData.title.trim() === "") {
+      throw new Error("Tiêu đề không được để trống");
+    }
+
 
     const parsedLocation =
       typeof postData.location === "string"
