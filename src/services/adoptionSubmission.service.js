@@ -5,17 +5,22 @@ const timezone = require("dayjs/plugin/timezone");
 dayjs.extend(utc);
 dayjs.extend(timezone);
 
-
 const getAdtoptionRequestList = async (id) => {
   try {
-    const adoptionRequest = await db.AdoptionSubmission.find({ performedBy: id })
+    const adoptionRequest = await db.AdoptionSubmission.find({
+      performedBy: id,
+    })
       .populate("performedBy")
       .populate({
         path: "adoptionForm",
         populate: [
-          { path: "pet", model: "Pet", select: "name petCode tokenMoney photos" },
+          {
+            path: "pet",
+            model: "Pet",
+            select: "name petCode tokenMoney photos",
+          },
           { path: "shelter", model: "Shelter", select: "name" },
-        ]
+        ],
       })
       .populate("answers.questionId");
     if (!adoptionRequest) {
@@ -25,7 +30,7 @@ const getAdtoptionRequestList = async (id) => {
   } catch (error) {
     throw error;
   }
-}
+};
 
 const getSubmissionsByUserId = async (userId) => {
   try {
@@ -61,15 +66,19 @@ const getAdoptionSubmissionById = async (id) => {
     const adoptionSubmission = await db.AdoptionSubmission.findById(id)
       .populate({
         path: "performedBy",
-        select: "-password -googleId -createdAt -updatedAt", 
+        select: "-password -googleId -createdAt -updatedAt",
       })
-      
+
       .populate({
         path: "adoptionForm",
         populate: [
           { path: "pet", model: "Pet", select: "name petCode" },
-          { path: "shelter", model: "Shelter", select: "name address hotline email" },
-        ]
+          {
+            path: "shelter",
+            model: "Shelter",
+            select: "name address hotline email",
+          },
+        ],
       })
       .populate("answers.questionId");
 
@@ -99,7 +108,10 @@ const getSubmissionsByPetIds = async (petIds) => {
     const submissions = await db.AdoptionSubmission.find({
       adoptionForm: { $in: formIds },
     })
-      .populate("performedBy", "fullName email address dob phoneNumber warningCount avatar")
+      .populate(
+        "performedBy",
+        "fullName email address dob phoneNumber warningCount avatar"
+      )
       .populate({
         path: "adoptionForm",
         populate: [
@@ -140,14 +152,18 @@ const updateSubmissionStatus = async (submissionId, status) => {
     const allowedNextStatuses = allowedStatus[currentStatus];
 
     if (!allowedNextStatuses) {
-      const error = new Error(`Trạng thái hiện tại "${currentStatus}" không hợp lệ`);
+      const error = new Error(
+        `Trạng thái hiện tại "${currentStatus}" không hợp lệ`
+      );
       error.statusCode = 400;
       throw error;
     }
 
     if (!allowedNextStatuses.includes(status)) {
       const error = new Error(
-        `Trạng thái không hợp lệ. Chỉ cho phép: ${allowedNextStatuses.join(", ")}`
+        `Trạng thái không hợp lệ. Chỉ cho phép: ${allowedNextStatuses.join(
+          ", "
+        )}`
       );
       error.statusCode = 400;
       throw error;
@@ -156,7 +172,6 @@ const updateSubmissionStatus = async (submissionId, status) => {
     submission.status = status;
     await submission.save();
     return submission;
-
   } catch (error) {
     throw error;
   }
@@ -170,22 +185,24 @@ const scheduleInterview = async ({
   availableTo,
   method,
   performedBy,
-  reviewedBy
+  reviewedBy,
 }) => {
   try {
     const submission = await db.AdoptionSubmission.findById(submissionId);
     if (!submission) {
       throw new Error("Không tìm thấy đơn nhận nuôi.");
     }
-    if(submission.status !== "scheduling"){
-      throw new Error("Chỉ có thể tạo lịch phỏng vấn với những đơn nhận nuôi trong trạng thái chờ phỏng vấn.");
+    if (submission.status !== "scheduling") {
+      throw new Error(
+        "Chỉ có thể tạo lịch phỏng vấn với những đơn nhận nuôi trong trạng thái chờ phỏng vấn."
+      );
     }
     if (!availableFrom || !availableTo || !method || !performedBy) {
-  throw new Error("Thiếu thông tin bắt buộc để lên lịch phỏng vấn.");
-  }
-  if (new Date(availableFrom) >= new Date(availableTo)) {
-  throw new Error("Thời gian bắt đầu phải trước thời gian kết thúc.");
-}
+      throw new Error("Thiếu thông tin bắt buộc để lên lịch phỏng vấn.");
+    }
+    if (new Date(availableFrom) >= new Date(availableTo)) {
+      throw new Error("Thời gian bắt đầu phải trước thời gian kết thúc.");
+    }
 
     // Cập nhật trường interview
     submission.interview = {
@@ -260,7 +277,11 @@ const getInterviewCountsByStaff = async (shelterId, from, to) => {
 };
 
 // update selecte schedule from user
-const selectInterviewSchedule = async (submissionId, userId, selectedSchedule) => {
+const selectInterviewSchedule = async (
+  submissionId,
+  userId,
+  selectedSchedule
+) => {
   const submission = await db.AdoptionSubmission.findById(submissionId);
 
   if (!submission) {
@@ -273,8 +294,7 @@ const selectInterviewSchedule = async (submissionId, userId, selectedSchedule) =
     throw error;
   }
 
-const selected = new Date(selectedSchedule);
-
+  const selected = new Date(selectedSchedule);
 
   const from = new Date(submission.interview.availableFrom);
   const to = new Date(submission.interview.availableTo);
@@ -302,9 +322,11 @@ const addInterviewFeedback = async (submissionId, userId, feedback) => {
     throw error;
   }
 
-    // Chỉ cho phép khi status là 'interviewing'
+  // Chỉ cho phép khi status là 'interviewing'
   if (submission.status !== "interviewing") {
-    const error = new Error("Chỉ có thể gửi phản hồi khi đơn đang ở trạng thái phỏng vấn");
+    const error = new Error(
+      "Chỉ có thể gửi phản hồi khi đơn đang ở trạng thái phỏng vấn"
+    );
     error.statusCode = 400;
     throw error;
   }
@@ -327,7 +349,7 @@ const addInterviewFeedback = async (submissionId, userId, feedback) => {
   }
 
   submission.interview.feedback = feedback;
-  submission.interview.scheduleAt = new Date(); 
+  submission.interview.scheduleAt = new Date();
   submission.interview.updateAt = new Date();
   submission.markModified("interview");
 
@@ -345,13 +367,14 @@ const addInterviewNote = async (submissionId, note) => {
     throw error;
   }
 
-    // Chỉ cho phép khi status là 'interviewing'
+  // Chỉ cho phép khi status là 'interviewing'
   if (submission.status !== "reviewed") {
-    const error = new Error("Chỉ có thể gửi phản hồi khi đơn đang ở trạng thái đã phỏng vấn");
+    const error = new Error(
+      "Chỉ có thể gửi phản hồi khi đơn đang ở trạng thái đã phỏng vấn"
+    );
     error.statusCode = 400;
     throw error;
   }
-
 
   submission.interview.note = note;
   submission.interview.updateAt = new Date();
@@ -361,11 +384,42 @@ const addInterviewNote = async (submissionId, note) => {
   return submission;
 };
 
+const updateManySubmissionStatus = async (adopterIds, petId) => {
+  try {
+    if (!petId) {
+      throw new Error("Thiếu id của thú nuôi!");
+    }
+
+
+    const adoptionForm = await db.AdoptionForm.findOne({
+      pet: petId,
+      status: "active",
+    });
+
+    if (!adoptionForm) {
+      throw new Error("Không tìm thấy đơn nhận nuôi!");
+    }
+
+    const result = await db.AdoptionSubmission.updateMany(
+      {
+        adoptionForm: adoptionForm._id,
+        performedBy: { $in: adopterIds },
+        status: {$ne: "rejected"},
+      },
+      {
+        $set: { status: "rejected" },
+      }
+    );
+    return result;
+  } catch (error) {
+    throw error;
+  }
+};
 
 
 const adoptionSubmissionService = {
   getAdtoptionRequestList,
-    getSubmissionsByUserId,
+  getSubmissionsByUserId,
   createAdoptionSubmission,
   checkUserSubmittedForm,
   getAdoptionSubmissionById,
@@ -375,6 +429,7 @@ const adoptionSubmissionService = {
   getInterviewCountsByStaff,
   selectInterviewSchedule,
   addInterviewFeedback,
-  addInterviewNote
+  addInterviewNote,
+  updateManySubmissionStatus,
 };
 module.exports = adoptionSubmissionService;
