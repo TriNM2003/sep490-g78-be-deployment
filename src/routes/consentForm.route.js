@@ -14,7 +14,7 @@ consentFormRouter.get(
 );
 
 consentFormRouter.put(
-  "consentForms/:consentFormId/change-status-user",
+  "/:consentFormId/change-status-user",
   [authMiddleware.verifyAccessToken, authMiddleware.isActive],
   consentFormController.changeFormStatusUser
 );

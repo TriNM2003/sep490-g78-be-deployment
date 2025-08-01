@@ -2,6 +2,7 @@ const db = require("../models");
 const { cloudinary } = require("../configs/cloudinary");
 const fs = require("fs/promises");
 const NotificationService = require("./notification.service");
+const { title } = require("process");
 
 const getPostsList = async (userId, shelterId) => {
   try {
@@ -131,8 +132,7 @@ const createPost = async (userId, postData, files) => {
       const member = shelter.members.find(
         (m) => m._id.toString() === userId.toString()
       );
-      if (!member)
-        throw new Error("Bạn không phải thành viên của shelter này");
+      if (!member) throw new Error("Bạn không phải thành viên của shelter này");
 
       if (
         !member.roles.includes("staff") &&
@@ -170,9 +170,15 @@ const createPost = async (userId, postData, files) => {
       }
     }
 
-    const parsedLocation = postData.location
-      ? JSON.parse(postData.location)
-      : { lat: 0, lng: 0 };
+    if(!postData.title || postData.title.trim() === "") {
+      throw new Error("Tiêu đề không được để trống");
+    }
+
+
+    const parsedLocation =
+      typeof postData.location === "string"
+        ? JSON.parse(postData.location)
+        : postData.location || { lat: 0, lng: 0 };
 
     const newPost = await db.Post.create({
       createdBy: userId,
@@ -200,7 +206,7 @@ const createPost = async (userId, postData, files) => {
     await Promise.all(
       tempFilePaths.map((path) => fs.unlink(path).catch(() => {}))
     );
-    throw new Error("Lỗi khi tạo bài viết: " + error.message);
+    throw error;
   }
 };
 
@@ -256,6 +262,11 @@ const editPost = async (userId, postId, postData, files) => {
       ? JSON.parse(postData.existingPhotos)
       : post.photos;
 
+    const parsedLocation =
+      typeof postData.location === "string"
+        ? JSON.parse(postData.location)
+        : postData.location || { lat: 0, lng: 0 };
+
     const updatedPost = await db.Post.findByIdAndUpdate(
       postId,
       {
@@ -264,7 +275,7 @@ const editPost = async (userId, postId, postData, files) => {
           privacy: postData.privacy || post.privacy,
           photos: [...keepPhotos, ...uploadedPhotos],
           address: postData.address || post.address,
-          location: postData.location || post.location,
+          location: parsedLocation,
         },
       },
       { new: true }
@@ -275,7 +286,7 @@ const editPost = async (userId, postId, postData, files) => {
     await Promise.all(
       tempFilePaths.map((path) => fs.unlink(path).catch(() => {}))
     );
-    throw new Error("Lỗi khi cập nhật bài viết: " + error.message);
+    throw error;
   }
 };
 
@@ -365,7 +376,7 @@ const reactPost = async (postId, userId) => {
 
     return updatedPost;
   } catch (error) {
-    throw new Error("Error reacting to post: " + error.message);
+    throw error;
   }
 };
 
@@ -414,7 +425,7 @@ const reportPost = async (userId, postId, reason, files) => {
         if (err) console.error("Lỗi xóa ảnh tạm:", err);
       });
     }
-    throw new Error("Lỗi khi báo cáo bài viết: " + error.message);
+    throw error;
   }
 };
 
@@ -446,7 +457,7 @@ const createComment = async ({ postId, userId, message }) => {
 
     return comment;
   } catch (error) {
-    throw new Error("Error creating comment: " + error.message);
+    throw error;
   }
 };
 
@@ -482,7 +493,7 @@ const removeComment = async (commentId, userId) => {
 
     return comment;
   } catch (error) {
-    throw new Error("Error deleting comment: " + error.message);
+    throw error;
   }
 };
 
@@ -507,7 +518,7 @@ const getCommentsByPost = async (postId) => {
       updatedAt: comment.updatedAt,
     }));
   } catch (error) {
-    throw new Error("Error fetching comments: " + error.message);
+    throw error;
   }
 };
 
