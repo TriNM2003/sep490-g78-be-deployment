@@ -2,100 +2,21 @@ const { response } = require("express");
 const { OpenAI } = require("openai");
 const openai = new OpenAI({ apiKey: process.env.OPEN_AI_NANO_APIKEY });
 
-const colorSuggestions = [
-  "Trắng",
-  "Đen",
-  "Nâu",
-  "Nâu socola",
-  "Vàng kem",
-  "Kem",
-  "Nâu vàng nhạt",
-  "Nâu rám",
-  "Xám",
-  "Xám xanh",
-  "Xanh lam",
-  "Đỏ",
-  "Cam",
-  "Vàng",
-  "Vàng mơ",
-  "Bạc",
-  "Loang sọc",
-  "Loang chấm",
-  "Đen pha nâu",
-  "Tam thể",
-  "Vằn mèo",
-  "Mai rùa",
-  "Hai màu",
-  "Ba màu",
-  "Nâu đậm",
-  "Tím nhạt",
-  "Quế",
-  "Be",
-  "Trắng ngà",
-  "Đen trắng kiểu vest",
-  "Thân nhạt, mặt đậm",
-  "Vằn mặt, tai",
-  "Khói",
-  "Loang đều",
-  "Trắng với mặt và đuôi có màu",
-  "Đốm trắng lớn",
-  "Nâu tự nhiên",
-  "Champagne",
-  "Bạch tạng",
-  "Chân trắng, mặt màu",
-  "Xám than",
-  "Nâu gỉ",
-  "Nâu gụ",
-  "Nâu gan",
-  "Hồng đào",
-  "Xám tro",
-  "Xanh rêu",
-  "Trắng tuyết",
-  "Đồng đỏ",
-  "Xám thép",
-  "Hổ phách",
-  "Xám rêu",
-  "Hồng tro",
-  "Bạch kim",
-  "Đen tuyền",
-];
-
 const analyzePetWithGPT = async (imageBase64) => {
   const prompt = `
-Bạn là chuyên gia phân tích động vật qua ảnh. Hãy phân tích **duy nhất một con vật trong ảnh** và trả về kết quả ở dạng **JSON hợp lệ** như sau:
+Phân tích ảnh con vật sau và trả về kết quả ở dạng **JSON hợp lệ** duy nhất:
 
 {
-  "age": "Số tháng tuổi ước lượng (ví dụ: '6')",
-  "weight": "Cân nặng ước lượng theo kg (ví dụ: '5')",
-  "color": [string] (danh sách màu lông chủ đạo, chỉ chọn từ danh sách được cung cấp, trả về ít nhất 1 và không quá 2 màu),
-  "species": "Loài bằng tiếng Việt (ví dụ: 'Chó', 'Mèo', 'Gà', 'Chim','Khỉ','Trâu','Bò','Lợn' ...)",
-  "breed": "Tên giống (ví dụ: 'Phú Quốc', 'Chó ta','Mèo ta', 'Gà ri', 'Vịt cỏ', nếu không rõ có thể ghi 'Không rõ')",
-  "identificationFeature": "Đặc điểm nhận dạng nổi bật (ví dụ: 'Lông đỏ nâu, đuôi dài, mắt viền trắng')"
+  "age": "Số tháng tuổi (ví dụ: '6')",
+  "weight": "Cân nặng ước lượng (ví dụ: '5')",
+  "color": "Màu lông (ví dụ: 'Vàng nâu')",
+  "species": "Loài bằng tiếng Việt (ví dụ: 'Chó', 'Mèo')",
+  "breed": "Giống (ví dụ: 'Chó ta', 'Phú Quốc')",
+  "identificationFeature": "Đặc điểm nổi bật (ví dụ: 'Tai cụp, đuôi cong')"
 }
-- Nếu là loài "Mèo" và không xác định được giống cụ thể nhưng trông giống mèo phổ biến tại Việt Nam, hãy trả về breed là "Mèo ta".
 
-### QUY ĐỊNH BẮT BUỘC:
-
-1. Trường **"color"** chỉ được dùng các màu sau (ghi chính xác, không thêm màu lạ, không sáng tạo):
-
-${colorSuggestions.map((c) => `- ${c}`).join("\n")}
-
-→ Nếu trong ảnh có màu không nằm trong danh sách trên, trả về:
-\`\`\`json
-{ "error": "invalid_color_detected" }
-\`\`\`
-
-2. Nếu ảnh:
-- Có nhiều hơn 1 con vật → trả:
-\`\`\`json
+Chỉ trả JSON. Nếu ảnh có nhiều con thú, trả về:
 { "error": "too_many_animals" }
-\`\`\`
-- Mờ, không rõ, không phải con vật → trả:
-\`\`\`json
-{ "error": "invalid_or_unclear_image" }
-\`\`\`
-
-**Chỉ trả đúng JSON hợp lệ. Không thêm văn bản, giải thích hay mô tả ngoài JSON.**
 `;
 
   const response = await openai.chat.completions.create({
@@ -115,11 +36,12 @@ ${colorSuggestions.map((c) => `- ${c}`).join("\n")}
         ],
       },
     ],
-    max_tokens: 1000,
+    max_tokens: 500,
   });
 
   const text = response.choices[0].message.content;
 
+  // Trích xuất JSON trong response
   const jsonMatch =
     text.match(/```json\s*(\{[\s\S]*?\})\s*```/) || text.match(/\{[\s\S]*?\}/);
 
@@ -130,22 +52,7 @@ ${colorSuggestions.map((c) => `- ${c}`).join("\n")}
   try {
     const parsed = JSON.parse(jsonMatch[1] || jsonMatch[0]);
 
-    //  Nếu có lỗi từ GPT
-    if (parsed.error) {
-      const supportErrors = ["chưa được hỗ trợ", "Loài", "Giống"];
-      const isSupportError = supportErrors.some((keyword) =>
-        parsed.error.toLowerCase().includes(keyword.toLowerCase())
-      );
-
-      if (!isSupportError) {
-        throw new Error(parsed.error); // lỗi mờ, nhiều con,...
-      }
-
-      // Nếu chỉ là chưa hỗ trợ giống/loài thì return để FE xử lý
-      return parsed;
-    }
-
-    //  Validate các trường bắt buộc
+    // Validate sơ bộ
     const requiredFields = [
       "species",
       "breed",
@@ -158,27 +65,7 @@ ${colorSuggestions.map((c) => `- ${c}`).join("\n")}
       }
     }
 
-    // Kiểm tra màu lông có nằm trong danh sách không
-    const inputColors = Array.isArray(parsed.color)
-      ? parsed.color.map((c) => c.trim())
-      : parsed.color
-          .split(/[,\n]/)
-          .map((c) => c.trim())
-          .filter((c) => c !== "");
-
-    const invalidColors = inputColors.filter(
-      (color) => !colorSuggestions.includes(color)
-    );
-
-    if (invalidColors.length > 0) {
-      throw new Error(`Màu lông không hợp lệ: ${invalidColors.join(", ")}`);
-    }
-
-    // Trả kết quả hợp lệ
-    return {
-      ...parsed,
-      color: inputColors,
-    };
+    return parsed;
   } catch (err) {
     throw new Error("JSON không hợp lệ từ GPT: " + err.message);
   }
@@ -201,7 +88,7 @@ const searchPetWithGPT = async (
       - age: number (ước tính tuổi theo tháng)
       - weight: number (ước tính cân nặng tính bằng kg)
       - color: [string] (danh sách màu lông chủ đạo, chỉ chọn từ danh sách được cung cấp) (trả về ít nhất 1 và không quá 2 màu)
-      - identificationFeature: string (đặc điểm nhận dạng nổi bật, nếu có)
+      - identificationFeature: string (đặc điểm nhận dạng nổi bật chỉ có ở con vật này khác với đặc điểm chung của loài, nếu có)
 
       ## Yêu cầu đặc biệt:
       - Nếu ảnh không đạt tiêu chuẩn, **trả về lỗi** với lý do cụ thể, ví dụ:
@@ -234,9 +121,19 @@ const searchPetWithGPT = async (
 
         Nếu tất cả species và breeds đều hợp lệ, hãy trả về JSON kết quả như bình thường.
         
-        - DANH SÁCH SPECIES: ${JSON.stringify(speciesList)}
-        - DANH SÁCH BREEDS: ${JSON.stringify(breedsList)}
-        - DANH SÁCH MÀU LÔNG: ${JSON.stringify(colorList)}
+        - DANH SÁCH SPECIES (kèm mô tả):
+         ${JSON.stringify(speciesList)}
+        - DANH SÁCH BREEDS (kèm mô tả):
+         ${JSON.stringify(breedsList)}
+        - DANH SÁCH MÀU LÔNG :
+         ${JSON.stringify(colorList)}
+
+        TÊN HỢP LỆ (Dùng để đối chiếu):
+            Loài hợp lệ: ${JSON.stringify(speciesList.map((s) => s.name))}
+
+            Giống hợp lệ: ${JSON.stringify(breedsList.map((b) => b.name))}
+
+            Màu lông hợp lệ: ${JSON.stringify(colorList)}
         
         
 

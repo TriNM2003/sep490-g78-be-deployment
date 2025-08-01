@@ -141,7 +141,9 @@ const uploadImage = async (req, res) => {
     const result = await cloudinary.uploader.upload(req.file.path, {
       folder: "pets",
     });
-
+    await fs.unlink(req.file.path).catch((err) => {
+      console.error("Lỗi khi xóa file tạm:", err);
+    });
     res.status(200).json({ url: result.secure_url });
   } catch (error) {
     res.status(500).json({ message: "Upload thất bại", error: error.message });
